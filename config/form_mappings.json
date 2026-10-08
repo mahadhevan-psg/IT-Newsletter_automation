@@ -1,0 +1,130 @@
+{
+  "version": "1.0",
+  "forms": {
+    "form_research": {
+      "form_name": "IT Chronicles - Research & Innovation Submission Form",
+      "section_id": "sec_research",
+      "category_field": "Research Subcategory",
+      "category_map": {
+        "Journal Publications": "cat_journal_pub",
+        "Conference Publications": "cat_conf_pub",
+        "Book / Book Chapters": "cat_books",
+        "Funded Research Projects": "cat_funded_projects",
+        "Consultancy Projects": "cat_consultancy",
+        "Patents & Intellectual Property": "cat_patents",
+        "Key Research Innovations & Technical Accomplishments": "cat_innovations"
+      },
+      "field_mappings": {
+        "Timestamp": "submission_timestamp",
+        "Email Address": "submitter_email",
+        "Submitter Full Name": "submitter_name",
+        "Title of Publication / Patent / Project / Innovation": "title",
+        "Authors / Investigators / Team Members": "author_or_person",
+        "Venue / Journal / Publisher / Funding Agency / Organization": "organization_or_venue",
+        "Date of Publication / Award / Grant": "event_date",
+        "Impact Factor / Indexing (e.g., Scopus, Web of Science, IEEE, Q1/Q2)": "impact_or_indexing",
+        "DOI / Patent Number / Grant Amount / URL Link": "grant_or_prize_amount",
+        "Abstract / Executive Summary / Highlights": "description",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Evidence / Certificate Link (Google Drive / Document URL)": "evidence_url"
+      }
+    },
+    "form_faculty": {
+      "form_name": "IT Chronicles - Faculty Achievements Submission Form",
+      "section_id": "sec_faculty",
+      "category_field": "Achievement Category",
+      "category_map": {
+        "Awards & Honors Received": "cat_fac_awards",
+        "Certifications & Upskilling Completed": "cat_fac_certifications",
+        "Invited Keynote / Expert Lectures Delivered": "cat_fac_keynotes",
+        "Resource Person / Session Chair Roles": "cat_fac_session_chairs",
+        "FDP / Workshops Attended": "cat_fac_fdp_attended",
+        "Professional Body & Editorial Board Roles": "cat_fac_memberships"
+      },
+      "field_mappings": {
+        "Timestamp": "submission_timestamp",
+        "Email Address": "submitter_email",
+        "Faculty Full Name": "author_or_person",
+        "Title of Award / Certification / Keynote / Workshop": "title",
+        "Organization / Host Institution / Awarding Body": "organization_or_venue",
+        "Date of Event / Award / Completion": "event_date",
+        "Level (International / National / State / University)": "impact_or_indexing",
+        "Description & Key Highlights": "description",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Evidence / Certificate Link (Google Drive URL)": "evidence_url"
+      }
+    },
+    "form_student": {
+      "form_name": "IT Chronicles - Student Achievements Submission Form",
+      "section_id": "sec_student",
+      "category_field": "Student Achievement Category",
+      "category_map": {
+        "Academic Excellence & Ranks": "cat_stu_academic",
+        "Hackathons & Coding Competitions": "cat_stu_hackathons",
+        "Higher Education & Top Placements": "cat_stu_placements",
+        "Technical Projects & Innovations": "cat_stu_projects",
+        "Sports, Cultural & Co-Curricular Accomplishments": "cat_stu_extracurricular"
+      },
+      "field_mappings": {
+        "Timestamp": "submission_timestamp",
+        "Email Address": "submitter_email",
+        "Student Name(s)": "author_or_person",
+        "Name of Competition / Award / Project / Event": "title",
+        "Organizing Institute / Company / Body": "organization_or_venue",
+        "Position / Rank / Prize / CTC (e.g. 1st Place, Cash Prize of $1000)": "grant_or_prize_amount",
+        "Date of Event / Award": "event_date",
+        "Project Abstract / Achievement Details": "description",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Certificate / Proof Link": "evidence_url"
+      }
+    },
+    "form_industry": {
+      "form_name": "IT Chronicles - Industry, Alumni & Outreach Submission Form",
+      "section_id": "sec_industry",
+      "category_field": "Outreach Category",
+      "category_map": {
+        "Industrial Visits & Field Tours": "cat_ind_visits",
+        "Industry Expert Lectures & Technical Talks": "cat_ind_talks",
+        "MoUs Signed & Industrial Collaborations": "cat_ind_mous",
+        "Alumni Interactions & Mentorship Sessions": "cat_ind_alumni",
+        "Community & Social Outreach Initiatives": "cat_ind_outreach"
+      },
+      "field_mappings": {
+        "Timestamp": "submission_timestamp",
+        "Email Address": "submitter_email",
+        "Coordinator / Faculty Name": "author_or_person",
+        "Title of Event / Visit / MoU Partner": "title",
+        "Company / Organization / Alumni Details": "organization_or_venue",
+        "Date of Event / Execution": "event_date",
+        "Target Audience & Number of Participants": "impact_or_indexing",
+        "Executive Summary & Outcomes": "description",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Event Report / Brochure Link": "evidence_url"
+      }
+    },
+    "form_departmental": {
+      "form_name": "IT Chronicles - Departmental Highlights Submission Form",
+      "section_id": "sec_departmental",
+      "category_field": "Department Highlight Category",
+      "category_map": {
+        "Workshops & FDPs Organized": "cat_dept_workshops",
+        "Conferences & Symposia Organized": "cat_dept_conferences",
+        "Infrastructure & Lab Upgrades": "cat_dept_infra",
+        "Student Club & Society Activities": "cat_dept_clubs",
+        "Department Statistics & Major Milestones": "cat_dept_milestones"
+      },
+      "field_mappings": {
+        "Timestamp": "submission_timestamp",
+        "Email Address": "submitter_email",
+        "Convener / Coordinator Name": "author_or_person",
+        "Title of Event / Upgrade / Milestone": "title",
+        "Coordinators / Department Leads": "author_or_person",
+        "Dates & Duration": "event_date",
+        "Total Participants Count": "grant_or_prize_amount",
+        "Event Overview & Highlights": "description",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Event Report / Flyer Link": "evidence_url"
+      }
+    }
+  }
+}

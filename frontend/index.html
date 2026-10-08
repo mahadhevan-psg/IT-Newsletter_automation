@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Chronicles - Newsletter Automation System</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-header">
+    <div class="brand">
+      <div class="logo">IT</div>
+      <div>
+        <h1>IT CHRONICLES</h1>
+        <p class="subtitle">Department Newsletter Automation System</p>
+      </div>
+    </div>
+    <div class="issue-badge" id="current-issue-badge">
+      Issue: ISSUE_2026_V1I1 | Vol. 1 Issue 1 (2026-2027)
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard-tab')">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('ingestion-tab')">📥 Form Ingestion & CSV</button>
+    <button class="tab-btn" onclick="switchTab('editorial-tab')">✍️ Editorial Review & Entries</button>
+    <button class="tab-btn" onclick="switchTab('section-gen-tab')">📄 Section DOCX Engine</button>
+    <button class="tab-btn" onclick="switchTab('master-builder-tab')">📰 Master Newsletter Builder</button>
+    <button class="tab-btn" onclick="switchTab('admin-tab')">⚙️ System Admin & Logs</button>
+  </nav>
+
+  <main class="container">
+    <!-- Tab 1: Dashboard -->
+    <section id="dashboard-tab" class="tab-content active">
+      <h2>System Status & Overview</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Submissions</span>
+          <span class="stat-value" id="stat-total-entries">0</span>
+        </div>
+        <div class="stat-card success">
+          <span class="stat-label">Approved Content</span>
+          <span class="stat-value" id="stat-approved-entries">0</span>
+        </div>
+        <div class="stat-card warning">
+          <span class="stat-label">Pending Review</span>
+          <span class="stat-value" id="stat-pending-entries">0</span>
+        </div>
+        <div class="stat-card danger">
+          <span class="stat-label">Featured Items</span>
+          <span class="stat-value" id="stat-featured-entries">0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Master Sections Overview</h3>
+        <table class="data-table" id="dashboard-sections-table">
+          <thead>
+            <tr>
+              <th>Section Name</th>
+              <th>Subcategories</th>
+              <th>Status</th>
+              <th>Total Entries</th>
+              <th>Approved Entries</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dynamic content -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab 2: Form Ingestion -->
+    <section id="ingestion-tab" class="tab-content">
+      <h2>Form Response Ingestion & Batch CSV</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Single Form Submission Test</h3>
+          <form id="ingest-form" onsubmit="handleSingleIngest(event)">
+            <div class="form-group">
+              <label>Select Master Form Source</label>
+              <select id="ingest-form-id" class="form-control" onchange="updateFormQuestions()">
+                <option value="form_research">Research & Innovation Form</option>
+                <option value="form_faculty">Faculty Achievements Form</option>
+                <option value="form_student">Student Achievements Form</option>
+                <option value="form_industry">Industry & Outreach Form</option>
+                <option value="form_departmental">Departmental Highlights Form</option>
+              </select>
+            </div>
+            <div id="dynamic-form-fields"></div>
+            <button type="submit" class="btn btn-primary">Ingest & Normalize Entry</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Batch CSV Response Upload</h3>
+          <p>Upload a Google Sheets CSV export for bulk ingestion into the canonical repository.</p>
+          <form id="csv-form" onsubmit="handleCsvIngest(event)">
+            <div class="form-group">
+              <label>Form Target</label>
+              <select id="csv-form-id" class="form-control">
+                <option value="form_research">Research & Innovation</option>
+                <option value="form_faculty">Faculty Achievements</option>
+                <option value="form_student">Student Achievements</option>
+                <option value="form_industry">Industry & Outreach</option>
+                <option value="form_departmental">Departmental Highlights</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Upload CSV File</label>
+              <input type="file" id="csv-file-input" accept=".csv" required class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Ingest CSV Batch</button>
+          </form>
+          <div id="csv-result-box" class="result-box hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Editorial Review -->
+    <section id="editorial-tab" class="tab-content">
+      <h2>Canonical Repository & Editorial Review</h2>
+      <div class="filters-bar">
+        <div class="filter-item">
+          <label>Section:</label>
+          <select id="filter-section" onchange="loadEntries()"></select>
+        </div>
+        <div class="filter-item">
+          <label>Status:</label>
+          <select id="filter-status" onchange="loadEntries()">
+            <option value="">All Statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="Reviewed">Reviewed</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" onclick="loadEntries()">🔄 Refresh Entries</button>
+      </div>
+
+      <div class="card">
+        <table class="data-table" id="entries-table">
+          <thead>
+            <tr>
+              <th>ID & Category</th>
+              <th>Title & Contributor</th>
+              <th>Venue / Impact / Date</th>
+              <th>Description & Links</th>
+              <th>Spotlight</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dynamic entries -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab 4: Section DOCX Engine -->
+    <section id="section-gen-tab" class="tab-content">
+      <h2>Section DOCX Document Generator</h2>
+      <p>Generate standalone Word (.docx) documents for individual newsletter sections using approved structured entries.</p>
+      
+      <div class="card">
+        <div class="form-group">
+          <label>Select Section to Generate</label>
+          <select id="gen-section-id" class="form-control" onchange="loadSectionEntriesForGen()"></select>
+        </div>
+        <div id="section-gen-summary"></div>
+        <button class="btn btn-primary btn-large" onclick="generateSectionDocx()">⚡ Generate Section DOCX Document</button>
+        
+        <div id="section-gen-result" class="result-box hidden"></div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Master Newsletter Builder -->
+    <section id="master-builder-tab" class="tab-content">
+      <h2>Master Newsletter Assembler</h2>
+      <p>Select sections and individual entries to compile into the final Master DOCX newsletter.</p>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h3>1. Include Sections</h3>
+          <div id="master-sections-selector"></div>
+        </div>
+        <div class="card">
+          <h3>2. Assembly & Output</h3>
+          <p>The assembler resolves optional sections, orders entries, renders statistics cards, spotlight features, and formats master output.</p>
+          <button class="btn btn-success btn-large" onclick="assembleMasterNewsletter()">🚀 Assemble Master DOCX Newsletter</button>
+          <div id="master-gen-result" class="result-box hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Admin Portal -->
+    <section id="admin-tab" class="tab-content">
+      <h2>System Administration & Audit Logs</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Form Question to Field Mappings</h3>
+          <pre id="admin-mappings-json" class="json-display"></pre>
+        </div>
+        <div class="card">
+          <h3>Audit Logs</h3>
+          <div class="audit-log-box" id="admin-audit-logs"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-10-08",
+  "fields": {
+    "entry_id": {
+      "key": "entry_id",
+      "label": "Canonical Entry ID",
+      "type": "string",
+      "read_only": true,
+      "description": "Unique auto-generated UUID or ID for the entry"
+    },
+    "issue_id": {
+      "key": "issue_id",
+      "label": "Newsletter Issue ID",
+      "type": "string",
+      "required": true,
+      "description": "Identifier of the newsletter issue (e.g. ISSUE_2026_V1I1)"
+    },
+    "section_id": {
+      "key": "section_id",
+      "label": "Section ID",
+      "type": "string",
+      "required": true,
+      "description": "ID of the major section (e.g., sec_research, sec_faculty)"
+    },
+    "category_id": {
+      "key": "category_id",
+      "label": "Category / Subsection ID",
+      "type": "string",
+      "required": true,
+      "description": "Specific subcategory key within section"
+    },
+    "title": {
+      "key": "title",
+      "label": "Title / Heading",
+      "type": "string",
+      "required": true,
+      "description": "Title of publication, patent, award, event, or activity"
+    },
+    "author_or_person": {
+      "key": "author_or_person",
+      "label": "Authors / Person(s) Involved",
+      "type": "string",
+      "required": true,
+      "description": "Names of faculty, students, authors, or coordinators"
+    },
+    "organization_or_venue": {
+      "key": "organization_or_venue",
+      "label": "Venue / Publisher / Organization / Host",
+      "type": "string",
+      "required": false,
+      "description": "Journal, conference, funding agency, institute, or partner name"
+    },
+    "event_date": {
+      "key": "event_date",
+      "label": "Date of Event / Publication / Award",
+      "type": "string",
+      "required": true,
+      "description": "Date or date range of entry"
+    },
+    "impact_or_indexing": {
+      "key": "impact_or_indexing",
+      "label": "Impact Factor / Indexing / Rank",
+      "type": "string",
+      "required": false,
+      "description": "Scopus, WoS, IEEE, 1st Rank, etc."
+    },
+    "grant_or_prize_amount": {
+      "key": "grant_or_prize_amount",
+      "label": "Grant / Funding / Cash Prize Amount",
+      "type": "string",
+      "required": false,
+      "description": "Financial value or grant amount"
+    },
+    "description": {
+      "key": "description",
+      "label": "Abstract / Description / Executive Summary",
+      "type": "text",
+      "required": true,
+      "description": "Full text description of the entry"
+    },
+    "photo_url": {
+      "key": "photo_url",
+      "label": "Photo / Image URL",
+      "type": "url",
+      "required": false,
+      "description": "Link to high-resolution photograph"
+    },
+    "evidence_url": {
+      "key": "evidence_url",
+      "label": "Evidence / Certificate URL",
+      "type": "url",
+      "required": false,
+      "description": "Link to certificate, report, or DOI"
+    },
+    "featured_flag": {
+      "key": "featured_flag",
+      "label": "Featured / Spotlight Item",
+      "type": "boolean",
+      "default": false,
+      "description": "Whether item is selected for newsletter spotlight card"
+    },
+    "display_order": {
+      "key": "display_order",
+      "label": "Display Order",
+      "type": "integer",
+      "default": 100,
+      "description": "Sorting priority within section"
+    },
+    "approval_status": {
+      "key": "approval_status",
+      "label": "Approval Status",
+      "type": "string",
+      "enum": ["Draft", "Reviewed", "Approved", "Rejected"],
+      "default": "Draft",
+      "description": "Current editorial approval state"
+    },
+    "submitter_email": {
+      "key": "submitter_email",
+      "label": "Submitter Email",
+      "type": "string",
+      "required": false,
+      "description": "Email address of the submitter"
+    },
+    "submission_timestamp": {
+      "key": "submission_timestamp",
+      "label": "Submission Timestamp",
+      "type": "string",
+      "description": "Timestamp when form response was ingested"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "issue_metadata": {
+    "issue_id": "ISSUE_2026_V1I1",
+    "academic_year": "2026-2027",
+    "volume": 1,
+    "issue": 1,
+    "semester": "Odd Semester (July - December 2026)",
+    "publication_period": "October 2026",
+    "department_name": "Department of Information Technology",
+    "institution_name": "Information Technology Academy",
+    "cover_title": "IT CHRONICLES",
+    "cover_subtitle": "Department of Information Technology Biannual Newsletter",
+    "editorial_message": {
+      "hod_message": "Welcome to the latest issue of IT Chronicles highlighting our department's milestones, research achievements, and student innovations.",
+      "chief_editor_message": "Our department continues to excel across academic research, industry partnerships, and student achievements.",
+      "editor_in_chief": "Dr. A. Sharma, Head of Department",
+      "editorial_team": ["Prof. R. Varma", "Dr. S. Kulkarni", "Ms. P. Nair"]
+    }
+  }
+}

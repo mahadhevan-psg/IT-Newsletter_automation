@@ -1,0 +1,183 @@
+IT Chronicles – Newsletter Automation System
+Five-Phase Implementation Plan
+Version 1.0 | October 2026
+1. Purpose
+This plan defines a robust, template-driven automation system for collecting newsletter content through fixed Google Forms, storing and normalizing submissions, generating section-specific Word documents, and assembling selected content into a final master newsletter document. The architecture is designed so that normal changes to forms, subsections, fields, layouts, and document formatting do not require application-code changes.
+2. Source Structure Used for the Plan
+The current IT Chronicles template contains a cover, contents page, Editorial & Messages, Research and Innovation, Faculty Achievements, Student Achievements, Industry/Alumni/Outreach, and Departmental Highlights. The template also demonstrates statistics cards, featured content blocks, registers/tables, images, and a data-to-document concept.
+The accompanying form specification proposes five master Google Forms for Research & Innovation, Faculty Achievements, Student Achievements, Industry/Alumni/Outreach, and Departmental Highlights, with category-specific subsections and fields.
+The plan therefore treats Editorial & Messages as issue-level content and the five master forms as structured data-entry sources.
+3. Design Principles
+Data is the source of truth; Word documents are generated views of the data.
+Google Form questions must be separated from internal/canonical field names through mappings.
+Sections and subsections must be configuration-driven rather than hard-coded.
+Word templates must control presentation and formatting.
+Template, schema, and configuration versions must be retained.
+Only approved content should enter the publication workflow.
+Every generated document must be traceable to its issue, entries, and template versions.
+Normal changes to document structure or formatting should require configuration/template changes, not code changes.
+The same content database should support multiple newsletter issues.
+4. Overall Architecture
+Google Forms → Google Sheets/raw responses → ingestion and validation → canonical content database → editor/approval workflow → template engine → section documents → newsletter builder → master DOCX/PDF.
+5. Five-Phase Implementation Plan
+Phase 1 – Data Architecture & Configuration Model
+Foundation of the system. Define the canonical data model and the configuration layer before building document generation.
+Key activities:
+Define Issue, Section, Subsection/Category, Entry, Field, Media, Template, Approval, and Generation entities.
+Define common entry fields: entry ID, issue, section, subcategory, date, title, person/team, description, outcome, evidence link, photo link, featured flag, display order, and approval status.
+Define category-specific schemas for publications, patents, funded projects, presentations, technical innovations, awards, certifications, invited talks, recognitions, research accomplishments, student achievements, industry/outreach activities, and departmental activities.
+Create a field registry with stable internal field keys independent of Google Form wording.
+Create Form → canonical-field mappings so Form question changes do not propagate into the document layer.
+Define section/subsection configuration including name, ID, enabled state, order, schema, and associated template.
+Define issue-level metadata for academic year, semester, volume, issue, publication period, cover information, editorial content, and department-at-a-glance information.
+Define versioning rules for forms, schemas, mappings, templates, and issues.
+Define validation rules and required/optional field behaviour.
+Deliverables: data model; database schema; field registry; section/category registry; form-mapping specification; configuration schema; versioning strategy; validation specification.
+Exit criteria: every current form field and every current newsletter section can be represented without hard-coded document logic.
+Phase 2 – Form Ingestion, Normalization & Editorial Workflow
+Build the reliable pipeline from Google Forms/Sheets into the structured content repository.
+Key activities:
+Connect each master Google Form response source.
+Create a raw-response ingestion layer so original submissions are preserved.
+Map each raw response to canonical fields.
+Detect the selected category/subsection and populate only the relevant schema.
+Normalize dates, names, categories, links, file references, and controlled values.
+Validate required fields, field types, links, duplicates, and inconsistent submissions.
+Store uploaded photos/evidence references separately from text data.
+Assign unique entry IDs.
+Implement Draft → Reviewed → Approved workflow.
+Allow editors to correct or reject entries without modifying the original raw response.
+Implement Featured and Display Order controls.
+Maintain an audit trail for edits, approvals, and status changes.
+Deliverables: ingestion service; normalized content database; validation engine; media handling; editor review interface; approval workflow; audit logs.
+Exit criteria: a real Google Form submission becomes a validated, traceable content entry without manual spreadsheet restructuring.
+Phase 3 – Template Engine & Section Document Generation
+Build the document-generation engine using editable Word templates and reusable layout components.
+Key activities:
+Create Word templates for each major newsletter section.
+Define a controlled placeholder convention using canonical field keys.
+Support repeated entries, optional blocks, conditional content, images, tables, statistics, featured cards, and section headers.
+Create reusable document components such as section header, statistics cards, featured/spotlight block, register/table, image-caption block, quote block, and footer/header.
+Keep layout and formatting inside Word templates wherever practical.
+Implement template validation to detect unknown placeholders, missing required fields, and invalid configuration.
+Implement template versions with Draft → Validated → Published → Archived lifecycle.
+Generate section-specific DOCX files from approved entries.
+Record the exact template version and data version used for every generated document.
+Support template preview before publication.
+Deliverables: template engine; component library; section templates; template validator; template versioning; section DOCX generator; generation metadata.
+Exit criteria: each current newsletter section can be generated from approved structured data, and normal formatting changes can be made by editing a template rather than source code.
+Phase 4 – Newsletter Builder & Master Document Assembly
+Create the interface and engine for selecting, ordering, previewing, and assembling the final newsletter.
+Key activities:
+Create an Issue/Newsletter Builder.
+Allow editors to select which major sections appear in an issue.
+Allow selection/deselection of individual entries within each subsection.
+Support automatic or manual display ordering.
+Support Featured selection and limits where the template requires spotlight content.
+Resolve optional sections and empty categories automatically.
+Assemble selected section content into the master newsletter structure.
+Support issue-level content such as cover, contents, editorial message, department-at-a-glance, and editorial team.
+Generate a master DOCX while preserving template formatting and section boundaries.
+Generate PDF output from the final approved document.
+Provide a preview before final generation.
+Store each generated master document with issue, selected-entry list, template versions, timestamp, and generator version.
+Deliverables: newsletter builder UI; selection/order workflow; master template; master assembler; preview; DOCX/PDF generation; generation history.
+Exit criteria: an editor can create a complete newsletter from approved entries without manually copying content between Word documents.
+Phase 5 – Administration, Versioning & Long-Term Maintainability
+Remove routine developer dependency and make future structural/form/template changes manageable through administration and controlled configuration.
+Key activities:
+Build an administration interface for sections, categories, fields, mappings, and templates.
+Allow administrators to add/disable/reorder subsections without changing application code.
+Allow administrators to upload and publish new Word template versions.
+Provide configuration validation before publishing changes.
+Maintain backward-compatible versions for historical issues.
+Allow multiple newsletter issues to coexist without overwriting earlier configurations.
+Implement role-based access for contributors, editors, and administrators.
+Implement backup and recovery for raw submissions, normalized data, templates, generated files, and configuration.
+Implement monitoring and error reporting for ingestion and document generation.
+Add automated regression tests using representative form responses and expected document outputs.
+Document the change procedure for form changes, new fields, new subsections, template changes, and new document types.
+Prepare deployment and maintenance documentation.
+Deliverables: admin portal; configuration management; template publishing workflow; RBAC; backups; monitoring; regression tests; administrator documentation.
+Exit criteria: routine changes can be performed by an authorized administrator without modifying application source code.
+6. Proposed Core Data Model
+Entity
+Purpose
+Examples
+Issue
+Represents one newsletter issue
+Academic year, semester, volume, issue
+Section
+Major newsletter area
+Research, Faculty, Student, Industry, Departmental
+Category
+Subsection/category within a section
+Publication, Patent, Award, Workshop
+Entry
+One approved content item
+One publication, one award, one event
+Field
+Canonical data attribute
+title, date, description, DOI
+Form Mapping
+Maps form questions to canonical fields
+Google question → journal_name
+Media
+Photo/evidence reference
+Drive image, certificate, report
+Template
+Versioned document layout
+Research v2, Master v4
+Approval
+Editorial state
+Draft, Reviewed, Approved
+Generation
+Audit record for output
+Issue + entries + template versions
+7. Change Management Model
+The system should make the following routine changes possible without source-code modification:
+Change
+Expected process
+Document formatting
+Edit Word template → validate → publish new version
+New form field
+Add form question → map to canonical field → optionally add placeholder to template
+New subsection
+Create category/schema → map form → assign template
+Remove subsection
+Disable/archive configuration
+Reorder content
+Change display order or master configuration
+New master layout
+Create new master template version
+Historical issue
+Keep its original configuration/template versions
+New document type
+Add schema + template + configuration; engine remains unchanged
+8. Quality & Robustness Requirements
+No reliance on fixed Excel column numbers in application logic.
+No dependence on the exact wording of Google Form questions.
+No hard-coded Word formatting in business logic wherever a template can express it.
+Unknown or missing fields must produce validation errors rather than silent corruption.
+Optional subsections must be safely omitted when no approved content exists.
+Historical generated documents must remain reproducible using their recorded versions.
+Raw form responses must remain immutable for auditability.
+Generated documents must retain traceability to source entries.
+Template changes must be previewable before publication.
+The system must support the current five-form structure while allowing future forms/categories.
+9. Suggested Implementation Order
+Freeze the canonical data model and configuration specification.
+Map all fields in the current five master forms.
+Define the initial database and issue model.
+Build ingestion and approval workflow.
+Create one complete vertical slice first: Research → approved entries → Research DOCX.
+Generalize the template engine and reusable components.
+Add the remaining four sections.
+Build master newsletter selection and assembly.
+Add administrator/configuration tools.
+Run regression tests using a full representative issue.
+Pilot with one semester/issue before production rollout.
+10. Definition of Success
+The system is successful when a future administrator can change the Google Form structure, add or remove a subsection, or redesign the Word newsletter layout through approved configuration and template workflows, while the core application continues to operate unchanged. A final newsletter should be reproducible from its stored issue configuration, approved entries, and template versions.
+11. Source Basis
+This plan is based on the uploaded IT Chronicles Semester Newsletter Template and the IT Chronicles Department Newsletter – ToC/form specification. The newsletter template defines the current visual/content structure and explicitly proposes Google Forms → Google Sheets → document generation, including Featured, Photo Link, Evidence Link, Display Order, and Approval Status controls. The form specification defines the five master form areas and their current category-specific fields.

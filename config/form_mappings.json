@@ -23,11 +23,15 @@
         "Venue / Journal / Publisher / Funding Agency / Organization": "organization_or_venue",
         "Date of Publication / Award / Grant": "event_date",
         "Impact Factor / Indexing (e.g., Scopus, Web of Science, IEEE, Q1/Q2)": "impact_or_indexing",
+        "Key Impact Badge / Metric": "badge_tag",
         "DOI / Patent Number / Grant Amount / URL Link": "grant_or_prize_amount",
         "Abstract / Executive Summary / Highlights": "description",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Evidence / Certificate Link (Google Drive / Document URL)": "evidence_url"
-      }
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Evidence / Certificate Link (Google Drive / Document URL)": "evidence_url",
+        "Is this a Landmark / Milestone Achievement?": "featured_flag"
+      },
+      "column_metadata": {}
     },
     "form_faculty": {
       "form_name": "IT Chronicles - Faculty Achievements Submission Form",
@@ -49,9 +53,12 @@
         "Organization / Host Institution / Awarding Body": "organization_or_venue",
         "Date of Event / Award / Completion": "event_date",
         "Level (International / National / State / University)": "impact_or_indexing",
+        "Key Impact Badge / Metric": "badge_tag",
         "Description & Key Highlights": "description",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Evidence / Certificate Link (Google Drive URL)": "evidence_url"
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Evidence / Certificate Link (Google Drive URL)": "evidence_url",
+        "Is this a Landmark / Milestone Achievement?": "featured_flag"
       }
     },
     "form_student": {
@@ -72,10 +79,13 @@
         "Name of Competition / Award / Project / Event": "title",
         "Organizing Institute / Company / Body": "organization_or_venue",
         "Position / Rank / Prize / CTC (e.g. 1st Place, Cash Prize of $1000)": "grant_or_prize_amount",
+        "Key Impact Badge / Metric": "badge_tag",
         "Date of Event / Award": "event_date",
         "Project Abstract / Achievement Details": "description",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Certificate / Proof Link": "evidence_url"
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Certificate / Proof Link": "evidence_url",
+        "Is this a Landmark / Milestone Achievement?": "featured_flag"
       }
     },
     "form_industry": {
@@ -97,10 +107,14 @@
         "Company / Organization / Alumni Details": "organization_or_venue",
         "Date of Event / Execution": "event_date",
         "Target Audience & Number of Participants": "impact_or_indexing",
+        "Key Impact Badge / Metric": "badge_tag",
         "Executive Summary & Outcomes": "description",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Event Report / Brochure Link": "evidence_url"
-      }
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Event Report / Brochure Link": "evidence_url",
+        "Is this a Landmark / Milestone Achievement?": "featured_flag"
+      },
+      "active_layout": "tpl_1791824960853"
     },
     "form_departmental": {
       "form_name": "IT Chronicles - Departmental Highlights Submission Form",
@@ -121,10 +135,14 @@
         "Coordinators / Department Leads": "author_or_person",
         "Dates & Duration": "event_date",
         "Total Participants Count": "grant_or_prize_amount",
+        "Key Impact Badge / Metric": "badge_tag",
         "Event Overview & Highlights": "description",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Event Report / Flyer Link": "evidence_url"
-      }
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Event Report / Flyer Link": "evidence_url",
+        "Is this a Landmark / Milestone Achievement?": "featured_flag"
+      },
+      "active_layout": "tpl_1791824953756"
     }
   }
 }

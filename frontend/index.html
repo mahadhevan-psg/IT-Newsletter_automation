@@ -3,215 +3,170 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IT Chronicles - Newsletter Automation System</title>
-  <link rel="stylesheet" href="style.css">
+  <title>IT Chronicles · Newsletter Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-header">
-    <div class="brand">
-      <div class="logo">IT</div>
-      <div>
-        <h1>IT CHRONICLES</h1>
-        <p class="subtitle">Department Newsletter Automation System</p>
+  <header class="topbar">
+    <div class="brand"><span class="logo">IT</span><span class="brand-name">Chronicles</span></div>
+    <nav class="tabs" id="main-tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="forms">Forms</button>
+      <button class="tab" data-tab="layout">Layout</button>
+      <button class="tab" data-tab="responses">Responses</button>
+      <button class="tab" data-tab="publish">Publish</button>
+    </nav>
+    <span class="issue-chip" id="issue-chip">Issue 2026 · Vol 1 No 1</span>
+  </header>
+
+  <main class="page">
+    <!-- ============ Overview ============ -->
+    <section id="tab-overview" class="view active">
+      <div class="stats">
+        <button class="stat" onclick="openResponses('')"><span class="stat-num" id="stat-total">0</span><span class="stat-lbl">Responses</span></button>
+        <button class="stat warn" onclick="openResponses('pending')"><span class="stat-num" id="stat-pending">0</span><span class="stat-lbl">Need review</span></button>
+        <button class="stat ok" onclick="openResponses('Approved')"><span class="stat-num" id="stat-approved">0</span><span class="stat-lbl">Approved</span></button>
+        <button class="stat" onclick="openResponses('featured')"><span class="stat-num" id="stat-featured">0</span><span class="stat-lbl">Featured</span></button>
       </div>
-    </div>
-    <div class="issue-badge" id="current-issue-badge">
-      Issue: ISSUE_2026_V1I1 | Vol. 1 Issue 1 (2026-2027)
-    </div>
-  </div>
-
-  <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard-tab')">📊 Dashboard</button>
-    <button class="tab-btn" onclick="switchTab('ingestion-tab')">📥 Form Ingestion & CSV</button>
-    <button class="tab-btn" onclick="switchTab('editorial-tab')">✍️ Editorial Review & Entries</button>
-    <button class="tab-btn" onclick="switchTab('section-gen-tab')">📄 Section DOCX Engine</button>
-    <button class="tab-btn" onclick="switchTab('master-builder-tab')">📰 Master Newsletter Builder</button>
-    <button class="tab-btn" onclick="switchTab('admin-tab')">⚙️ System Admin & Logs</button>
-  </nav>
-
-  <main class="container">
-    <!-- Tab 1: Dashboard -->
-    <section id="dashboard-tab" class="tab-content active">
-      <h2>System Status & Overview</h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-label">Total Submissions</span>
-          <span class="stat-value" id="stat-total-entries">0</span>
-        </div>
-        <div class="stat-card success">
-          <span class="stat-label">Approved Content</span>
-          <span class="stat-value" id="stat-approved-entries">0</span>
-        </div>
-        <div class="stat-card warning">
-          <span class="stat-label">Pending Review</span>
-          <span class="stat-value" id="stat-pending-entries">0</span>
-        </div>
-        <div class="stat-card danger">
-          <span class="stat-label">Featured Items</span>
-          <span class="stat-value" id="stat-featured-entries">0</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Master Sections Overview</h3>
-        <table class="data-table" id="dashboard-sections-table">
-          <thead>
-            <tr>
-              <th>Section Name</th>
-              <th>Subcategories</th>
-              <th>Status</th>
-              <th>Total Entries</th>
-              <th>Approved Entries</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Dynamic content -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Tab 2: Form Ingestion -->
-    <section id="ingestion-tab" class="tab-content">
-      <h2>Form Response Ingestion & Batch CSV</h2>
       <div class="grid-2">
         <div class="card">
-          <h3>Single Form Submission Test</h3>
-          <form id="ingest-form" onsubmit="handleSingleIngest(event)">
-            <div class="form-group">
-              <label>Select Master Form Source</label>
-              <select id="ingest-form-id" class="form-control" onchange="updateFormQuestions()">
-                <option value="form_research">Research & Innovation Form</option>
-                <option value="form_faculty">Faculty Achievements Form</option>
-                <option value="form_student">Student Achievements Form</option>
-                <option value="form_industry">Industry & Outreach Form</option>
-                <option value="form_departmental">Departmental Highlights Form</option>
-              </select>
-            </div>
-            <div id="dynamic-form-fields"></div>
-            <button type="submit" class="btn btn-primary">Ingest & Normalize Entry</button>
-          </form>
+          <div class="card-head"><h3>Sections</h3></div>
+          <table class="table" id="overview-sections"><thead><tr><th>Section</th><th class="num">Responses</th><th class="num">Approved</th></tr></thead><tbody></tbody></table>
         </div>
-
         <div class="card">
-          <h3>Batch CSV Response Upload</h3>
-          <p>Upload a Google Sheets CSV export for bulk ingestion into the canonical repository.</p>
-          <form id="csv-form" onsubmit="handleCsvIngest(event)">
-            <div class="form-group">
-              <label>Form Target</label>
-              <select id="csv-form-id" class="form-control">
-                <option value="form_research">Research & Innovation</option>
-                <option value="form_faculty">Faculty Achievements</option>
-                <option value="form_student">Student Achievements</option>
-                <option value="form_industry">Industry & Outreach</option>
-                <option value="form_departmental">Departmental Highlights</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Upload CSV File</label>
-              <input type="file" id="csv-file-input" accept=".csv" required class="form-control">
-            </div>
-            <button type="submit" class="btn btn-success">Ingest CSV Batch</button>
-          </form>
-          <div id="csv-result-box" class="result-box hidden"></div>
+          <div class="card-head"><h3>Recent activity</h3></div>
+          <div class="log" id="activity-log"></div>
         </div>
       </div>
     </section>
 
-    <!-- Tab 3: Editorial Review -->
-    <section id="editorial-tab" class="tab-content">
-      <h2>Canonical Repository & Editorial Review</h2>
-      <div class="filters-bar">
-        <div class="filter-item">
-          <label>Section:</label>
-          <select id="filter-section" onchange="loadEntries()"></select>
-        </div>
-        <div class="filter-item">
-          <label>Status:</label>
-          <select id="filter-status" onchange="loadEntries()">
-            <option value="">All Statuses</option>
-            <option value="Draft">Draft</option>
-            <option value="Reviewed">Reviewed</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-        </div>
-        <button class="btn btn-secondary" onclick="loadEntries()">🔄 Refresh Entries</button>
-      </div>
-
-      <div class="card">
-        <table class="data-table" id="entries-table">
-          <thead>
-            <tr>
-              <th>ID & Category</th>
-              <th>Title & Contributor</th>
-              <th>Venue / Impact / Date</th>
-              <th>Description & Links</th>
-              <th>Spotlight</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Dynamic entries -->
-          </tbody>
-        </table>
+    <!-- ============ Forms ============ -->
+    <section id="tab-forms" class="view">
+      <div class="forms-layout">
+        <aside class="forms-side">
+          <button class="btn primary block" onclick="openNewForm()">+ New form</button>
+          <div id="forms-list" class="forms-list"></div>
+        </aside>
+        <div id="form-editor" class="form-editor"></div>
       </div>
     </section>
 
-    <!-- Tab 4: Section DOCX Engine -->
-    <section id="section-gen-tab" class="tab-content">
-      <h2>Section DOCX Document Generator</h2>
-      <p>Generate standalone Word (.docx) documents for individual newsletter sections using approved structured entries.</p>
-      
-      <div class="card">
-        <div class="form-group">
-          <label>Select Section to Generate</label>
-          <select id="gen-section-id" class="form-control" onchange="loadSectionEntriesForGen()"></select>
+    <!-- ============ Layout (canvas) ============ -->
+    <section id="tab-layout" class="view">
+      <div class="layout-bar">
+        <div class="field-inline"><label>Preview with</label><select id="lay-form" onchange="onLayoutFormChange()"></select></div>
+        <div class="field-inline"><label>Layout</label><select id="lay-saved" onchange="onSavedLayoutChange()"></select></div>
+        <input id="lay-name" class="input name-input" placeholder="Layout name">
+        <span class="spacer"></span>
+        <label class="switch" title="Hide editing handles"><input type="checkbox" id="lay-preview" onchange="togglePreviewMode()"><span>Preview</span></label>
+        <button class="btn ghost" onclick="resetLayout()">Reset</button>
+        <button class="btn primary" onclick="saveLayout()">Save layout</button>
+      </div>
+
+      <div class="designer">
+        <aside class="palette">
+          <h4>Elements</h4>
+          <p class="hint">Drag onto the page, or click to add.</p>
+          <div id="palette-items"></div>
+        </aside>
+
+        <div class="canvas-area" id="canvas-area">
+          <div class="paper" id="paper">
+            <div class="paper-head"><span id="paper-title">IT CHRONICLES</span><span id="paper-vol">VOL. 1 · ISSUE 1</span></div>
+            <div id="canvas-blocks" class="canvas-blocks"></div>
+            <div class="canvas-empty" id="canvas-empty">Drop an element here to start your layout</div>
+          </div>
         </div>
-        <div id="section-gen-summary"></div>
-        <button class="btn btn-primary btn-large" onclick="generateSectionDocx()">⚡ Generate Section DOCX Document</button>
-        
-        <div id="section-gen-result" class="result-box hidden"></div>
+
+        <aside class="inspector">
+          <div id="inspector-element"></div>
+          <details class="sample-panel" open>
+            <summary>Preview data</summary>
+            <div class="field"><select id="lay-sample" onchange="onSampleChange()"></select></div>
+            <div id="sample-fields" class="sample-fields"></div>
+          </details>
+        </aside>
       </div>
     </section>
 
-    <!-- Tab 5: Master Newsletter Builder -->
-    <section id="master-builder-tab" class="tab-content">
-      <h2>Master Newsletter Assembler</h2>
-      <p>Select sections and individual entries to compile into the final Master DOCX newsletter.</p>
-      
-      <div class="grid-2">
-        <div class="card">
-          <h3>1. Include Sections</h3>
-          <div id="master-sections-selector"></div>
-        </div>
-        <div class="card">
-          <h3>2. Assembly & Output</h3>
-          <p>The assembler resolves optional sections, orders entries, renders statistics cards, spotlight features, and formats master output.</p>
-          <button class="btn btn-success btn-large" onclick="assembleMasterNewsletter()">🚀 Assemble Master DOCX Newsletter</button>
-          <div id="master-gen-result" class="result-box hidden"></div>
-        </div>
+    <!-- ============ Responses ============ -->
+    <section id="tab-responses" class="view">
+      <div class="toolbar">
+        <div class="pills" id="status-pills"></div>
+        <span class="spacer"></span>
+        <select id="filter-section" class="input compact" onchange="renderResponses()"></select>
+        <button class="btn" onclick="openAddResponses('csv')">Import CSV</button>
+        <button class="btn primary" onclick="openAddResponses('single')">+ Add response</button>
       </div>
+      <div id="responses-list" class="responses"></div>
     </section>
 
-    <!-- Tab 6: Admin Portal -->
-    <section id="admin-tab" class="tab-content">
-      <h2>System Administration & Audit Logs</h2>
-      <div class="grid-2">
+    <!-- ============ Publish ============ -->
+    <section id="tab-publish" class="view">
+      <div class="publish-grid">
         <div class="card">
-          <h3>Form Question to Field Mappings</h3>
-          <pre id="admin-mappings-json" class="json-display"></pre>
+          <div class="card-head"><h3>Sections in this issue</h3><span class="muted" id="publish-count"></span></div>
+          <div id="publish-sections"></div>
         </div>
-        <div class="card">
-          <h3>Audit Logs</h3>
-          <div class="audit-log-box" id="admin-audit-logs"></div>
+        <div class="card publish-side">
+          <h3>Master newsletter</h3>
+          <p class="muted">Combines every ticked section, with featured items first, into one Word document.</p>
+          <button class="btn primary large block" id="btn-master" onclick="buildMaster()">Build master document</button>
+          <div id="master-result" class="result hidden"></div>
         </div>
       </div>
     </section>
   </main>
 
+  <!-- ============ Dialogs ============ -->
+  <div id="dlg-new-form" class="overlay hidden">
+    <div class="dialog">
+      <div class="dialog-head"><h3>New form</h3><button class="x" onclick="closeDlg('dlg-new-form')">×</button></div>
+      <div class="dialog-body">
+        <div class="field"><label>Form name</label><input id="nf-name" class="input" placeholder="e.g. Hackathons &amp; Competitions"></div>
+        <div class="field"><label>Newsletter section</label><select id="nf-section" class="input"></select></div>
+        <div class="field">
+          <label>Questions <span class="muted">(optional)</span></label>
+          <textarea id="nf-headers" class="input" rows="5" placeholder="Paste the header row of your Google Form responses sheet. We detect what each column means.&#10;Leave empty to start with the standard questions."></textarea>
+        </div>
+      </div>
+      <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-new-form')">Cancel</button><button class="btn primary" onclick="createForm()">Create form</button></div>
+    </div>
+  </div>
+
+  <div id="dlg-add" class="overlay hidden">
+    <div class="dialog wide">
+      <div class="dialog-head"><h3>Add responses</h3><button class="x" onclick="closeDlg('dlg-add')">×</button></div>
+      <div class="dialog-body">
+        <div class="seg" id="add-mode">
+          <button data-mode="csv" class="on" onclick="setAddMode('csv')">Import file</button>
+          <button data-mode="single" onclick="setAddMode('single')">Type one in</button>
+        </div>
+
+        <div id="add-csv">
+          <label class="drop" id="csv-drop">
+            <input type="file" id="csv-file" accept=".csv,.xlsx,.xls" onchange="onCsvPicked()">
+            <strong id="csv-file-label">Choose a CSV or Excel file</strong>
+            <span class="muted">Exported from your Google Form responses sheet</span>
+          </label>
+          <div class="field" id="csv-form-row">
+            <label>Import into <span class="muted" id="csv-detect-note"></span></label>
+            <select id="csv-form" class="input"></select>
+          </div>
+        </div>
+
+        <div id="add-single" class="hidden">
+          <div class="field"><label>Form</label><select id="single-form" class="input" onchange="renderSingleFields()"></select></div>
+          <div id="single-fields"></div>
+        </div>
+      </div>
+      <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-add')">Cancel</button><button class="btn primary" id="add-submit" onclick="submitAdd()">Import</button></div>
+    </div>
+  </div>
+
+  <script src="sample_data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -8,13 +8,34 @@
       "enabled": true,
       "template_file": "templates/research_section_template.docx",
       "subcategories": [
-        { "category_id": "cat_journal_pub", "name": "Journal Publications" },
-        { "category_id": "cat_conf_pub", "name": "Conference Publications" },
-        { "category_id": "cat_books", "name": "Book & Book Chapters" },
-        { "category_id": "cat_funded_projects", "name": "Funded Research Projects" },
-        { "category_id": "cat_consultancy", "name": "Consultancy Projects" },
-        { "category_id": "cat_patents", "name": "Patents & Intellectual Property" },
-        { "category_id": "cat_innovations", "name": "Key Research Innovations & Accomplishments" }
+        {
+          "category_id": "cat_journal_pub",
+          "name": "Journal Publications"
+        },
+        {
+          "category_id": "cat_conf_pub",
+          "name": "Conference Publications"
+        },
+        {
+          "category_id": "cat_books",
+          "name": "Book & Book Chapters"
+        },
+        {
+          "category_id": "cat_funded_projects",
+          "name": "Funded Research Projects"
+        },
+        {
+          "category_id": "cat_consultancy",
+          "name": "Consultancy Projects"
+        },
+        {
+          "category_id": "cat_patents",
+          "name": "Patents & Intellectual Property"
+        },
+        {
+          "category_id": "cat_innovations",
+          "name": "Key Research Innovations & Accomplishments"
+        }
       ]
     },
     {
@@ -24,12 +45,30 @@
       "enabled": true,
       "template_file": "templates/faculty_section_template.docx",
       "subcategories": [
-        { "category_id": "cat_fac_awards", "name": "Awards & Honors Received" },
-        { "category_id": "cat_fac_certifications", "name": "Certifications & Upskilling Completed" },
-        { "category_id": "cat_fac_keynotes", "name": "Invited Keynote / Expert Lectures Delivered" },
-        { "category_id": "cat_fac_session_chairs", "name": "Resource Person / Session Chair Roles" },
-        { "category_id": "cat_fac_fdp_attended", "name": "FDP / Workshops Attended" },
-        { "category_id": "cat_fac_memberships", "name": "Professional Body & Editorial Board Roles" }
+        {
+          "category_id": "cat_fac_awards",
+          "name": "Awards & Honors Received"
+        },
+        {
+          "category_id": "cat_fac_certifications",
+          "name": "Certifications & Upskilling Completed"
+        },
+        {
+          "category_id": "cat_fac_keynotes",
+          "name": "Invited Keynote / Expert Lectures Delivered"
+        },
+        {
+          "category_id": "cat_fac_session_chairs",
+          "name": "Resource Person / Session Chair Roles"
+        },
+        {
+          "category_id": "cat_fac_fdp_attended",
+          "name": "FDP / Workshops Attended"
+        },
+        {
+          "category_id": "cat_fac_memberships",
+          "name": "Professional Body & Editorial Board Roles"
+        }
       ]
     },
     {
@@ -39,11 +78,34 @@
       "enabled": true,
       "template_file": "templates/student_section_template.docx",
       "subcategories": [
-        { "category_id": "cat_stu_academic", "name": "Academic Excellence & Ranks" },
-        { "category_id": "cat_stu_hackathons", "name": "Hackathons & Coding Competitions" },
-        { "category_id": "cat_stu_placements", "name": "Higher Education & Top Placements" },
-        { "category_id": "cat_stu_projects", "name": "Technical Projects & Innovations" },
-        { "category_id": "cat_stu_extracurricular", "name": "Sports, Cultural & Co-Curricular Accomplishments" }
+        {
+          "category_id": "cat_stu_academic",
+          "name": "Academic Excellence & Ranks"
+        },
+        {
+          "category_id": "cat_stu_hackathons",
+          "name": "Hackathons & Coding Competitions"
+        },
+        {
+          "category_id": "cat_stu_placements",
+          "name": "Higher Education & Top Placements"
+        },
+        {
+          "category_id": "cat_stu_projects",
+          "name": "Technical Projects & Innovations"
+        },
+        {
+          "category_id": "cat_stu_extracurricular",
+          "name": "Sports, Cultural & Co-Curricular Accomplishments"
+        },
+        {
+          "category_id": "cat_hack_nat",
+          "name": "National Grand Finale"
+        },
+        {
+          "category_id": "cat_hack_int",
+          "name": "Internal Sprint"
+        }
       ]
     },
     {
@@ -53,11 +115,26 @@
       "enabled": true,
       "template_file": "templates/industry_section_template.docx",
       "subcategories": [
-        { "category_id": "cat_ind_visits", "name": "Industrial Visits & Field Tours" },
-        { "category_id": "cat_ind_talks", "name": "Industry Expert Lectures & Technical Talks" },
-        { "category_id": "cat_ind_mous", "name": "MoUs Signed & Industrial Collaborations" },
-        { "category_id": "cat_ind_alumni", "name": "Alumni Interactions & Mentorship Sessions" },
-        { "category_id": "cat_ind_outreach", "name": "Community & Social Outreach Initiatives" }
+        {
+          "category_id": "cat_ind_visits",
+          "name": "Industrial Visits & Field Tours"
+        },
+        {
+          "category_id": "cat_ind_talks",
+          "name": "Industry Expert Lectures & Technical Talks"
+        },
+        {
+          "category_id": "cat_ind_mous",
+          "name": "MoUs Signed & Industrial Collaborations"
+        },
+        {
+          "category_id": "cat_ind_alumni",
+          "name": "Alumni Interactions & Mentorship Sessions"
+        },
+        {
+          "category_id": "cat_ind_outreach",
+          "name": "Community & Social Outreach Initiatives"
+        }
       ]
     },
     {
@@ -67,11 +144,26 @@
       "enabled": true,
       "template_file": "templates/departmental_section_template.docx",
       "subcategories": [
-        { "category_id": "cat_dept_workshops", "name": "Workshops & FDPs Organized" },
-        { "category_id": "cat_dept_conferences", "name": "Conferences & Symposia Organized" },
-        { "category_id": "cat_dept_infra", "name": "Infrastructure & Lab Upgrades" },
-        { "category_id": "cat_dept_clubs", "name": "Student Club & Society Activities" },
-        { "category_id": "cat_dept_milestones", "name": "Department Statistics & Major Milestones" }
+        {
+          "category_id": "cat_dept_workshops",
+          "name": "Workshops & FDPs Organized"
+        },
+        {
+          "category_id": "cat_dept_conferences",
+          "name": "Conferences & Symposia Organized"
+        },
+        {
+          "category_id": "cat_dept_infra",
+          "name": "Infrastructure & Lab Upgrades"
+        },
+        {
+          "category_id": "cat_dept_clubs",
+          "name": "Student Club & Society Activities"
+        },
+        {
+          "category_id": "cat_dept_milestones",
+          "name": "Department Statistics & Major Milestones"
+        }
       ]
     }
   ]

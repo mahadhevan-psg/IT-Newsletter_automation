@@ -9,17 +9,19 @@ from pydantic import BaseModel
 
 from database.db_manager import (
     init_db, get_all_issues, get_issue, get_sections_and_categories,
-    get_entries, update_entry_status, get_audit_logs, save_generation_record
+    get_entries, update_entry_status, get_audit_logs, save_generation_record,
+    get_visual_templates, get_visual_template, save_visual_template, delete_visual_template
 )
 from backend.services.ingestion_service import IngestionService
 from backend.services.docx_generator import DOCXGenerator
 from backend.services.newsletter_builder import NewsletterBuilder
 from backend.services.template_engine import TemplateEngine
+from backend.services.config_service import ConfigService
 
 app = FastAPI(
     title="IT Chronicles - Newsletter Automation System API",
-    version="1.0.0",
-    description="API for Form Ingestion, Canonical Content Repository, Editorial Workflow, DOCX Template Engine, and Master Newsletter Builder."
+    version="2.0.0",
+    description="API for Form Schema Management, Visual Newsletter Template Designer, Form Ingestion, Canonical Repository, and Document Assembly."
 )
 
 app.add_middleware(
@@ -34,6 +36,7 @@ ingestion_service = IngestionService()
 docx_generator = DOCXGenerator()
 newsletter_builder = NewsletterBuilder()
 template_engine = TemplateEngine()
+config_service = ConfigService(normalizer=ingestion_service.normalizer)
 
 # Initialize Database on Startup
 @app.on_event("startup")
@@ -64,6 +67,130 @@ def get_form_mappings():
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
+
+# --- Dynamic Forms & Schema Management Endpoints ---
+@app.get("/api/forms/canonical-tags")
+def get_canonical_tags():
+    return config_service.get_canonical_field_options()
+
+@app.get("/api/forms")
+def list_forms():
+    return config_service.get_all_forms()
+
+@app.get("/api/forms/{form_id}")
+def get_form_details(form_id: str):
+    form = config_service.get_form(form_id)
+    if not form:
+        raise HTTPException(status_code=404, detail=f"Form '{form_id}' not found")
+    return form
+
+@app.post("/api/forms")
+def create_new_form(payload: Dict[str, Any] = Body(...)):
+    try:
+        new_form = config_service.create_form(payload)
+        return {"success": True, "form": new_form}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/api/forms/{form_id}")
+def update_form_definition(form_id: str, payload: Dict[str, Any] = Body(...)):
+    try:
+        updated_form = config_service.update_form(form_id, payload)
+        return {"success": True, "form": updated_form}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/forms/{form_id}")
+def remove_form(form_id: str):
+    success = config_service.delete_form(form_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Form '{form_id}' not found")
+    return {"success": True, "deleted_form_id": form_id}
+
+@app.post("/api/forms/{form_id}/columns")
+def add_or_update_column_endpoint(form_id: str, payload: Dict[str, Any] = Body(...)):
+    try:
+        res = config_service.add_or_update_column(form_id, payload)
+        return {"success": True, "form": res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/forms/{form_id}/columns/{column_name}")
+def delete_column_endpoint(form_id: str, column_name: str):
+    try:
+        res = config_service.delete_column(form_id, column_name)
+        return {"success": True, "form": res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class BulkHeadersPayload(BaseModel):
+    headers_text: str
+
+@app.post("/api/forms/{form_id}/columns/bulk")
+def bulk_import_headers(form_id: str, payload: BulkHeadersPayload):
+    try:
+        res = config_service.bulk_import_columns(form_id, payload.headers_text)
+        return {"success": True, "form": res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# --- Visual Template Designer Endpoints ---
+@app.get("/api/visual-templates")
+def list_visual_templates():
+    return get_visual_templates()
+
+@app.get("/api/visual-templates/{template_id}")
+def get_visual_template_details(template_id: str):
+    tpl = get_visual_template(template_id)
+    if not tpl:
+        raise HTTPException(status_code=404, detail="Visual template not found")
+    return tpl
+
+class VisualTemplateSavePayload(BaseModel):
+    template_id: str
+    name: str
+    section_id: Optional[str] = None
+    form_id: Optional[str] = None
+    layout: List[Dict[str, Any]]
+    is_default: Optional[bool] = False
+
+@app.post("/api/visual-templates")
+def save_visual_template_endpoint(payload: VisualTemplateSavePayload):
+    try:
+        saved_id = save_visual_template(
+            template_id=payload.template_id,
+            name=payload.name,
+            section_id=payload.section_id,
+            form_id=payload.form_id,
+            layout_data=payload.layout,
+            is_default=payload.is_default or False
+        )
+        return {"success": True, "template_id": saved_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/visual-templates/{template_id}")
+def delete_visual_template_endpoint(template_id: str):
+    success = delete_visual_template(template_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Template not found")
+    config_service.clear_layout_assignments(template_id)
+    return {"success": True, "deleted_template_id": template_id}
+
+# --- Which layout each section's Word documents use (layouts are shared by all sections) ---
+@app.get("/api/section-layouts")
+def get_section_layouts():
+    return config_service.get_section_layouts()
+
+class SectionLayoutPayload(BaseModel):
+    template_id: Optional[str] = None   # null/empty = standard built-in style
+
+@app.put("/api/section-layouts/{section_id}")
+def set_section_layout(section_id: str, payload: SectionLayoutPayload):
+    if payload.template_id and not get_visual_template(payload.template_id):
+        raise HTTPException(status_code=404, detail="Layout not found")
+    config_service.set_section_layout(section_id, payload.template_id)
+    return {"success": True, "section_id": section_id, "template_id": payload.template_id}
 
 # --- Canonical Entries & Editorial Endpoints ---
 @app.get("/api/entries")
@@ -113,9 +240,16 @@ def ingest_form_submission(payload: SubmissionPayload):
 @app.post("/api/entries/ingest-csv")
 async def ingest_csv(form_id: str = Form(...), issue_id: str = Form("ISSUE_2026_V1I1"), file: UploadFile = File(...)):
     content = await file.read()
-    csv_text = content.decode("utf-8", errors="ignore")
-    results = ingestion_service.process_csv_upload(form_id, csv_text, issue_id=issue_id)
-    return {"total_ingested": len(results), "results": results}
+    filename = (file.filename or "").lower()
+    
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        results = ingestion_service.process_excel_upload(form_id, content, issue_id=issue_id)
+    else:
+        csv_text = content.decode("utf-8", errors="ignore")
+        results = ingestion_service.process_csv_upload(form_id, csv_text, issue_id=issue_id)
+        
+    duplicates = sum(1 for r in results if r.get("duplicate"))
+    return {"total_ingested": len(results) - duplicates, "duplicates_skipped": duplicates, "results": results}
 
 # --- Document Generation Endpoints ---
 class SectionGenRequest(BaseModel):
@@ -138,11 +272,14 @@ def generate_section_docx_endpoint(section_id: str, req: SectionGenRequest):
     output_dir = os.path.join(os.path.dirname(__file__), "..", "output")
     out_file = os.path.join(output_dir, f"Section_{section_id}_{req.issue_id}.docx")
 
+    active_layout = config_service.get_active_layout(section_id)
     gen_path = docx_generator.generate_section_docx(
         section=sec_info,
         subcategories=sec_info.get("subcategories", []),
         approved_entries=approved,
-        output_path=out_file
+        output_path=out_file,
+        layout=active_layout["layout"] if active_layout else None,
+        issue=get_issue(req.issue_id)
     )
 
     save_generation_record(
@@ -158,7 +295,8 @@ def generate_section_docx_endpoint(section_id: str, req: SectionGenRequest):
         "success": True,
         "file_path": gen_path,
         "filename": os.path.basename(gen_path),
-        "total_entries": len(approved)
+        "total_entries": len(approved),
+        "layout_used": active_layout["name"] if active_layout else None
     }
 
 class MasterGenRequest(BaseModel):

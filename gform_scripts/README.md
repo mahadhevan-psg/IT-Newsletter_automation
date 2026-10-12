@@ -9,14 +9,18 @@ This folder contains Google Apps Scripts to automatically generate the five mast
 5. `create_departmental_highlights_form.js` - Departmental Highlights Master Form
 6. `build_all_forms.js` - Master execution script to generate all 5 forms at once.
 
+## Single Master Script (Recommended)
+
+Copy and paste the entire content of [`MasterFormsCreator.gs`](file:///d:/ITA_projects/Newsletter_Automation/gform_scripts/MasterFormsCreator.gs) into a single Google Apps Script file (`Code.gs`) to generate all 5 forms in a single click.
+
 ---
 
 ## How to Execute in Google Apps Script
 
 1. Open [Google Apps Script Console](https://script.google.com).
 2. Click **New project**.
-3. Copy and paste the contents of `create_research_innovation_form.js`, `create_faculty_achievements_form.js`, `create_student_achievements_form.js`, `create_industry_outreach_form.js`, `create_departmental_highlights_form.js`, and `build_all_forms.js` into your project files.
-4. Select the `buildAllMasterForms` function from the dropdown list.
+3. Copy and paste the contents of [`MasterFormsCreator.gs`](file:///d:/ITA_projects/Newsletter_Automation/gform_scripts/MasterFormsCreator.gs) into your project `Code.gs`.
+4. Select the `buildAllMasterForms` function from the top toolbar dropdown list.
 5. Click **Run**.
 6. View the Execution Log output to obtain the generated Edit URLs and Public Submission URLs for each form.
 7. Connect each form's response Google Sheet or download CSV responses into the IT Chronicles Newsletter System.

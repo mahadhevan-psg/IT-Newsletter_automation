@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS canonical_entries (
     grant_or_prize_amount TEXT,
     description TEXT NOT NULL,
     photo_url TEXT,
+    photo_caption TEXT,
     evidence_url TEXT,
+    badge_tag TEXT,
     featured_flag BOOLEAN DEFAULT 0,
     display_order INTEGER DEFAULT 100,
     approval_status TEXT DEFAULT 'Draft', -- Draft, Reviewed, Approved, Rejected

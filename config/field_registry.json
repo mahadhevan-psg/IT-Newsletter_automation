@@ -86,6 +86,20 @@
       "required": false,
       "description": "Link to high-resolution photograph"
     },
+    "photo_caption": {
+      "key": "photo_caption",
+      "label": "Photo Caption / Names in Image",
+      "type": "string",
+      "required": false,
+      "description": "Caption describing the photo and individuals present"
+    },
+    "badge_tag": {
+      "key": "badge_tag",
+      "label": "Key Impact Badge / Metric",
+      "type": "string",
+      "required": false,
+      "description": "Short impact badge pill (e.g. Scopus Q1, 1st Prize, Patent Granted, IEEE)"
+    },
     "evidence_url": {
       "key": "evidence_url",
       "label": "Evidence / Certificate URL",

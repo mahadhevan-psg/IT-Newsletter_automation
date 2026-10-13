@@ -1,10 +1,12 @@
 """
 Word output, driven entirely by the layout chosen in the Layout designer.
 
-There is no built-in design here: no cover template, stats card, banners or card styling.
-Each entry is written block by block exactly as the layout lists them, with the same
-sizes, colours, alignment, photo shapes and button styles the designer canvas shows.
-Page width matches the canvas paper (A4, 1" side margins = ~600px content width).
+A layout is a 12-column grid: every element has a position (x, y) and size (w, h) in grid
+cells, a link to a form column, and its own styling. Each entry becomes one borderless table
+with 12 columns, and every element is a merged cell covering the same cells it covers on the
+designer's canvas, so what is arranged on the canvas is what lands on the page.
+
+There is no built-in design: no cover template, stats card, banners or card styling.
 """
 import os
 import re
@@ -15,10 +17,15 @@ from typing import List, Dict, Any, Optional
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
-from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml import parse_xml, OxmlElement
 from docx.oxml.ns import nsdecls, qn
 from PIL import Image
+
+try:
+    from database.db_manager import get_raw_response
+except Exception:   # the generator can be used without a database
+    get_raw_response = None
 
 # ---------------------------------------------------------------- palette (same values as the designer's CSS)
 NAVY, AMBER, SLATE, GREEN = "1F4E78", "C65911", "5A6B7C", "15803D"
@@ -28,22 +35,28 @@ BADGE_FILL = {"navy": NAVY, "amber": AMBER, "slate": SLATE, "green": GREEN}
 BUTTON_FILL = {"solid": NAVY, "accent": AMBER}
 ASPECT = {"16:9": 16 / 9, "4:3": 4 / 3, "1:1": 1.0}
 
-CONTENT_WIDTH_IN = 8.27 - 2.0          # A4 minus 1" margins, about 600 css px
-FLOAT_IMAGE_IN = 220 / 96              # "beside text" photo width in the designer (220px)
+COLS = 12
+ROW_PX = 28                            # height of one grid row in the designer (css px)
+CANVAS_PX = 600                        # width of the designer page content (css px)
+CONTENT_WIDTH_IN = 8.27 - 2.0          # A4 minus 1" margins
+CELL_PAD_IN = 0.04
+CAPTION_PX = 22
 FONT = "Calibri"
 
-# The layout used when a section has not been given one (mirrors the designer's starting layout)
+# default size (grid rows) of each element type
+DEFAULT_H = {"badge": 1, "headline": 3, "byline": 1, "meta": 1, "text": 6, "image": 12, "link": 2, "stats": 2, "divider": 1, "label": 2}
+
 DEFAULT_LAYOUT: List[Dict[str, Any]] = [
-    {"type": "badge", "tag": "badge_tag", "style": {"badgeColor": "navy"}},
-    {"type": "headline", "tag": "title", "style": {"textAlign": "left"}},
-    {"type": "byline", "tag": "author_or_person", "style": {}},
-    {"type": "image", "tag": "photo_url", "captionTag": "photo_caption", "style": {"aspectRatio": "16:9", "float": "none"}},
-    {"type": "text", "tag": "description", "style": {"textAlign": "left"}},
-    {"type": "link", "tag": "evidence_url", "linkText": "View details", "style": {"buttonStyle": "solid"}},
+    {"type": "badge", "tag": "badge_tag", "x": 1, "y": 1, "w": 12, "h": 1, "style": {"badgeColor": "navy"}},
+    {"type": "headline", "tag": "title", "x": 1, "y": 2, "w": 12, "h": 3, "style": {}},
+    {"type": "byline", "tag": "author_or_person", "x": 1, "y": 5, "w": 12, "h": 1, "style": {}},
+    {"type": "image", "tag": "photo_url", "x": 1, "y": 6, "w": 12, "h": 12, "style": {"showCaption": True}},
+    {"type": "text", "tag": "description", "x": 1, "y": 18, "w": 12, "h": 6, "style": {}},
+    {"type": "link", "tag": "evidence_url", "x": 1, "y": 24, "w": 6, "h": 2, "linkText": "View details", "style": {"buttonStyle": "solid"}},
 ]
 
 
-# ---------------------------------------------------------------- helpers
+# ---------------------------------------------------------------- layout model helpers
 def dedupe_entries(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Collapse identical submissions so one story never prints twice (a featured copy wins)."""
     norm = lambda v: " ".join(str(v or "").lower().split())
@@ -63,14 +76,57 @@ def dedupe_entries(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 _TEXT_ROLE_BY_TAG = {"title": "headline", "author_or_person": "byline", "organization_or_venue": "meta"}
 
 
-def normalize_layout(layout: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
-    out = []
-    for b in layout or DEFAULT_LAYOUT:
-        b = dict(b)
+def _has_grid(b: Dict[str, Any]) -> bool:
+    return all(isinstance(b.get(k), (int, float)) for k in ("x", "y", "w", "h"))
+
+
+def ensure_grid(layout: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    """Layouts saved before the canvas existed are flat lists; stack them top to bottom (same rules as the designer)."""
+    blocks = [dict(b) for b in (layout or DEFAULT_LAYOUT)]
+    for b in blocks:
         if b.get("type") == "text" and b.get("tag") in _TEXT_ROLE_BY_TAG:
             b["type"] = _TEXT_ROLE_BY_TAG[b["tag"]]
-        out.append(b)
-    return out
+        b["style"] = dict(b.get("style") or {})
+    if all(_has_grid(b) for b in blocks):
+        return blocks
+    y = 1
+    for i, b in enumerate(blocks):
+        ratio = ASPECT.get(b["style"].get("aspectRatio", "16:9"), 16 / 9)
+        if b.get("type") == "image" and b["style"].get("float") == "left":
+            iw = 4
+            ih = max(3, round(iw * CANVAS_PX / COLS / ratio / ROW_PX))
+            b.update(x=1, y=y, w=iw, h=ih)
+            ry = y
+            for r in blocks[i + 1:]:
+                r.update(x=iw + 1, y=ry, w=COLS - iw, h=DEFAULT_H.get(r.get("type"), 2))
+                ry += r["h"]
+            break
+        h = round(COLS * CANVAS_PX / COLS / ratio / ROW_PX) if b.get("type") == "image" else DEFAULT_H.get(b.get("type"), 2)
+        b.update(x=1, y=y, w=COLS, h=h)
+        y += h
+    return compact(blocks)
+
+
+def _overlap(a, b) -> bool:
+    return a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"] and a["y"] < b["y"] + b["h"] and b["y"] < a["y"] + a["h"]
+
+
+def compact(blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Float every element up until it rests on another (identical to the designer's behaviour)."""
+    placed: List[Dict[str, Any]] = []
+    for b in sorted(blocks, key=lambda b: (b["y"], b["x"])):
+        b["y"] = 1
+        while True:
+            hit = next((p for p in placed if _overlap(p, b)), None)
+            if not hit:
+                break
+            b["y"] = hit["y"] + hit["h"]
+        placed.append(b)
+    return blocks
+
+
+def normalize_layout(layout: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    return ensure_grid(layout)
 
 
 def order_entries(entries: List[Dict[str, Any]], subcategories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -99,8 +155,32 @@ def _px(n: float) -> float:
     return n * 0.75
 
 
+_ALIGN = {"left": WD_ALIGN_PARAGRAPH.LEFT, "center": WD_ALIGN_PARAGRAPH.CENTER,
+          "right": WD_ALIGN_PARAGRAPH.RIGHT, "justify": WD_ALIGN_PARAGRAPH.JUSTIFY}
+_VALIGN = {"top": WD_CELL_VERTICAL_ALIGNMENT.TOP, "middle": WD_CELL_VERTICAL_ALIGNMENT.CENTER, "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM}
+
+
+_PPR_AFTER_PBDR = ("w:shd", "w:tabs", "w:suppressAutoHyphens", "w:kinsoku", "w:wordWrap", "w:overflowPunct", "w:topLinePunct",
+                   "w:autoSpaceDE", "w:autoSpaceDN", "w:bidi", "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind",
+                   "w:contextualSpacing", "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment",
+                   "w:textboxTightWrap", "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
+_RPR_AFTER_SPACING = ("w:w", "w:kern", "w:position", "w:sz", "w:szCs", "w:highlight", "w:u", "w:effect", "w:bdr", "w:shd",
+                      "w:fitText", "w:vertAlign", "w:rtl", "w:cs", "w:em", "w:lang", "w:eastAsianLayout", "w:specVanish", "w:oMath")
+_TCPR_AFTER_BORDERS = ("w:shd", "w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign", "w:hideMark")
+_TCPR_AFTER_SHD = _TCPR_AFTER_BORDERS[1:]
+
+
+def _p_border(p, xml: str):
+    p._p.get_or_add_pPr().insert_element_before(parse_xml(xml), *_PPR_AFTER_PBDR)
+
+
+def _p_shade(p, fill_hex: str):
+    p._p.get_or_add_pPr().insert_element_before(
+        parse_xml(f'<w:shd {nsdecls("w")} w:val="clear" w:color="auto" w:fill="{fill_hex}"/>'), *_PPR_AFTER_PBDR[1:])
+
+
 class _Sink:
-    """Where paragraphs go: the document body, or a table cell (reusing the cell's empty first paragraph)."""
+    """Where paragraphs go: a table cell (reusing its empty first paragraph) or the document body."""
     def __init__(self, container):
         self.c = container
         self.reuse = hasattr(container, "_tc")
@@ -118,6 +198,7 @@ class DOCXGenerator:
         # templates_dir is accepted for backward compatibility; no .docx template is used any more
         self.cache_dir = os.path.join(os.path.dirname(__file__), "..", "..", "output", "image_cache")
         os.makedirs(self.cache_dir, exist_ok=True)
+        self._raw_cache: Dict[str, Dict[str, Any]] = {}
 
     # ---- public API -----------------------------------------------------
     def new_document(self) -> Document:
@@ -148,7 +229,7 @@ class DOCXGenerator:
                     entries: List[Dict[str, Any]], layout: Optional[List[Dict[str, Any]]] = None,
                     issue: Optional[Dict[str, Any]] = None, page_break_before: bool = False) -> int:
         """Masthead (as on the designer's page) followed by every entry rendered from the layout."""
-        blocks = normalize_layout(layout)
+        blocks = ensure_grid(layout)
         entries = order_entries(dedupe_entries(entries), subcategories)
         self._masthead(doc, section.get("name", ""), issue, page_break_before)
         for i, entry in enumerate(entries):
@@ -183,63 +264,96 @@ class DOCXGenerator:
         p.paragraph_format.page_break_before = page_break_before
         p.paragraph_format.space_after = Pt(16)
         p.paragraph_format.tab_stops.add_tab_stop(Inches(CONTENT_WIDTH_IN), WD_TAB_ALIGNMENT.RIGHT)
-        p._p.get_or_add_pPr().append(parse_xml(
-            f'<w:pBdr {nsdecls("w")}>'
-            f'<w:top w:val="single" w:sz="36" w:space="6" w:color="{NAVY}"/>'
-            f'<w:bottom w:val="single" w:sz="12" w:space="4" w:color="{NAVY}"/></w:pBdr>'))
+        _p_border(p, f'<w:pBdr {nsdecls("w")}>'
+                     f'<w:top w:val="single" w:sz="36" w:space="6" w:color="{NAVY}"/>'
+                     f'<w:bottom w:val="single" w:sz="12" w:space="4" w:color="{NAVY}"/></w:pBdr>')
         left = "IT CHRONICLES" + (f" · {section_name.upper()}" if section_name else "")
         right = f"VOL. {issue['volume']} · ISSUE {issue['issue']}" if issue and issue.get("volume") else ""
         r = p.add_run(left)
         r.font.size, r.font.bold, r.font.color.rgb = Pt(8.5), True, RGBColor.from_string(NAVY)
-        self._spacing(r, 1.5)
+        sp = OxmlElement("w:spacing")
+        sp.set(qn("w:val"), "30")
+        r._element.get_or_add_rPr().insert_element_before(sp, *_RPR_AFTER_SPACING)
         if right:
             r2 = p.add_run("\t" + right)
             r2.font.size, r2.font.bold, r2.font.color.rgb = Pt(8.5), True, RGBColor.from_string(META)
-
-    @staticmethod
-    def _spacing(run, pts: float):
-        el = OxmlElement("w:spacing")
-        el.set(qn("w:val"), str(int(pts * 20)))
-        run._element.get_or_add_rPr().append(el)
 
     def _rule(self, container, space_before: float = 6, space_after: float = 6, color: str = RULE):
         p = container.par() if isinstance(container, _Sink) else container.add_paragraph()
         p.paragraph_format.space_before = Pt(space_before)
         p.paragraph_format.space_after = Pt(space_after)
-        p._p.get_or_add_pPr().append(parse_xml(
-            f'<w:pBdr {nsdecls("w")}><w:bottom w:val="single" w:sz="6" w:space="1" w:color="{color}"/></w:pBdr>'))
+        _p_border(p, f'<w:pBdr {nsdecls("w")}><w:bottom w:val="single" w:sz="6" w:space="1" w:color="{color}"/></w:pBdr>')
 
-    # ---- one entry ----------------------------------------------------------
-    def _render_entry(self, doc, entry: Dict[str, Any], blocks: List[Dict[str, Any]]):
-        sink = _Sink(doc)
-        for idx, blk in enumerate(blocks):
-            st = blk.get("style") or {}
-            if blk.get("type") == "image" and st.get("float") == "left":
-                path = self._image_for(entry, blk)
-                if path:
-                    # what follows sits beside the photo, as it wraps in the designer
-                    self._beside_text(doc, entry, blk, path, blocks[idx + 1:])
-                    return
-                continue
-            self._render_block(sink, entry, blk, CONTENT_WIDTH_IN)
+    # ---- values ---------------------------------------------------------------
+    def _raw(self, entry: Dict[str, Any]) -> Dict[str, Any]:
+        rid = entry.get("response_id")
+        if not rid or get_raw_response is None:
+            return {}
+        if rid not in self._raw_cache:
+            try:
+                self._raw_cache[rid] = get_raw_response(rid) or {}
+            except Exception:
+                self._raw_cache[rid] = {}
+        return self._raw_cache[rid]
 
-    def _beside_text(self, doc, entry, image_blk, image_path: str, rest: List[Dict[str, Any]]):
-        table = doc.add_table(rows=1, cols=2)
+    def _value(self, entry: Dict[str, Any], blk: Dict[str, Any]) -> str:
+        """The element's content: the entry's field for the linked column (falling back to the raw answer by header)."""
+        if blk.get("type") == "label":
+            return str(blk.get("text") or "").strip()
+        tag = blk.get("tag") or ""
+        val = entry.get(tag) if tag else None
+        if (val is None or str(val).strip() == "") and blk.get("column"):
+            val = self._raw(entry).get(blk["column"])
+        return str(val or "").strip()
+
+    # ---- one entry = one table ---------------------------------------------------
+    def _render_entry(self, doc, entry: Dict[str, Any], layout: List[Dict[str, Any]]):
+        items = []
+        for b in layout:
+            val = self._value(entry, b)
+            if val or b.get("type") == "divider":
+                items.append((dict(b), val))
+        if not items:
+            return
+        blocks = compact([b for b, _ in items])       # elements with no data leave no hole
+        rows = max(b["y"] + b["h"] - 1 for b in blocks)
+
+        table = doc.add_table(rows=rows, cols=COLS)
         table.alignment = WD_TABLE_ALIGNMENT.LEFT
         table.autofit = False
-        table._tbl.tblPr.append(parse_xml(f'<w:tblLayout {nsdecls("w")} w:type="fixed"/>'))
-        left_w, right_w = Inches(FLOAT_IMAGE_IN + 0.15), Inches(CONTENT_WIDTH_IN - FLOAT_IMAGE_IN - 0.15)
-        c_img, c_txt = table.rows[0].cells
-        c_img.width, c_txt.width = left_w, right_w
-        table.columns[0].width, table.columns[1].width = left_w, right_w
-        for cell, (l, r) in ((c_img, (0, 120)), (c_txt, (120, 0))):
-            cell._element.get_or_add_tcPr().append(parse_xml(
-                f'<w:tcMar {nsdecls("w")}><w:top w:w="0" w:type="dxa"/><w:left w:w="{l}" w:type="dxa"/>'
-                f'<w:bottom w:w="0" w:type="dxa"/><w:right w:w="{r}" w:type="dxa"/></w:tcMar>'))
-        self._render_block(_Sink(c_img), entry, image_blk, FLOAT_IMAGE_IN, resolved=image_path)
-        sink = _Sink(c_txt)
-        for blk in rest:
-            self._render_block(sink, entry, blk, CONTENT_WIDTH_IN - FLOAT_IMAGE_IN - 0.3)
+        col_w = Inches(CONTENT_WIDTH_IN / COLS)
+        for c in table.columns:
+            c.width = col_w
+        for row in table.rows:
+            row.height = Pt(_px(ROW_PX))
+            row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+            for cell in row.cells:
+                cell.width = col_w
+
+        cells = []
+        for b, (_, val) in zip(blocks, items):
+            first = table.cell(b["y"] - 1, b["x"] - 1)
+            last = table.cell(b["y"] + b["h"] - 2, b["x"] + b["w"] - 2)
+            cells.append((first.merge(last) if first is not last else first, b, val))
+        for cell, b, val in cells:
+            self._fill_cell(cell, entry, b, val)
+
+    def _fill_cell(self, cell, entry: Dict[str, Any], blk: Dict[str, Any], val: str):
+        st = blk.get("style") or {}
+        tcPr = cell._element.get_or_add_tcPr()
+        if blk.get("type") == "stats":
+            tcPr.insert_element_before(parse_xml(
+                f'<w:tcBorders {nsdecls("w")}><w:left w:val="single" w:sz="24" w:space="0" w:color="{AMBER}"/></w:tcBorders>'), *_TCPR_AFTER_BORDERS[:0], *(("w:shd",) + _TCPR_AFTER_SHD))
+            tcPr.insert_element_before(parse_xml(f'<w:shd {nsdecls("w")} w:val="clear" w:color="auto" w:fill="{STAT_BG}"/>'), *_TCPR_AFTER_SHD)
+        tcPr.insert_element_before(parse_xml(
+            f'<w:tcMar {nsdecls("w")}><w:top w:w="20" w:type="dxa"/><w:left w:w="60" w:type="dxa"/>'
+            f'<w:bottom w:w="20" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tcMar>'), "w:textDirection", "w:tcFitText", "w:vAlign", "w:hideMark")
+        cell.vertical_alignment = _VALIGN.get(st.get("vAlign", "top"), WD_CELL_VERTICAL_ALIGNMENT.TOP)
+        box_w = blk["w"] * CONTENT_WIDTH_IN / COLS - 2 * CELL_PAD_IN
+        box_h = blk["h"] * ROW_PX / 96
+        self._render_block(_Sink(cell), entry, blk, val, box_w, box_h)
+        for p in cell.paragraphs:
+            p.paragraph_format.space_after = Pt(0)
 
     # ---- blocks ---------------------------------------------------------------
     def _run(self, p, text: str, size_pt: float, bold: bool, color: str, style: Optional[Dict[str, Any]] = None, italic: bool = False):
@@ -253,83 +367,73 @@ class DOCXGenerator:
         r.font.italic = italic
         return r
 
-    def _render_block(self, sink: _Sink, entry: Dict[str, Any], blk: Dict[str, Any], width_in: float, resolved: Optional[str] = None):
+    def _render_block(self, sink: _Sink, entry: Dict[str, Any], blk: Dict[str, Any], val: str, width_in: float, height_in: float):
         btype = blk.get("type")
         st = blk.get("style") or {}
-        tag = blk.get("tag") or ""
-        val = str(entry.get(tag) or "").strip() if tag else ""
-        align = WD_ALIGN_PARAGRAPH.CENTER if st.get("textAlign") == "center" else WD_ALIGN_PARAGRAPH.LEFT
+        align = _ALIGN.get(st.get("textAlign", "left"), WD_ALIGN_PARAGRAPH.LEFT)
 
         if btype == "divider":
-            self._rule(sink, 6, 6, _hex(st.get("borderColor"), RULE))
+            self._rule(sink, 0, 0, _hex(st.get("borderColor"), RULE))
             return
         if not val:
             return
 
         if btype == "badge":
             p = sink.par()
-            p.paragraph_format.space_after = Pt(6)
+            p.alignment = align
             fill = _hex(st.get("bgColor")) or BADGE_FILL.get(st.get("badgeColor", "navy"), NAVY)
             r = self._run(p, f"  {val.upper()}  ", 8.25, True, "FFFFFF", {"textColor": st.get("textColor")})
             self._shade(r, fill)
-        elif btype == "headline":
+        elif btype in ("headline", "label"):
             p = sink.par()
             p.alignment = align
-            p.paragraph_format.space_after = Pt(5)
             p.paragraph_format.line_spacing = 1.2
-            self._run(p, val, _px(23), True, NAVY, st)
+            self._run(p, val, _px(23) if btype == "headline" else _px(14), True, NAVY, st)
         elif btype == "byline":
             p = sink.par()
-            p.paragraph_format.space_after = Pt(5)
+            p.alignment = align
             self._run(p, f"By {val}", _px(14), True, BYLINE, st)
         elif btype == "meta":
             p = sink.par()
-            p.paragraph_format.space_after = Pt(6)
+            p.alignment = align
             date = str(entry.get("event_date") or "").strip()
             self._run(p, val + (f" · {date}" if date else ""), _px(13), False, META, st)
         elif btype == "text":
             p = sink.par()
             p.alignment = align
-            p.paragraph_format.space_after = Pt(8)
             try:
-                p.paragraph_format.line_spacing = float(st.get("lineHeight") or 1.6)
+                p.paragraph_format.line_spacing = float(st.get("lineHeight") or 1.5)
             except ValueError:
-                p.paragraph_format.line_spacing = 1.6
+                p.paragraph_format.line_spacing = 1.5
             self._run(p, val, _px(14), False, BODY, st)
         elif btype == "stats":
             p = sink.par()
-            p.paragraph_format.space_before = Pt(4)
-            p.paragraph_format.space_after = Pt(8)
-            p.paragraph_format.left_indent = Inches(0.12)
-            pPr = p._p.get_or_add_pPr()
-            pPr.append(parse_xml(f'<w:pBdr {nsdecls("w")}><w:left w:val="single" w:sz="24" w:space="8" w:color="{AMBER}"/></w:pBdr>'))
-            pPr.append(parse_xml(f'<w:shd {nsdecls("w")} w:val="clear" w:color="auto" w:fill="{STAT_BG}"/>'))
+            p.alignment = align
             self._run(p, val, _px(24), True, AMBER)
             label = str(entry.get("badge_tag") or "").strip()
             if label and label != val:
                 self._run(p, f"   {label}", _px(13), True, BYLINE)
         elif btype == "link":
             p = sink.par()
-            p.paragraph_format.space_after = Pt(8)
+            p.alignment = align
             self._button(p, val, blk.get("linkText") or "View details", st)
         elif btype == "image":
-            path = resolved or self._image_for(entry, blk)
-            if not path:
+            cap = str(entry.get("photo_caption") or "").strip() if st.get("showCaption", True) else ""
+            img_h = height_in - (CAPTION_PX / 96 if cap else 0) - 0.02
+            src = self._resolve_image(val)
+            if not src or img_h <= 0.2:
                 return
+            path = self._crop(src, width_in / img_h)
             p = sink.par()
-            p.paragraph_format.space_after = Pt(0)
+            p.alignment = align if st.get("textAlign") in ("center", "right") else WD_ALIGN_PARAGRAPH.LEFT
             try:
                 p.add_run().add_picture(path, width=Inches(width_in))
             except Exception:
                 return
-            cap = str(entry.get(blk.get("captionTag") or "photo_caption") or "").strip()
             if cap:
                 pc = sink.par()
-                pc.paragraph_format.space_after = Pt(8)
-                pc._p.get_or_add_pPr().append(parse_xml(f'<w:shd {nsdecls("w")} w:val="clear" w:color="auto" w:fill="{CAPTION_BG}"/>'))
+                _p_shade(pc, CAPTION_BG)
                 self._run(pc, f" {cap}", _px(12), False, CAPTION, italic=True)
-            else:
-                p.paragraph_format.space_after = Pt(8)
 
     # ---- inline pieces ---------------------------------------------------------
     @staticmethod
@@ -372,14 +476,9 @@ class DOCXGenerator:
         p._p.append(link)
 
     # ---- images ----------------------------------------------------------------
-    def _image_for(self, entry: Dict[str, Any], blk: Dict[str, Any]) -> Optional[str]:
-        src = self._resolve_image(str(entry.get(blk.get("tag") or "") or "").strip())
-        if not src:
-            return None
-        return self._crop(src, ASPECT.get((blk.get("style") or {}).get("aspectRatio", "16:9"), 16 / 9))
-
     def _crop(self, path: str, ratio: float) -> str:
-        """Centre-crop to the chosen shape (the designer shows the photo with object-fit: cover)."""
+        """Centre-crop to the box the element covers on the canvas (the designer shows object-fit: cover)."""
+        ratio = round(ratio, 3)
         out = os.path.join(self.cache_dir, f"crop_{hashlib.md5((path + str(ratio)).encode()).hexdigest()}.jpg")
         if os.path.exists(out):
             return out

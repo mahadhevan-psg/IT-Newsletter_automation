@@ -47,6 +47,7 @@
       <div class="forms-layout">
         <aside class="forms-side">
           <button class="btn primary block" onclick="openNewForm()">+ New form</button>
+          <button class="btn block" style="margin-top:8px" onclick="openScriptImport()">Import from Apps Script</button>
           <div id="forms-list" class="forms-list"></div>
         </aside>
         <div id="form-editor" class="form-editor"></div>
@@ -61,6 +62,7 @@
         <input id="lay-name" class="input name-input" placeholder="Layout name">
         <span class="spacer"></span>
         <label class="switch" title="Hide editing handles"><input type="checkbox" id="lay-preview" onchange="togglePreviewMode()"><span>Preview</span></label>
+        <button class="btn ghost" onclick="undoLayout()" title="Ctrl+Z">Undo</button>
         <button class="btn ghost" onclick="resetLayout()">Reset</button>
         <button class="btn primary" onclick="saveLayout()">Save layout</button>
       </div>
@@ -68,15 +70,14 @@
       <div class="designer">
         <aside class="palette">
           <h4>Elements</h4>
-          <p class="hint">Drag onto the page, or click to add.</p>
+          <p class="hint">Drag onto the page, or click to add. Each element links to a form column.</p>
           <div id="palette-items"></div>
         </aside>
 
         <div class="canvas-area" id="canvas-area">
           <div class="paper" id="paper">
             <div class="paper-head"><span id="paper-title">IT CHRONICLES</span><span id="paper-vol">VOL. 1 · ISSUE 1</span></div>
-            <div id="canvas-blocks" class="canvas-blocks"></div>
-            <div class="canvas-empty" id="canvas-empty">Drop an element here to start your layout</div>
+            <div id="grid" class="grid edit"></div>
           </div>
         </div>
 
@@ -133,6 +134,22 @@
         </div>
       </div>
       <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-new-form')">Cancel</button><button class="btn primary" onclick="createForm()">Create form</button></div>
+    </div>
+  </div>
+
+  <div id="dlg-script" class="overlay hidden">
+    <div class="dialog wide">
+      <div class="dialog-head"><h3>Import from Apps Script</h3><button class="x" onclick="closeDlg('dlg-script')">×</button></div>
+      <div class="dialog-body">
+        <p class="hint" style="margin-top:0">Paste the Google Apps Script you used to create the form (it can build several). We read every question, work out what each one is, and pick up the sub-section choices.</p>
+        <div class="field"><textarea id="script-text" class="input mono" rows="8" placeholder="function createResearchForm() {&#10;  const form = FormApp.create(&quot;…&quot;);&#10;  form.addTextItem().setTitle(&quot;…&quot;);"></textarea></div>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px">
+          <button class="btn primary" onclick="detectScript()">Detect questions</button>
+          <label class="btn">Open .gs / .js file<input type="file" id="script-file" accept=".gs,.js,.txt" style="display:none" onchange="onScriptFile()"></label>
+        </div>
+        <div id="script-results"></div>
+      </div>
+      <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-script')">Cancel</button><button class="btn primary" id="script-go" onclick="importScriptForms()" disabled>Import selected</button></div>
     </div>
   </div>
 

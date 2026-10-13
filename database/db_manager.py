@@ -658,3 +658,14 @@ def save_generation_record(issue_id: str, generation_type: str, section_id: Opti
 
 if __name__ == "__main__":
     init_db()
+
+
+def get_raw_response(response_id: str) -> dict:
+    """The answers exactly as submitted, keyed by question header."""
+    conn = get_connection()
+    row = conn.execute("SELECT raw_json FROM raw_responses WHERE response_id = ?", (response_id,)).fetchone()
+    conn.close()
+    try:
+        return json.loads(row["raw_json"]) if row else {}
+    except Exception:
+        return {}

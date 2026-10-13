@@ -242,7 +242,7 @@ function renderFormEditor() {
       <div id="q-list">${form.columns.map((c, i) => questionRowHtml(c, i)).join("") || `<div class="empty">No questions yet — add some below.</div>`}</div>
       <div class="add-q">
         <div class="row">
-          <textarea id="add-q-text" class="input" rows="2" placeholder="Type a question, or paste the whole header row from your responses sheet"></textarea>
+          <textarea id="add-q-text" class="input" rows="2" placeholder="Type a question, paste a header row, or paste the form’s Apps Script"></textarea>
           <button class="btn primary" onclick="addQuestions()">Add &amp; detect</button>
         </div>
       </div>
@@ -340,7 +340,18 @@ async function addQuestions() {
   const before = form.columns.length;
   try {
     await flushPendingSave();
-    await api("POST", `/api/forms/${form.form_id}/columns/bulk`, { headers_text: text });
+    if (/FormApp/.test(text)) {   // the Apps Script itself was pasted: take its questions
+      const parsed = await api("POST", "/api/forms/parse-script", { script: text });
+      const src = parsed.find(p => p.existing_form_id === form.form_id) || parsed[0];
+      const have = new Set(form.columns.map(c => c.name));
+      await api("PUT", `/api/forms/${form.form_id}`, {
+        columns: form.columns.concat(src.columns.filter(c => !have.has(c.name))),
+        category_map: { ...src.category_map, ...(form.category_map || {}) },
+        category_field: form.category_field || src.category_field
+      });
+    } else {
+      await api("POST", `/api/forms/${form.form_id}/columns/bulk`, { headers_text: text });
+    }
     await reloadFormsAndSections();
     await autoPickCategory(currentFormId);
     toast(`Added ${curForm().columns.length - before} question(s)`);
@@ -368,6 +379,82 @@ async function deleteForm() {
     currentFormId = null;
     await reloadFormsAndSections();
     toast("Form deleted");
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---- import from a Google Apps Script (the one that builds the form)
+let scriptForms = [];
+
+function openScriptImport() {
+  $("script-text").value = "";
+  $("script-file").value = "";
+  $("script-results").innerHTML = "";
+  $("script-go").disabled = true;
+  scriptForms = [];
+  openDlg("dlg-script");
+}
+
+async function onScriptFile() {
+  const f = $("script-file").files[0];
+  if (!f) return;
+  $("script-text").value = await f.text();
+  detectScript();
+}
+
+async function detectScript() {
+  const script = $("script-text").value.trim();
+  if (!script) { toast("Paste your Apps Script first", true); return; }
+  try {
+    scriptForms = await api("POST", "/api/forms/parse-script", { script });
+  } catch (e) { $("script-results").innerHTML = `<p class="result err">${esc(e.message)}</p>`; $("script-go").disabled = true; return; }
+  const sectionOpts = `<option value="__new__">New section</option>` + sections.map(s => `<option value="${s.section_id}">${esc(s.name)}</option>`).join("");
+  $("script-results").innerHTML = scriptForms.map((f, i) => {
+    const existing = forms.find(x => x.form_id === f.existing_form_id);
+    const missing = existing ? f.columns.filter(c => !existing.columns.some(x => x.name === c.name)).length : f.columns.length;
+    return `
+      <div class="script-form">
+        <label class="sf-head"><input type="checkbox" id="sf-on-${i}" checked>
+          <span><strong>${esc(f.title.replace(/^IT Chronicles\s*[-–]\s*/, ""))}</strong>
+          <span class="muted">${f.columns.length} questions${f.category_field ? ` · sub-sections from “${esc(f.category_field)}” (${Object.keys(f.category_map).length})` : ""}</span></span></label>
+        <div class="sf-meta">${existing
+          ? `<span class="tag Approved">Already exists</span> <span class="muted">${missing ? `${missing} new question(s) will be added` : "nothing new to add"}</span>`
+          : `<span class="tag">New form</span> <select class="input compact" id="sf-sec-${i}">${sectionOpts}</select>`}</div>
+      </div>`;
+  }).join("");
+  $("script-go").disabled = false;
+}
+
+async function importScriptForms() {
+  let done = 0, last = null;
+  try {
+    for (let i = 0; i < scriptForms.length; i++) {
+      if (!$(`sf-on-${i}`).checked) continue;
+      const f = scriptForms[i];
+      const existing = forms.find(x => x.form_id === f.existing_form_id);
+      if (existing) {
+        const have = new Set(existing.columns.map(c => c.name));
+        const columns = existing.columns.concat(f.columns.filter(c => !have.has(c.name)));
+        const map = { ...f.category_map, ...(existing.category_map || {}) };
+        await api("PUT", `/api/forms/${existing.form_id}`, {
+          columns, category_map: map, category_field: existing.category_field || f.category_field
+        });
+        last = existing.form_id;
+      } else {
+        let id = "form_" + (slug(f.title.replace(/^IT Chronicles\s*[-–]\s*/, "")) || "new");
+        for (let n = 2; forms.some(x => x.form_id === id); n++) id += "_" + n;
+        const sec = $(`sf-sec-${i}`).value;
+        const payload = { form_id: id, form_name: f.title, section_name: f.title.replace(/^IT Chronicles\s*[-–]\s*/, "").replace(/\s*Submission Form$/i, ""),
+          columns: f.columns, category_field: f.category_field, category_map: f.category_map };
+        if (sec !== "__new__") payload.section_id = sec;
+        await api("POST", "/api/forms", payload);
+        last = id;
+      }
+      done++;
+    }
+    closeDlg("dlg-script");
+    if (last) currentFormId = last;
+    await reloadFormsAndSections();
+    toast(`Imported ${done} form(s) from the script`);
   } catch (e) { toast(e.message, true); }
 }
 
@@ -413,47 +500,134 @@ async function createForm() {
 }
 
 // ================================================================ LAYOUT (canvas)
+// A layout is a 12-column grid. Every element has a position (x, y) and size (w, h) in cells,
+// is linked to a form column by its header, and carries its own styling.
+const COLS = 12;
+const ROW_PX = 28;
+
 const BLOCK_TYPES = {
-  image:    { label: "Photo",         ico: "▣", tag: "photo_url", style: { aspectRatio: "16:9", float: "none" } },
-  headline: { label: "Headline",      ico: "H", tag: "title", style: { textAlign: "left" } },
-  byline:   { label: "Authors",       ico: "By", tag: "author_or_person", style: {} },
-  meta:     { label: "Venue & date",  ico: "Vn", tag: "organization_or_venue", style: {} },
-  badge:    { label: "Badge",         ico: "◖◗", tag: "badge_tag", style: { badgeColor: "navy" } },
-  text:     { label: "Description",   ico: "¶", tag: "description", style: { textAlign: "left" } },
-  link:     { label: "Button link",   ico: "↗", tag: "evidence_url", style: { buttonStyle: "solid" }, linkText: "View details" },
-  stats:    { label: "Stat callout",  ico: "#", tag: "grant_or_prize_amount", style: {} },
-  divider:  { label: "Divider",       ico: "—", tag: "", style: {} }
+  headline: { label: "Headline",     ico: "H",  tags: ["title"], w: 12, h: 3, style: {} },
+  byline:   { label: "Authors",      ico: "By", tags: ["author_or_person"], w: 12, h: 1, style: {} },
+  meta:     { label: "Venue & date", ico: "Vn", tags: ["organization_or_venue"], w: 12, h: 1, style: {} },
+  text:     { label: "Description",  ico: "¶",  tags: ["description"], w: 12, h: 6, style: {} },
+  badge:    { label: "Badge",        ico: "◖◗", tags: ["badge_tag", "impact_or_indexing"], w: 6, h: 1, style: { badgeColor: "navy" } },
+  image:    { label: "Photo",        ico: "▣",  tags: ["photo_url"], w: 12, h: 12, style: { showCaption: true } },
+  link:     { label: "Button link",  ico: "↗",  tags: ["evidence_url"], w: 6, h: 2, style: { buttonStyle: "solid" }, linkText: "View details" },
+  stats:    { label: "Stat callout", ico: "#",  tags: ["grant_or_prize_amount"], w: 6, h: 2, style: {} },
+  label:    { label: "Text label",   ico: "T",  tags: [], w: 12, h: 2, style: {}, text: "Your text" },
+  divider:  { label: "Divider",      ico: "—",  tags: [], w: 12, h: 1, style: {} }
 };
+const TEXTISH = ["headline", "byline", "meta", "text", "badge", "stats", "link", "label"];
 
-const DEFAULT_LAYOUT = () => [
-  mkBlock("badge"), mkBlock("headline"), mkBlock("byline"), mkBlock("image"), mkBlock("text"), mkBlock("link")
-];
+let undoStack = [];
 
-function mkBlock(type) {
+const byId = id => layout.find(b => b.id === id);
+const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const cloneLayout = () => JSON.parse(JSON.stringify(layout));
+
+// ---- default / migrated layouts
+function mkBlock(type, x = 1, y = 999) {
   const t = BLOCK_TYPES[type];
-  const b = { id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type, label: t.label, tag: t.tag, style: { ...t.style } };
-  if (type === "image") b.captionTag = "photo_caption";
+  const b = { id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, x, y, w: t.w, h: t.h, style: { ...t.style } };
   if (t.linkText) b.linkText = t.linkText;
+  if (t.text) b.text = t.text;
+  const col = columnForTags(t.tags);
+  if (col) { b.column = col.name; b.tag = col.canonical_tag; } else if (t.tags[0]) { b.tag = t.tags[0]; }
   return b;
 }
 
+function columnForTags(tags) {
+  const cols = curForm()?.columns || [];
+  for (const t of tags) { const c = cols.find(c => c.canonical_tag === t); if (c) return c; }
+  return null;
+}
+
+const DEFAULT_LAYOUT = () => {
+  const list = ["badge", "headline", "byline", "image", "text", "link"].map((t, i) => mkBlock(t, 1, 100 + i));
+  list[0].w = 12;
+  return compactAll(list);
+};
+
+// Presets store headline / byline / venue as generic text blocks; give them their proper role
+const TEXT_ROLE = { title: "headline", author_or_person: "byline", organization_or_venue: "meta" };
+
+// Layouts saved before the canvas existed are flat lists: stack them top to bottom (same rules as the Word export)
+function ensureGrid(blocks) {
+  blocks = blocks.map(b => ({ ...b, type: b.type === "text" && TEXT_ROLE[b.tag] ? TEXT_ROLE[b.tag] : b.type, style: { ...(b.style || {}) } }));
+  if (!blocks.every(b => ["x", "y", "w", "h"].every(k => typeof b[k] === "number"))) {
+    let y = 1;
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i];
+      const ratio = { "16:9": 16 / 9, "4:3": 4 / 3, "1:1": 1 }[b.style.aspectRatio] || 16 / 9;
+      if (b.type === "image" && b.style.float === "left") {
+        Object.assign(b, { x: 1, y, w: 4, h: Math.max(3, Math.round(4 * 50 / ratio / ROW_PX)) });
+        let ry = y;
+        for (const r of blocks.slice(i + 1)) { Object.assign(r, { x: 5, y: ry, w: 8, h: BLOCK_TYPES[r.type]?.h || 2 }); ry += r.h; }
+        break;
+      }
+      const h = b.type === "image" ? Math.round(600 / ratio / ROW_PX) : (BLOCK_TYPES[b.type]?.h || 2);
+      Object.assign(b, { x: 1, y, w: COLS, h });
+      y += h;
+    }
+  }
+  const cols = curForm()?.columns || [];
+  blocks.forEach(b => {   // link older blocks to the column that feeds their field
+    if (!b.column && b.tag) { const c = cols.find(c => c.canonical_tag === b.tag); if (c) b.column = c.name; }
+    b.id = b.id || mkBlock("divider").id;
+  });
+  return compactAll(blocks);
+}
+
+// ---- placement: elements never overlap and float up until they rest on another
+function settle(pinned, list = layout) {
+  const placed = pinned ? [pinned] : [];
+  list.filter(b => b !== pinned).sort((a, b) => a.y - b.y || a.x - b.x).forEach(b => {
+    b.y = 1;
+    for (;;) { const hit = placed.find(p => overlap(p, b)); if (!hit) break; b.y = hit.y + hit.h; }
+    placed.push(b);
+  });
+  return list;
+}
+const compactAll = list => settle(null, list);
+
+function pushHistory() { undoStack.push(JSON.stringify(layout)); if (undoStack.length > 60) undoStack.shift(); }
+function undoLayout() {
+  if (!undoStack.length) { toast("Nothing to undo"); return; }
+  layout = JSON.parse(undoStack.pop());
+  if (!byId(selectedBlockId)) selectedBlockId = null;
+  renderCanvas(); renderInspector();
+}
+function mutate(fn, pinnedSettle = true) {
+  const b = byId(selectedBlockId); if (!b) return;
+  pushHistory();
+  fn(b);
+  b.w = Math.max(1, Math.min(COLS, b.w)); b.x = Math.max(1, Math.min(COLS - b.w + 1, b.x)); b.h = Math.max(1, b.h); b.y = Math.max(1, b.y);
+  if (pinnedSettle) settle(b);
+  compactAll(layout);
+  renderCanvas(); renderInspector();
+}
+
+// ---- tab setup
+let canvasWired = false;
+
 function initLayoutView() {
-  if (!$("palette-items").children.length) {
+  if (!canvasWired) {
+    canvasWired = true;
     $("palette-items").innerHTML = Object.entries(BLOCK_TYPES).map(([k, t]) =>
       `<button class="pal-item" draggable="true" data-type="${k}"><span class="pal-ico">${t.ico}</span>${t.label}</button>`).join("");
     $("palette-items").querySelectorAll(".pal-item").forEach(p => {
       p.addEventListener("click", () => addBlock(p.dataset.type));
-      p.addEventListener("dragstart", e => { dragSrc = { kind: "new", type: p.dataset.type }; e.dataTransfer.setData("text/plain", p.dataset.type); e.dataTransfer.effectAllowed = "copy"; });
-      p.addEventListener("dragend", clearDrag);
+      p.addEventListener("dragstart", e => { dragSrc = p.dataset.type; e.dataTransfer.setData("text/plain", dragSrc); e.dataTransfer.effectAllowed = "copy"; });
+      p.addEventListener("dragend", () => { dragSrc = null; clearGhost(); });
     });
-    wireCanvasDnD();
+    wireCanvas();
   }
   $("lay-form").innerHTML = forms.map(f => `<option value="${f.form_id}" ${f.form_id === currentFormId ? "selected" : ""}>${esc(f.form_name.replace(/^IT Chronicles\s*[-–]\s*/, ""))}</option>`).join("");
   fillLayoutSelect(currentLayoutId);
   if (!layoutLoaded) { layoutLoaded = true; onSavedLayoutChange(); }
 }
 
-// The form is only used for example content and the field list; the layout itself belongs to no section.
+// The form supplies the column list and example content; the layout itself belongs to no form or section.
 async function onLayoutFormChange() {
   await flushPendingSave();
   currentFormId = $("lay-form").value;
@@ -469,16 +643,13 @@ function fillLayoutSelect(selectId) {
   $("lay-saved").value = savedLayouts.some(t => t.template_id === selectId) ? selectId : "";
 }
 
-// Presets store headline / byline / venue as generic text blocks; give them their proper role
-const TEXT_ROLE = { title: "headline", author_or_person: "byline", organization_or_venue: "meta" };
-const normalizeLayout = blocks => blocks.map(b => b.type === "text" && TEXT_ROLE[b.tag] ? { ...b, type: TEXT_ROLE[b.tag] } : b);
-
 function onSavedLayoutChange() {
   currentLayoutId = $("lay-saved").value;
   const tpl = savedLayouts.find(t => t.template_id === currentLayoutId);
-  layout = tpl && tpl.layout?.length ? normalizeLayout(JSON.parse(JSON.stringify(tpl.layout))) : DEFAULT_LAYOUT();
+  layout = tpl && tpl.layout?.length ? ensureGrid(JSON.parse(JSON.stringify(tpl.layout))) : DEFAULT_LAYOUT();
   $("lay-name").value = tpl ? tpl.name : "New layout";
   selectedBlockId = null;
+  undoStack = [];
   renderSampleOptions();
   renderCanvas();
   renderInspector();
@@ -487,15 +658,14 @@ function onSavedLayoutChange() {
 function resetLayout() { onSavedLayoutChange(); toast("Layout reset"); }
 
 function togglePreviewMode() {
-  const on = $("lay-preview").checked;
-  $("paper").classList.toggle("preview", on);
-  $("paper").querySelectorAll(".cb").forEach(c => c.draggable = !on);
+  if ($("lay-preview").checked) selectedBlockId = null;
+  renderCanvas(); renderInspector();
 }
 
 // ---- sample data
 function demoSample() {
   const f = curForm();
-  return JSON.parse(JSON.stringify(SAMPLE_DATA[f?.form_id] || SAMPLE_DATA[Object.keys(SAMPLE_DATA).find(k => f?.section_id && k.includes(f.section_id.replace("sec_", "")))] || SAMPLE_DATA.form_research));
+  return JSON.parse(JSON.stringify(SAMPLE_DATA[f?.form_id] || SAMPLE_DATA.form_research));
 }
 
 function renderSampleOptions() {
@@ -520,209 +690,350 @@ function renderSampleFields() {
     `<div class="field"><label>${l}</label><input class="input" value="${esc(sample[k] || "")}" oninput="sample['${k}']=this.value; renderCanvas()"></div>`).join("");
 }
 
-// ---- field options for a block
-function fieldOptionsHtml(selTag) {
-  const form = curForm();
-  const seen = new Set();
-  let mine = "";
-  (form?.columns || []).forEach(c => {
-    const t = c.canonical_tag;
-    if (!t || t === "custom" || INTERNAL_TAGS.includes(t) || seen.has(t)) return;
-    seen.add(t);
-    mine += `<option value="${esc(t)}" ${t === selTag ? "selected" : ""}>${esc(isKnownTag(t) ? tagLabel(t) : c.name)}</option>`;
-  });
-  const others = SHOWN_TAGS.filter(t => !seen.has(t)).map(t => `<option value="${t}" ${t === selTag ? "selected" : ""}>${tagLabel(t)}</option>`).join("");
-  return `${mine ? `<optgroup label="From this form">${mine}</optgroup>` : ""}${others ? `<optgroup label="Not asked by this form">${others}</optgroup>` : ""}`;
-}
-
 // ---- rendering
 const ph = txt => `<span class="ph">${esc(txt)}</span>`;
 
-// Font settings carried by preset layouts (the palette's own blocks rely on defaults)
 function fontCss(st) {
   let css = "";
-  if (st.fontSize) css += `font-size:${esc(st.fontSize)};`;
+  if (st.fontSize) css += `font-size:${/^\d+(\.\d+)?$/.test(st.fontSize) ? st.fontSize + "px" : esc(st.fontSize)};`;
   if (st.fontWeight) css += `font-weight:${esc(st.fontWeight)};`;
   if (/^#[0-9a-f]{6}$/i.test(st.textColor || "")) css += `color:${st.textColor};`;
   return css;
 }
 
-function blockHtml(b, d) {
-  const v = d[b.tag];
+function valueOf(b) {
+  if (b.type === "label") return b.text || "";
+  return sample[b.tag] ?? sample[b.column] ?? "";
+}
+
+function blockHtml(b) {
+  const v = valueOf(b);
   const st = b.style || {};
+  const none = ph(b.column || "Link a column");
+  const align = `text-align:${esc(st.textAlign || "left")};`;
   switch (b.type) {
-    case "badge": return `<span class="nl-badge ${esc(st.badgeColor || "navy")}">${v ? esc(v) : ph("Badge")}</span>`;
-    case "headline": return `<div class="nl-h" style="text-align:${esc(st.textAlign || "left")};${fontCss(st)}">${v ? esc(v) : ph("Headline")}</div>`;
-    case "byline": return `<div class="nl-by" style="${fontCss(st)}">By ${v ? esc(v) : ph("authors")}</div>`;
-    case "meta": return `<div class="nl-meta" style="${fontCss(st)}">${v ? esc(v) : ph("Venue")}${d.event_date ? " · " + esc(d.event_date) : ""}</div>`;
-    case "text": return `<p class="nl-p" style="text-align:${esc(st.textAlign || "left")};${fontCss(st)}">${v ? esc(v) : ph("Description appears here…")}</p>`;
-    case "link": return `<span class="nl-btn ${esc(st.buttonStyle || "solid")}">${esc(b.linkText || "View details")}</span>`;
-    case "stats": return `<div class="nl-stat"><b>${v ? esc(v) : ph("Value")}</b><span>${esc(d.badge_tag || "")}</span></div>`;
+    case "badge": return `<span class="nl-badge ${esc(st.badgeColor || "navy")}" style="${fontCss(st)}">${v ? esc(v) : none}</span>`;
+    case "headline": return `<div class="nl-h" style="${align}${fontCss(st)}">${v ? esc(v) : none}</div>`;
+    case "label": return `<div class="nl-h lbl" style="${align}${fontCss(st)}">${v ? esc(v) : ph("Your text")}</div>`;
+    case "byline": return `<div class="nl-by" style="${align}${fontCss(st)}">By ${v ? esc(v) : none}</div>`;
+    case "meta": return `<div class="nl-meta" style="${align}${fontCss(st)}">${v ? esc(v) : none}${v && sample.event_date ? " · " + esc(sample.event_date) : ""}</div>`;
+    case "text": return `<p class="nl-p" style="${align}${fontCss(st)}">${v ? esc(v) : none}</p>`;
+    case "link": return `<div style="${align}"><span class="nl-btn ${esc(st.buttonStyle || "solid")}" style="${fontCss(st)}">${esc(b.linkText || "View details")}</span></div>`;
+    case "stats": return `<div class="nl-stat"><b>${v ? esc(v) : none}</b><span>${esc(sample.badge_tag || "")}</span></div>`;
     case "divider": return `<div class="nl-hr"></div>`;
     case "image": {
-      const ratio = { "1:1": "1/1", "4:3": "4/3", "16:9": "16/9" }[st.aspectRatio] || "16/9";
-      const cap = d[b.captionTag] || d.photo_caption;
-      const float = st.float === "left";
-      return `<div class="nl-img" style="${float ? "float:left; width:220px; margin:0 16px 8px 0;" : ""}">
-        ${v ? `<img src="${esc(v)}" alt="" draggable="false" style="aspect-ratio:${ratio}" onerror="this.style.visibility='hidden'">` : `<div style="aspect-ratio:${ratio}; display:grid; place-items:center">${ph("Photo")}</div>`}
+      const cap = st.showCaption !== false ? sample.photo_caption : "";
+      return `<div class="nl-img fill">
+        ${v ? `<img src="${esc(v)}" alt="" draggable="false" onerror="this.style.visibility='hidden'">` : `<div class="ph-box">${none}</div>`}
         ${cap ? `<div class="nl-cap">${esc(cap)}</div>` : ""}</div>`;
     }
   }
   return "";
 }
 
+const V_ALIGN = { top: "flex-start", middle: "center", bottom: "flex-end" };
+
 function renderCanvas() {
   const f = curForm();
   const sec = sections.find(s => s.section_id === f?.section_id);
   $("paper-title").textContent = "IT CHRONICLES" + (sec ? " · " + sec.name.toUpperCase() : "");
   const preview = $("lay-preview").checked;
-  $("canvas-blocks").innerHTML = layout.map(b => `
-    <div class="cb ${b.id === selectedBlockId ? "sel" : ""}" data-id="${b.id}" draggable="${!preview}">
-      <div class="cb-tools">
-        <button title="Move up" data-act="up">▲</button><button title="Move down" data-act="down">▼</button>
-        <button title="Duplicate" data-act="dup">⧉</button><button title="Remove" data-act="del">✕</button>
-      </div>
-      ${blockHtml(b, sample)}
-    </div>`).join("");
+  const bottom = layout.reduce((m, b) => Math.max(m, b.y + b.h - 1), 0);
+  const rows = Math.max(22, bottom + 6);
+  const grid = $("grid");
+  grid.style.gridTemplateRows = `repeat(${rows}, ${ROW_PX}px)`;
+  grid.classList.toggle("edit", !preview);
   $("paper").classList.toggle("preview", preview);
+  grid.innerHTML = layout.map(b => {
+    const sel = !preview && b.id === selectedBlockId;
+    const st = b.style || {};
+    return `<div class="gb gb-${b.type} ${sel ? "sel" : ""}" data-id="${b.id}" style="${posCss(b)}justify-content:${V_ALIGN[st.vAlign] || "flex-start"}">
+      <div class="gb-in">${blockHtml(b)}</div>
+      ${sel ? `<span class="gb-tag">${esc(b.type === "label" ? "Text label" : b.column || "Not linked to a column")}</span>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map(h => `<i class="hd hd-${h}" data-h="${h}"></i>`).join("")}` : ""}
+    </div>`;
+  }).join("");
 }
 
-function wireCanvasDnD() {
-  const blocks = $("canvas-blocks");
-  const area = $("canvas-area");
+const posCss = b => `grid-column:${b.x} / span ${b.w}; grid-row:${b.y} / span ${b.h};`;
 
-  blocks.addEventListener("click", e => {
-    const tool = e.target.closest("[data-act]");
-    const cb = e.target.closest(".cb");
-    if (!cb) return;
-    const idx = layout.findIndex(b => b.id === cb.dataset.id);
-    if (tool) {
-      e.stopPropagation();
-      const act = tool.dataset.act;
-      if (act === "up" && idx > 0) [layout[idx - 1], layout[idx]] = [layout[idx], layout[idx - 1]];
-      else if (act === "down" && idx < layout.length - 1) [layout[idx + 1], layout[idx]] = [layout[idx], layout[idx + 1]];
-      else if (act === "dup") { const c = JSON.parse(JSON.stringify(layout[idx])); c.id = mkBlock("divider").id; layout.splice(idx + 1, 0, c); selectedBlockId = c.id; }
-      else if (act === "del") { layout.splice(idx, 1); if (selectedBlockId === cb.dataset.id) selectedBlockId = null; }
-      renderCanvas(); renderInspector();
-      return;
-    }
-    if ($("lay-preview").checked) return;
-    selectedBlockId = cb.dataset.id;
-    renderCanvas(); renderInspector();
+function positionDom() {
+  layout.forEach(b => {
+    const el = $("grid").querySelector(`[data-id="${b.id}"]`);
+    if (el) { el.style.gridColumn = `${b.x} / span ${b.w}`; el.style.gridRow = `${b.y} / span ${b.h}`; }
+  });
+}
+
+// ---- pointer handling: select, move, resize
+function cellAt(clientX, clientY) {
+  const r = $("grid").getBoundingClientRect();
+  return {
+    col: Math.max(1, Math.min(COLS, Math.floor((clientX - r.left) / (r.width / COLS)) + 1)),
+    row: Math.max(1, Math.floor((clientY - r.top) / ROW_PX) + 1)
+  };
+}
+
+function wireCanvas() {
+  const grid = $("grid");
+
+  grid.addEventListener("pointerdown", e => {
+    if ($("lay-preview").checked || e.button !== 0) return;
+    const gb = e.target.closest(".gb");
+    if (!gb) { if (selectedBlockId) { selectedBlockId = null; renderCanvas(); renderInspector(); } return; }
+    const id = gb.dataset.id;
+    const handle = e.target.closest(".hd")?.dataset.h || null;
+    if (id !== selectedBlockId) { selectedBlockId = id; renderCanvas(); renderInspector(); }
+    startGesture(e, id, handle);
   });
 
-  area.addEventListener("click", e => {
-    if (!e.target.closest(".cb") && selectedBlockId) { selectedBlockId = null; renderCanvas(); renderInspector(); }
-  });
-
-  blocks.addEventListener("dragstart", e => {
-    const cb = e.target.closest(".cb");
-    if (!cb) return;
-    dragSrc = { kind: "move", id: cb.dataset.id };
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", cb.dataset.id);
-    setTimeout(() => cb.classList.add("dragging"), 0);
-  });
-  blocks.addEventListener("dragend", clearDrag);
-
-  area.addEventListener("dragover", e => {
+  grid.addEventListener("dragover", e => {
     if (!dragSrc) return;
     e.preventDefault();
-    markDropTarget(dropIndex(e.clientY));
+    const { col, row } = cellAt(e.clientX, e.clientY);
+    const t = BLOCK_TYPES[dragSrc];
+    showGhost(Math.min(col, COLS - t.w + 1), row, t.w, t.h);
   });
-  area.addEventListener("drop", e => {
+  grid.addEventListener("drop", e => {
     if (!dragSrc) return;
     e.preventDefault();
-    let idx = dropIndex(e.clientY);
-    if (dragSrc.kind === "move") {
-      const from = layout.findIndex(b => b.id === dragSrc.id);
-      if (from >= 0) {
-        const [b] = layout.splice(from, 1);
-        if (from < idx) idx--;
-        layout.splice(idx, 0, b);
-      }
-    } else {
-      const b = mkBlock(dragSrc.type);
-      layout.splice(idx, 0, b);
-      selectedBlockId = b.id;
-    }
-    clearDrag();
+    const { col, row } = cellAt(e.clientX, e.clientY);
+    const b = mkBlock(dragSrc, 1, row);
+    b.x = Math.min(col, COLS - b.w + 1);
+    pushHistory();
+    layout.push(b);
+    selectedBlockId = b.id;
+    settle(b); compactAll(layout);
+    dragSrc = null; clearGhost();
     renderCanvas(); renderInspector();
   });
+  grid.addEventListener("dragleave", e => { if (!grid.contains(e.relatedTarget)) clearGhost(); });
+
+  document.addEventListener("keydown", onCanvasKey);
 }
 
-function dropIndex(y) {
-  const kids = [...$("canvas-blocks").children];
-  let idx = 0;
-  kids.forEach((k, i) => { const r = k.getBoundingClientRect(); if (y > r.top + r.height / 2) idx = i + 1; });
-  return idx;
+function showGhost(x, y, w, h) {
+  let g = $("grid").querySelector(".ghost");
+  if (!g) { g = document.createElement("div"); g.className = "ghost"; $("grid").appendChild(g); }
+  g.style.gridColumn = `${x} / span ${w}`; g.style.gridRow = `${y} / span ${h}`;
 }
-function markDropTarget(idx) {
-  const kids = [...$("canvas-blocks").children];
-  kids.forEach(k => k.classList.remove("drop-before", "drop-after"));
-  if (!kids.length) return;
-  if (idx < kids.length) kids[idx].classList.add("drop-before"); else kids[kids.length - 1].classList.add("drop-after");
-}
-function clearDrag() {
-  dragSrc = null;
-  $("canvas-blocks").querySelectorAll(".cb").forEach(k => k.classList.remove("dragging", "drop-before", "drop-after"));
+function clearGhost() { $("grid")?.querySelector(".ghost")?.remove(); }
+
+function startGesture(e, id, handle) {
+  e.preventDefault();
+  const b = byId(id); if (!b) return;
+  const before = JSON.stringify(layout);
+  const start = { x: b.x, y: b.y, w: b.w, h: b.h };
+  const c0 = cellAt(e.clientX, e.clientY);
+  let moved = false;
+
+  const onMove = ev => {
+    const c = cellAt(ev.clientX, ev.clientY);
+    if (!moved && c.col === c0.col && c.row === c0.row) return;
+    moved = true;
+    if (!handle) {                                   // move
+      b.x = Math.max(1, Math.min(COLS - start.w + 1, start.x + c.col - c0.col));
+      b.y = Math.max(1, start.y + c.row - c0.row);
+    } else {                                         // resize from any edge or corner
+      let { x, y, w, h } = start;
+      if (handle.includes("e")) w = Math.max(1, c.col - x + 1);
+      if (handle.includes("w")) { const nx = Math.min(c.col, x + w - 1); w = x + w - nx; x = nx; }
+      if (handle.includes("s")) h = Math.max(1, c.row - y + 1);
+      if (handle.includes("n")) { const ny = Math.min(c.row, y + h - 1); h = y + h - ny; y = ny; }
+      Object.assign(b, { x, y, w, h });
+    }
+    settle(b);
+    positionDom();
+  };
+  const onUp = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    if (!moved) return;
+    compactAll(layout);
+    if (JSON.stringify(layout) !== before) undoStack.push(before);
+    renderCanvas(); renderInspector();
+  };
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
 }
 
+function onCanvasKey(e) {
+  if (!$("tab-layout").classList.contains("active")) return;
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undoLayout(); return; }
+  const b = byId(selectedBlockId); if (!b) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") { e.preventDefault(); duplicateBlock(); return; }
+  if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); deleteBlock(); return; }
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d) return;
+  e.preventDefault();
+  mutate(x => { if (e.shiftKey) { x.w += d[0]; x.h += d[1]; } else { x.x += d[0]; x.y += d[1]; } });
+}
+
+// ---- adding / removing
 function addBlock(type) {
-  const b = mkBlock(type);
-  const at = selectedBlockId ? layout.findIndex(x => x.id === selectedBlockId) + 1 : layout.length;
-  layout.splice(at, 0, b);
+  pushHistory();
+  const b = mkBlock(type, 1, 999);
+  layout.push(b);
   selectedBlockId = b.id;
+  compactAll(layout);
+  renderCanvas(); renderInspector();
+  $("grid").querySelector(".gb.sel")?.scrollIntoView({ block: "nearest" });
+}
+function duplicateBlock() {
+  const b = byId(selectedBlockId); if (!b) return;
+  pushHistory();
+  const c = JSON.parse(JSON.stringify(b));
+  c.id = mkBlock("divider").id; c.y = b.y + b.h;
+  layout.push(c); selectedBlockId = c.id;
+  compactAll(layout);
+  renderCanvas(); renderInspector();
+}
+function deleteBlock() {
+  if (!byId(selectedBlockId)) return;
+  pushHistory();
+  layout = layout.filter(b => b.id !== selectedBlockId);
+  selectedBlockId = null;
+  compactAll(layout);
   renderCanvas(); renderInspector();
 }
 
 // ---- inspector
-function segHtml(key, current, options) {
-  return `<div class="seg">${options.map(([v, l]) => `<button class="${(current ?? options[0][0]) === v ? "on" : ""}" onclick="setStyle('${key}','${v}')">${l}</button>`).join("")}</div>`;
+function seg(options, current, fn) {
+  return `<div class="seg">${options.map(([v, l]) => `<button class="${current === v ? "on" : ""}" onclick="${fn}('${v}')">${l}</button>`).join("")}</div>`;
 }
-function setStyle(key, val) {
-  const b = layout.find(x => x.id === selectedBlockId); if (!b) return;
-  b.style = b.style || {};
-  b.style[key] = val;
+const setStyle = (key, val) => mutate(b => { b.style = b.style || {}; b.style[key] = val; });
+const setLinkText = v => { const b = byId(selectedBlockId); if (b) { b.linkText = v; renderCanvas(); } };
+const setLabelText = v => { const b = byId(selectedBlockId); if (b) { b.text = v; renderCanvas(); } };
+const setNum = (k, v) => { const n = parseInt(v, 10); if (!isNaN(n)) mutate(b => { b[k] = n; }); };
+
+function setColumn(name) {
+  mutate(b => {
+    const c = (curForm()?.columns || []).find(c => c.name === name);
+    b.column = name || undefined;
+    b.tag = c ? c.canonical_tag : (name ? b.tag : "");
+  }, false);
+}
+
+function alignOnPage(mode) {
+  mutate(b => {
+    if (mode === "full") { b.x = 1; b.w = COLS; }
+    else if (mode === "left") b.x = 1;
+    else if (mode === "center") b.x = Math.round((COLS - b.w) / 2) + 1;
+    else if (mode === "right") b.x = COLS - b.w + 1;
+  });
+}
+
+// Image + text arrangements: the text blocks that follow the photo are moved beside it or below it
+function arrangeImage(mode) {
+  const img = byId(selectedBlockId); if (!img || img.type !== "image") return;
+  pushHistory();
+  const order = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+  const at = order.indexOf(img);
+  let group = [];
+  for (const b of order.slice(at + 1)) { if (!TEXTISH.includes(b.type)) break; group.push(b); }
+  if (!group.length) for (const b of order.slice(0, at).reverse()) { if (!TEXTISH.includes(b.type)) break; group.unshift(b); }
+  const y0 = Math.min(img.y, ...group.map(b => b.y));
+  if (mode === "top") {
+    Object.assign(img, { x: 1, w: COLS, y: y0, h: Math.max(img.h, 8) });
+    let y = y0 + img.h; group.forEach(b => { Object.assign(b, { x: 1, w: COLS, y }); y += b.h; });
+  } else {
+    const iw = 5, tw = COLS - iw;
+    const ix = mode === "left" ? 1 : tw + 1, tx = mode === "left" ? iw + 1 : 1;
+    Object.assign(img, { x: ix, w: iw, y: y0, h: 8 });
+    let y = y0; group.forEach(b => { Object.assign(b, { x: tx, w: tw, y }); y += b.h; });
+  }
+  compactAll(layout);
+  renderCanvas();
+  // narrower columns wrap text onto more lines: grow each text box to fit, then restack
+  let y = mode === "top" ? y0 + img.h : y0;
+  group.forEach(b => {
+    const inner = $("grid").querySelector(`[data-id="${b.id}"] .gb-in`);
+    if (inner && ["headline", "byline", "meta", "text", "label"].includes(b.type)) b.h = Math.max(1, Math.ceil((inner.scrollHeight + 8) / ROW_PX));
+    b.y = y; y += b.h;
+  });
+  compactAll(layout);
   renderCanvas(); renderInspector();
 }
-function setBlockTag(tag) {
-  const b = layout.find(x => x.id === selectedBlockId); if (!b) return;
-  b.tag = tag;
-  renderCanvas();
-}
-function setLinkText(v) {
-  const b = layout.find(x => x.id === selectedBlockId); if (!b) return;
-  b.linkText = v;
-  renderCanvas();
+
+function fitHeight() {
+  const el = $("grid").querySelector(".gb.sel .gb-in");
+  if (!el) return;
+  mutate(b => { b.h = Math.max(1, Math.ceil((el.scrollHeight + 8) / ROW_PX)); });
 }
 
 function renderInspector() {
   const el = $("inspector-element");
-  const b = layout.find(x => x.id === selectedBlockId);
+  const b = byId(selectedBlockId);
   if (!b) {
-    el.innerHTML = `<div class="insp-head"><h3>Page</h3></div><p class="insp-empty">Click any element on the page to change what it shows and how it looks.</p>`;
+    el.innerHTML = `<div class="insp-head"><h3>Page</h3></div>
+      <p class="insp-empty">Drag elements from the left onto the page. Click one to link it to a form column, move or resize it, and set how it aligns.</p>
+      <p class="hint">Arrow keys nudge, Shift+arrows resize, Delete removes, Ctrl+Z undoes.</p>`;
     return;
   }
   const st = b.style || {};
-  let opts = "";
-  if (b.type === "image") opts = `
-    <div class="field"><label>Shape</label>${segHtml("aspectRatio", st.aspectRatio, [["16:9", "Wide"], ["4:3", "Photo"], ["1:1", "Square"]])}</div>
-    <div class="field"><label>Placement</label>${segHtml("float", st.float, [["none", "Full width"], ["left", "Beside text"]])}</div>`;
-  if (b.type === "headline" || b.type === "text") opts = `<div class="field"><label>Alignment</label>${segHtml("textAlign", st.textAlign, [["left", "Left"], ["center", "Centre"]])}</div>`;
-  if (b.type === "badge") opts = `<div class="field"><label>Colour</label>${segHtml("badgeColor", st.badgeColor, [["navy", "Navy"], ["amber", "Amber"], ["slate", "Slate"], ["green", "Green"]])}</div>`;
-  if (b.type === "link") opts = `
+  const t = BLOCK_TYPES[b.type];
+  const cols = curForm()?.columns || [];
+  const known = !b.column || cols.some(c => c.name === b.column);
+  const colOpts = `<option value="">Not linked</option>` +
+    (known ? "" : `<option value="${esc(b.column)}" selected>${esc(b.column)} (other form)</option>`) +
+    cols.filter(c => c.canonical_tag !== "submission_timestamp").map(c => `<option value="${esc(c.name)}" ${c.name === b.column ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+  const isText = ["headline", "byline", "meta", "text", "label", "badge", "link"].includes(b.type);
+
+  let typeOpts = "";
+  if (b.type === "image") typeOpts = `
+    <div class="field"><label>Caption</label>${seg([["on", "Show"], ["off", "Hide"]], st.showCaption === false ? "off" : "on", "setCaption")}</div>
+    <div class="field"><label>Arrange photo with text</label>
+      <div class="arrange">
+        <button onclick="arrangeImage('top')" title="Photo on top, text below"><span class="ar ar-top"></span>Top</button>
+        <button onclick="arrangeImage('left')" title="Photo left, text wraps on the right"><span class="ar ar-left"></span>Left</button>
+        <button onclick="arrangeImage('right')" title="Photo right, text wraps on the left"><span class="ar ar-right"></span>Right</button>
+      </div></div>`;
+  if (b.type === "badge") typeOpts = `<div class="field"><label>Colour</label>${seg([["navy", "Navy"], ["amber", "Amber"], ["slate", "Slate"], ["green", "Green"]], st.badgeColor || "navy", "setBadge")}</div>`;
+  if (b.type === "link") typeOpts = `
     <div class="field"><label>Button text</label><input class="input" value="${esc(b.linkText || "")}" oninput="setLinkText(this.value)"></div>
-    <div class="field"><label>Style</label>${segHtml("buttonStyle", st.buttonStyle, [["solid", "Solid"], ["accent", "Accent"], ["outline", "Outline"]])}</div>`;
+    <div class="field"><label>Style</label>${seg([["solid", "Solid"], ["accent", "Accent"], ["outline", "Outline"]], st.buttonStyle || "solid", "setButton")}</div>`;
+  if (b.type === "label") typeOpts = `<div class="field"><label>Text</label><input class="input" value="${esc(b.text || "")}" oninput="setLabelText(this.value)"></div>`;
 
   el.innerHTML = `
-    <div class="insp-head"><h3>${esc(BLOCK_TYPES[b.type]?.label || b.type)}</h3></div>
-    ${b.type === "divider" ? `<p class="insp-empty">A thin line between parts of the article.</p>` : `
-      <div class="field"><label>Shows</label>
-        <select class="input" onchange="setBlockTag(this.value)">${fieldOptionsHtml(b.tag)}</select>
-      </div>`}
-    ${opts}`;
+    <div class="insp-head"><h3>${esc(t.label)}</h3>
+      <span><button class="icon-x" title="Duplicate (Ctrl+D)" onclick="duplicateBlock()">⧉</button><button class="icon-x" title="Delete" onclick="deleteBlock()">×</button></span></div>
+
+    ${["divider", "label"].includes(b.type) ? "" : `
+    <div class="field"><label>Linked form column</label>
+      <select class="input" onchange="setColumn(this.value)">${colOpts}</select>
+      <p class="hint" style="margin:4px 0 0">${b.column ? `Fills with the answer to this question${b.tag ? ` (${esc(tagLabel(b.tag))})` : ""}. Other forms use the matching field.` : "Pick the question this element should show."}</p>
+    </div>`}
+    ${typeOpts}
+
+    <div class="field"><label>Align on page</label>
+      <div class="seg">
+        <button onclick="alignOnPage('left')">Left</button><button onclick="alignOnPage('center')">Centre</button>
+        <button onclick="alignOnPage('right')">Right</button><button onclick="alignOnPage('full')">Full width</button>
+      </div></div>
+    ${b.type === "divider" ? "" : `
+    <div class="field"><label>Text alignment</label>${seg([["left", "Left"], ["center", "Centre"], ["right", "Right"], ["justify", "Justify"]], st.textAlign || "left", "setAlign")}</div>
+    <div class="field"><label>Vertical position</label>${seg([["top", "Top"], ["middle", "Middle"], ["bottom", "Bottom"]], st.vAlign || "top", "setVAlign")}</div>`}
+
+    ${isText ? `
+    <div class="field two">
+      <div><label>Font size</label><input class="input" type="number" min="8" max="72" placeholder="auto" value="${parseInt(st.fontSize) || ""}" onchange="setStyle('fontSize', this.value ? this.value + 'px' : '')"></div>
+      <div><label>Colour</label><input class="input color" type="color" value="${/^#[0-9a-f]{6}$/i.test(st.textColor || "") ? st.textColor : "#1f4e78"}" onchange="setStyle('textColor', this.value)"></div>
+    </div>
+    <div class="field"><label>Weight</label>${seg([["", "Auto"], ["400", "Regular"], ["700", "Bold"]], st.fontWeight || "", "setWeight")}</div>` : ""}
+
+    <div class="field"><label>Position &amp; size <span class="muted">(grid cells)</span></label>
+      <div class="num4">
+        ${[["x", "Col", b.x], ["y", "Row", b.y], ["w", "Wide", b.w], ["h", "High", b.h]].map(([k, l, v]) =>
+          `<label>${l}<input class="input" type="number" min="1" value="${v}" onchange="setNum('${k}', this.value)"></label>`).join("")}
+      </div>
+      ${["headline", "byline", "meta", "text", "label"].includes(b.type) ? `<button class="btn sm" style="margin-top:8px" onclick="fitHeight()">Fit height to text</button>` : ""}
+    </div>`;
 }
+const setCaption = v => setStyle("showCaption", v === "on");
+const setBadge = v => setStyle("badgeColor", v);
+const setButton = v => setStyle("buttonStyle", v);
+const setAlign = v => setStyle("textAlign", v);
+const setVAlign = v => setStyle("vAlign", v);
+const setWeight = v => setStyle("fontWeight", v);
 
 // ---- save
 async function saveLayout() {

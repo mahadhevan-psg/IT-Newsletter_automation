@@ -75,7 +75,7 @@ class TestMagazineGeneration(unittest.TestCase):
         
         # Verify DOCX structure
         doc = Document(result_path)
-        text = "\n".join(p.text for p in doc.paragraphs)
+        text = "\n".join([p.text for p in doc.paragraphs] + [c.text for t in doc.tables for r in t.rows for c in r.cells])
         self.assertIn("STUDENT ACHIEVEMENTS", text)
         for e in entries:
             self.assertIn(e["title"], text)

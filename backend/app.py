@@ -77,6 +77,17 @@ def get_canonical_tags():
 def list_forms():
     return config_service.get_all_forms()
 
+class ScriptPayload(BaseModel):
+    script: str
+
+@app.post("/api/forms/parse-script")
+def parse_form_script_endpoint(payload: ScriptPayload):
+    """Read a Google Apps Script that creates forms and return the questions it contains (nothing is saved)."""
+    forms = config_service.analyze_script(payload.script)
+    if not forms:
+        raise HTTPException(status_code=400, detail="No form questions found. Paste the Apps Script that calls FormApp.create(...).")
+    return forms
+
 @app.get("/api/forms/{form_id}")
 def get_form_details(form_id: str):
     form = config_service.get_form(form_id)

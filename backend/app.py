@@ -20,6 +20,8 @@ from backend.services.config_service import ConfigService, BUILTIN_LAYOUTS
 from backend.services.front_matter_service import FrontMatterService, UPLOAD_DIR
 from backend.services.master_sync import MasterSync
 from backend.master.api import router as master_router
+from backend.demo import mode as demo_mode
+from backend.demo.api import router as demo_router
 from database.master_db import init_master_db
 
 app = FastAPI(
@@ -48,9 +50,14 @@ master_sync = MasterSync(normalizer=ingestion_service.normalizer)
 @app.on_event("startup")
 def startup_event():
     init_db()
-    init_master_db()
+    if demo_mode.enabled():
+        from backend.demo import seed as demo_seed      # DEMO_MODE=true: build the sample department, then reset it on a timer
+        demo_seed.start()
+    else:
+        init_master_db()
 
 app.include_router(master_router)
+app.include_router(demo_router)
 
 
 @app.get("/healthz", include_in_schema=False)
@@ -70,7 +77,7 @@ def healthz():
 # --- The newsletter API is for the Admin and the HoD ---
 # Everything under /api/ that is not the portal, the diary or the sign-in has its own rules elsewhere; the rest (entries,
 # forms, layouts, front pages, generated documents) needs a signed-in Admin or HoD. Uploaded photos stay readable so <img> tags work.
-_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/")
+_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/")
 
 
 def _newsletter_denied(authorization):

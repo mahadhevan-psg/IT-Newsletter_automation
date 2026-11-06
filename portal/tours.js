@@ -4,7 +4,8 @@
 (function () {
   'use strict';
   const { esc, waitFor } = TourUtil;
-  const firstName = n => String(n || '').replace(/^(Dr|Prof|Mr|Mrs|Ms)\.?\s+/i, '').split(/\s+/)[0] || 'there';
+  // 'Dr. S. Venkatesan' -> 'Venkatesan' (skip the title and initials); 'Kavin M' -> 'Kavin'
+  const firstName = n => { const t = String(n || '').replace(/^(Dr|Prof|Mr|Mrs|Ms)\.?\s+/i, '').split(/\s+/).filter(Boolean); return t.find(w => !/^[A-Za-z]\.?$/.test(w)) || t[0] || 'there'; };
   const role = (name, text) => `<div class="tour-role"><b>${name}</b><span>${text}</span></div>`;
   const find = (selector, re) => () => [...document.querySelectorAll(selector)].find(e => re.test(e.textContent));
   const card = selector => () => document.querySelector(selector)?.closest('.card');

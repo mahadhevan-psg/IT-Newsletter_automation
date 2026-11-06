@@ -61,6 +61,8 @@ Add the two marked below yourself; the others are built into the image (or set b
 | `MASTER_SECRET` | Key that signs sign-in sessions. Changing it signs everybody out. |
 | `MASTER_DB_PATH`, `NEWSLETTER_DB_PATH`, `DATA_DIR` | Where the data lives. Leave as they are. |
 | `PORT` | Set by Render. |
+| `DEMO_MODE` | **Only for the separate demo service** (see below). Never set it on the real service. |
+| `DEMO_RESET_HOURS` | Demo service only: how often the sample data is rebuilt (default 12). |
 
 ## Updating
 Push to the connected branch: Render rebuilds and redeploys. The data on the disk is untouched. Studio settings in `/data/config/` are kept as you edited them; to go back to the shipped defaults, delete that one file in the Render **Shell** and restart.
@@ -79,3 +81,38 @@ Open <http://localhost:10000>. `-v it-data:/data` is the persistent disk; leave 
 - **Forgot the only admin password?** Open the service's **Shell** tab and run
   `python -c "from database.master_db import db; from backend.master.auth import hash_password as h; c=db().__enter__(); c.execute(\"UPDATE users SET password_hash=?, must_change=1 WHERE user_id='ADMIN'\", (h('NewTemp-Pass-1'),)); c.commit()"`
   then sign in with `NewTemp-Pass-1` and change it.
+
+## The demo site (a second Render service)
+
+Demo mode runs the **same image** with sample data already in it, so you can show the system without touching real records.
+It is a **separate Web Service**, never the real one.
+
+### Create it
+Render dashboard -> **New +** -> **Web Service** -> the **same repository** -> **Language: Docker**, then:
+
+| Field | Value |
+|---|---|
+| Name | e.g. `it-department-demo` |
+| Instance Type | **Free** (no disk is needed) |
+| Environment Variables | `DEMO_MODE` = `true`   and   `MASTER_SECRET` = any long random text |
+| Health Check Path (Advanced) | `/healthz` |
+| Disks | **none** |
+
+Click **Create Web Service**. (With Blueprints available you could use [render.demo.yaml](render.demo.yaml) instead.)
+
+### What visitors see
+- The sign-in page shows **"Try the demo"**: one click signs in as the Admin, the Head of Department, a Programme Coordinator, a Class tutor, a Faculty member or a Student (all use the password `Demo@1234`, which the page shows).
+- Every page carries a yellow **DEMO** strip saying the data is invented.
+- The guided tour starts for every visitor, because the demo never records a tour as "seen".
+- About 320 students, 16 faculty, 330 form submissions (papers, patents, awards, events, MoUs, hackathons ...), 90 placement offers over three years with interview and internship stories, and a newsletter with approved entries and front pages.
+- Passwords cannot be changed or reset in the demo, so shared logins cannot be broken.
+
+### How it keeps itself clean
+- The sample data is rebuilt every time the service starts, and again every `DEMO_RESET_HOURS` (default 12).
+- A **"Reset the demo data"** button on the sign-in page does it on demand (limited to once every 5 minutes).
+- A free service sleeps after ~15 minutes without visitors; the next visit wakes it and rebuilds the data, which takes about a minute.
+
+### Safety
+- Demo mode **refuses to start on a database that holds real data**: it wipes only a database that is empty or that it created itself, otherwise the service stops with an error. So pointing it at the real disk by mistake cannot erase anything.
+- Everything in it is invented, including names and numbers; no real person or company result is described.
+- Keep the real service and the demo as two services with their own addresses.

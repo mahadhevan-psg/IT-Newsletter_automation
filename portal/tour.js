@@ -154,7 +154,10 @@
       const sections = () => (o.sections ? o.sections() : []);
       const tag = (steps, label) => steps.map(s => ({ section: label, ...s }));
       const fullSteps = () => [...(o.welcome ? o.welcome() : []), ...sections().flatMap(s => tag(s.steps(), s.label))];
+      const flag = 'tour-seen:' + o.app + ':' + (o.me ? o.me.id : '');
+      const seenHere = () => { try { return sessionStorage.getItem(flag) === '1'; } catch (e) { return false; } };
       const markSeen = async () => {
+        try { sessionStorage.setItem(flag, '1'); } catch (e) { /* private mode */ }     // so a page reload does not restart it, even where the server does not remember (the demo)
         if (o.me && (o.me.tours_seen || []).includes(o.app)) return;
         try {
           const r = await fetch('/api/auth/tour-seen', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + o.token }, body: JSON.stringify({ tour: o.app }) });
@@ -190,7 +193,7 @@
         const s = sections().find(x => x.id === b.dataset.s);
         if (s) launch(tag(s.steps(), s.label), false);
       });
-      return { startFull, markSeen, autoStart() { if (o.me && !(o.me.tours_seen || []).includes(o.app)) setTimeout(() => !Tour.active() && startFull(true), 700); } };
+      return { startFull, markSeen, autoStart() { if (o.me && !(o.me.tours_seen || []).includes(o.app) && !seenHere()) setTimeout(() => !Tour.active() && startFull(true), 700); } };
     },
   };
   window.TourKit = TourKit;

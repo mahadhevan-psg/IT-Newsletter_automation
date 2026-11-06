@@ -1,0 +1,17 @@
+# OPTIONAL Blueprint for the public DEMO site (sample data only). The same image as the real service, with DEMO_MODE on.
+# Without Blueprints: create a second Web Service from the same repository and add the environment variables below (see DEPLOY.md).
+# The demo needs NO disk and the free instance type is enough: its sample data is rebuilt at every start.
+services:
+  - type: web
+    name: it-department-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: DEMO_RESET_HOURS
+        value: "12"
+      - key: MASTER_SECRET
+        generateValue: true

@@ -88,3 +88,17 @@ def test_deployment_files_exist_and_agree():
     assert "/data/master_system.db" in docker and "/data/newsletter_system.db" in docker
     assert "**/*.db" in ignore and "output/" in ignore and "venv/" in ignore                                  # no local data or secrets in the image
     assert "pytest" not in read("requirements.txt") and "pytest" in read("requirements-dev.txt")
+
+
+def test_demo_service_files_are_safe_and_complete():
+    """The demo service is the same image with DEMO_MODE on: no disk, free plan, and it must not be defined inside the real service."""
+    root = os.path.join(os.path.dirname(__file__), "..")
+    read = lambda n: open(os.path.join(root, n), encoding="utf-8").read()
+    demo, real = read("render.demo.yaml"), read("render.yaml")
+    assert 'key: DEMO_MODE' in demo and 'value: "true"' in demo and "plan: free" in demo and "disk:" not in demo and "/healthz" in demo
+    assert "DEMO_MODE" not in real                                                         # the real service can never be a demo by accident
+    assert "config.default" in read("Dockerfile") and "DEMO" in read("docker-entrypoint.sh")
+    html = client.get("/").text
+    assert "demo-box" in html and "/api/demo/info" in html and "/portal/demo.js" in html
+    for page in ("/homepage/", "/portal/", "/diary/", "/newsletter/"):
+        assert "/portal/demo.js" in client.get(page).text, page

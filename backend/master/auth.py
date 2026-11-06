@@ -11,6 +11,7 @@ from typing import Optional, Set
 
 from fastapi import Depends, Header, HTTPException
 
+from backend.demo.mode import enabled as demo_enabled
 from database.master_db import db, HERE
 
 TOKEN_TTL = 8 * 3600
@@ -162,6 +163,8 @@ def mark_tour_seen(user: User, tour: str) -> Set[str]:
     """Called when someone finishes or skips a tour, so it is not pushed on them again (they can still replay it from Help)."""
     if tour not in TOURS:
         raise HTTPException(400, "Unknown tour")
+    if demo_enabled():                      # shared demo logins: the next visitor should get the tour too
+        return set(user.tours_seen)
     with db() as conn:
         row = conn.execute("SELECT tours_seen FROM users WHERE user_id = ?", (user.id,)).fetchone()
         seen = _split(row[0] if row else "") | {tour}
@@ -170,6 +173,8 @@ def mark_tour_seen(user: User, tour: str) -> Set[str]:
 
 
 def change_password(user: User, old: str, new: str):
+    if demo_enabled():
+        raise HTTPException(403, "Passwords cannot be changed in the demo, so that everyone can keep signing in with the demo accounts.")
     if len(new or "") < 8:
         raise HTTPException(400, "New password must be at least 8 characters")
     with db() as conn:

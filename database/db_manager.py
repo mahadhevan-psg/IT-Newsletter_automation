@@ -11,6 +11,8 @@ SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.sql")
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    if os.environ.get("DEMO_MODE", "").strip().lower() in ("1", "true", "yes", "on"):
+        conn.execute("PRAGMA synchronous = OFF")        # the demo's data is throw-away: no need to flush the disk on every commit
     return conn
 
 def init_db():

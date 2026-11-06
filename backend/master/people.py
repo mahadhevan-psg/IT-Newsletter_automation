@@ -388,6 +388,9 @@ def set_roles(conn, admin: User, emp_id: str, roles: List[Dict[str, Any]]):
 
 
 def reset_password(conn, admin: User, emp_id: str) -> str:
+    from backend.demo.mode import enabled as demo_enabled
+    if demo_enabled():
+        raise HTTPException(403, "Passwords cannot be reset in the demo.")
     if not conn.execute("SELECT 1 FROM faculty WHERE emp_id = ?", (emp_id,)).fetchone():
         raise HTTPException(404, "Faculty not found")
     pw = _temp_password()

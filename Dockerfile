@@ -21,6 +21,9 @@ RUN pip install -r requirements.txt
 # the application (see .dockerignore for what is left out: databases, tests, generated files, local virtual environment)
 COPY . .
 
+# a pristine copy of the settings: the demo service puts these back when it resets (the normal service never touches it)
+RUN cp -r /app/config /app/config.default
+
 # Runs as an ordinary user. The entrypoint starts as root only to fix the ownership of the mounted data disk
 # (Render mounts it root-owned), then drops to this user before the server starts.
 RUN useradd --system --home-dir /app app \

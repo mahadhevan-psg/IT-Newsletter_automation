@@ -34,12 +34,31 @@
       </form>
       <div class="login-error" id="lg-err" role="alert"></div>
     </section>
+
+    <section class="login-panel demo-box" id="demo-box" hidden>
+      <h2>Try the demo</h2>
+      <p>This is a demo with invented data. Pick a role to sign in as them (all use the password <b id="demo-pw"></b>).</p>
+      <div id="demo-accounts"></div>
+      <button type="button" class="demo-reset" id="demo-reset">Reset the demo data</button>
+      <div class="login-error" id="demo-msg" role="status"></div>
+    </section>
   </main>
 
   <footer class="foot">
     <span>IT Chronicles · Department of Information Technology</span>
   </footer>
 
+  <style>
+    .demo-box { margin-top: 18px; border-top-color: #e0a800; text-align: left; }
+    .demo-box h2, .demo-box > p { text-align: center; }
+    #demo-accounts { display: flex; flex-direction: column; gap: 8px; }
+    #demo-accounts button { text-align: left; font: inherit; background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; }
+    #demo-accounts button:hover { border-color: var(--blue); background: var(--blue-soft); }
+    #demo-accounts b { display: block; color: var(--blue-dark); } #demo-accounts small { color: var(--muted); display: block; margin-top: 1px; }
+    #demo-accounts code { background: var(--blue-soft); border-radius: 4px; padding: 0 5px; font-size: 12px; margin-left: 6px; }
+    .demo-reset { margin-top: 12px; width: 100%; background: none !important; color: var(--muted) !important; border: 1px dashed var(--line) !important; font-weight: 500 !important; }
+    .demo-reset:hover { color: var(--blue-dark) !important; border-color: var(--blue) !important; }
+  </style>
   <script>
     // Faculty (and tutors, coordinators, HoD, Admin) -> /homepage/ ; students -> /diary/.
     const STAFF_HOME = '/homepage/', STUDENT_HOME = '/diary/';
@@ -57,6 +76,34 @@
         } catch (e) { }
         sessionStorage.removeItem(key);
       }
+    })();
+
+    // Demo site only: show the demo accounts (the endpoint answers {enabled:false} on a normal deployment).
+    (async () => {
+      try {
+        const d = await (await fetch('/api/demo/info')).json();
+        if (!d.enabled) return;
+        const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        document.getElementById('demo-pw').textContent = d.password;
+        document.getElementById('demo-accounts').innerHTML = d.accounts.map(a => `<button type="button" data-id="${esc(a.id)}"><b>${esc(a.role)}<code>${esc(a.id)}</code></b><small>${esc(a.about)}</small></button>`).join('');
+        document.getElementById('demo-box').hidden = false;
+        document.getElementById('demo-accounts').addEventListener('click', e => {
+          const b = e.target.closest('button[data-id]'); if (!b) return;
+          document.getElementById('lg-id').value = b.dataset.id; document.getElementById('lg-pw').value = d.password;
+          document.getElementById('login-form').requestSubmit();
+        });
+        document.getElementById('demo-reset').addEventListener('click', async () => {
+          const msg = document.getElementById('demo-msg'), btn = document.getElementById('demo-reset');
+          if (!confirm('Put the demo back to its original sample data? Anything entered since will be removed.')) return;
+          btn.disabled = true; msg.style.color = ''; msg.textContent = 'Resetting... this takes a few seconds.';
+          try {
+            const r = await fetch('/api/demo/reset', { method: 'POST' }), j = await r.json().catch(() => ({}));
+            msg.textContent = r.ok ? 'Done: the demo data is fresh again.' : (j.detail || 'Could not reset the demo');
+            msg.style.color = r.ok ? '#15803d' : '';
+          } catch (ex) { msg.textContent = 'Could not reach the server.'; }
+          btn.disabled = false;
+        });
+      } catch (e) { /* not a demo */ }
     })();
 
     document.getElementById('login-form').addEventListener('submit', async e => {
@@ -78,5 +125,6 @@
       }
     });
   </script>
+  <script src="/portal/demo.js" defer></script>
 </body>
 </html>

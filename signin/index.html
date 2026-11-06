@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in · IT Chronicles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/homepage/home.css">
+</head>
+<body>
+  <header class="ribbon">
+    <div class="logos left">
+      <div class="logo-slot"><span>Logo 1</span><img src="/homepage/assets/logo-psg.jpg" alt="PSG College of Technology" onerror="this.remove()"></div>
+      <div class="logo-slot"><span>Logo 2</span><img src="/homepage/assets/logo-75years.png" alt="75 years of academic excellence and innovation" onerror="this.remove()"></div>
+    </div>
+    <div class="ribbon-text">
+      <div class="college">PSG College of Technology</div>
+      <div class="dept">Department of Information Technology</div>
+    </div>
+    <div class="logos right">
+      <div class="logo-slot"><span>Logo 3</span><img src="/homepage/assets/logo-ita.jpg" alt="Department of Information Technology" onerror="this.remove()"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="login-panel" id="login">
+      <h2>Sign in</h2>
+      <p>One login for everyone. Faculty go to the forms page and the staff portal, students to the Placements Diary.</p>
+      <form id="login-form" autocomplete="on">
+        <input id="lg-id" name="username" placeholder="Employee ID or Roll number" autocomplete="username" required autofocus>
+        <input id="lg-pw" name="password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" id="lg-go">Sign in</button>
+      </form>
+      <div class="login-error" id="lg-err" role="alert"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>IT Chronicles · Department of Information Technology</span>
+  </footer>
+
+  <script>
+    // Faculty (and tutors, coordinators, HoD, Admin) -> /homepage/ ; students -> /diary/.
+    const STAFF_HOME = '/homepage/', STUDENT_HOME = '/diary/';
+    const ownPage = n => /^\/(newsletter|portal|homepage|diary)\//.test(n || '') ? n : null;    // only our own applications, never an outside address
+    const next = ownPage(new URLSearchParams(location.search).get('next'));
+
+    // Already signed in on this browser tab? Skip the form (checked with the server, so a stale session cannot loop).
+    (async () => {
+      for (const [key, home] of [['tok', STAFF_HOME], ['dtok', STUDENT_HOME]]) {
+        const t = sessionStorage.getItem(key);
+        if (!t) continue;
+        try {
+          const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + t } });
+          if (r.ok) { location.replace(key === 'tok' ? (next || home) : home); return; }
+        } catch (e) { }
+        sessionStorage.removeItem(key);
+      }
+    })();
+
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const err = document.getElementById('lg-err'), btn = document.getElementById('lg-go');
+      err.textContent = ''; btn.disabled = true;
+      try {
+        const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: document.getElementById('lg-id').value, password: document.getElementById('lg-pw').value }) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || 'Could not sign in');
+        const staff = data.user.kind === 'STAFF';
+        sessionStorage.removeItem(staff ? 'dtok' : 'tok');                  // never keep two different people's sessions in one tab
+        sessionStorage.setItem(staff ? 'tok' : 'dtok', data.token);
+        location.href = staff ? (next || STAFF_HOME) : STUDENT_HOME;
+      } catch (ex) {
+        err.textContent = ex.message;
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -177,8 +177,7 @@ textarea.input { resize: vertical; }
 .sample-fields .input { padding: 5px 8px; font-size: 12px; }
 
 /* rendered newsletter elements */
-.nl-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 3px 12px; border-radius: 99px; color: #fff; }
-.nl-badge.navy { background: #1f4e78; } .nl-badge.amber { background: #c65911; } .nl-badge.slate { background: #5a6b7c; } .nl-badge.green { background: #15803d; }
+.nl-badge { display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #000; }
 .nl-h { font-size: 23px; line-height: 1.25; font-weight: 800; color: #1f4e78; }
 .nl-by { font-size: 14px; font-weight: 600; color: #475569; }
 .nl-meta { font-size: 13px; color: #64748b; }
@@ -186,8 +185,7 @@ textarea.input { resize: vertical; }
 .nl-img img { width: 100%; display: block; object-fit: cover; height: auto; }
 .nl-cap { font-size: 12px; font-style: italic; color: #64748b; padding: 5px 9px; background: #f8fafc; }
 .nl-p { font-size: 14px; line-height: 1.65; color: #334155; }
-.nl-btn { display: inline-block; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; }
-.nl-btn.solid { background: #1f4e78; color: #fff; } .nl-btn.accent { background: #c65911; color: #fff; } .nl-btn.outline { border: 2px solid #1f4e78; color: #1f4e78; }
+.nl-link { display: inline-block; font-size: 12px; color: #000; text-decoration: underline; }
 .nl-stat { display: flex; align-items: center; gap: 14px; border-left: 4px solid #c65911; background: #f8fafc; padding: 11px 16px; border-radius: 6px; }
 .nl-stat b { font-size: 24px; font-weight: 800; color: #c65911; }
 .nl-stat span { font-size: 13px; font-weight: 600; color: #475569; }
@@ -310,3 +308,73 @@ textarea.input { resize: vertical; }
 .ar-right::before { right: 3px; top: 3px; bottom: 3px; width: 12px; } .ar-right::after { left: 3px; right: 19px; top: 3px; bottom: 3px; background: #9db8d0; }
 .grid .gb-in { max-height: 100%; overflow: hidden; }
 .grid.edit .gb { overflow: visible; }
+
+/* ---------- Front pages ---------- */
+.front-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.front-hod { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+.front-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.front-cols h4 { margin-bottom: 8px; }
+.front-students { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 8px; }
+.front-person { min-width: 0; }
+.front-students .front-person { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.photo-field { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.photo-thumb { width: 64px; height: 80px; border-radius: 6px; border: 1px dashed var(--line-strong); background: var(--bg); display: grid; place-items: center; overflow: hidden; flex: none; font-size: 11px; color: var(--muted); }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.check-row { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 10px 0 14px; }
+
+/* ---------- Fixed layouts (read-only previews in the Layout tab) ---------- */
+.fixed-mode .palette, .fixed-mode #inspector-element, .fixed-mode #lay-name, .fixed-mode .layout-bar .btn, .fixed-mode .layout-bar .switch { display: none; }
+.fixed-preview { font-family: 'Arial Narrow', Arial, sans-serif; font-stretch: condensed; font-size: 12px; color: #000; line-height: 1.45; }
+.fixed-preview .fp-h { font-size: 14px; font-weight: 700; margin: 4px 0; text-transform: none; letter-spacing: 0; color: #000; }
+.fixed-preview .fp-sub { font-weight: 700; }
+.fixed-preview .fp-badge { font-weight: 700; text-transform: uppercase; }
+.fixed-preview .fp-entry { text-align: left; }
+.fixed-preview .fp-alt p { text-align: left; }          /* beside a photo the text is ragged-right; in the centred layout it is justified */
+.fixed-preview p { margin: 4px 0; text-align: justify; }
+.fixed-preview .fp-link { text-decoration: underline; color: #000; }
+.fixed-preview .fp-img img { width: 100%; display: block; }
+.fixed-preview .fp-img.left { float: left; width: 38%; margin: 0 14px 6px 0; }
+.fixed-preview .fp-img.right { float: right; width: 38%; margin: 0 0 6px 14px; }
+.fixed-preview .fp-img.center { width: 70%; margin: 0 auto 8px; }
+.fixed-preview .fp-cap { font-size: 11px; text-align: center; }
+.fixed-preview .fp-clear { clear: both; }
+.fixed-preview hr { border: 0; border-top: 1px solid #000; margin: 14px 0; }
+.fixed-preview .fp-note { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--muted); background: var(--bg); padding: 3px 8px; border-radius: 4px; margin: 10px 0 8px; clear: both; }
+
+/* The fixed layouts have no palette or inspector: use the freed width, and keep the page black and white */
+.fixed-mode .designer { grid-template-columns: minmax(0, 1fr) 290px; }
+.fixed-mode .paper { border-top-color: #000; }
+.fixed-mode .paper-head { color: #000; border-bottom-color: #000; }
+.fixed-preview .fp-note, .fixed-preview .hint { color: #000; }
+.fixed-preview .fp-note { background: none; border: 1px dashed #000; }
+
+/* ---------- Front pages preview ---------- */
+.paper.no-head .paper-head { display: none; }
+.fixed-preview .fp-nameplate { text-align: center; border-top: 5px solid #000; border-bottom: 1.5px solid #000; padding: 10px 0 12px; margin-bottom: 14px; }
+.fixed-preview .np-title { font-size: 16px; font-weight: 700; letter-spacing: .4em; padding-bottom: 3px; }
+.fixed-preview .fp-bar, .fixed-preview .fp-band { font-size: 16px; font-weight: 700; letter-spacing: .2em; margin: 6px 0 10px; color: #000; text-transform: uppercase; }
+.fixed-preview .fp-bar { border-left: 5px solid #000; padding-left: 10px; }
+.fixed-preview .fp-band { text-align: center; border-top: 4px solid #000; border-bottom: 1px solid #000; padding: 6px 0; margin-bottom: 16px; }
+.fixed-preview .fp-frame { border: 1px solid #000; display: block; }
+.fixed-preview .fp-frame.right { float: right; width: 32%; margin: 0 0 8px 14px; }
+.fixed-preview .fp-sign { text-align: right; margin: 10px 0 0 auto; width: 40%; border-top: 1px solid #000; padding-top: 4px; }
+.fixed-preview .fp-panels { display: flex; gap: 16px; margin-top: 16px; }
+.fixed-preview .fp-panel { flex: 1; background: #f2f2f2; padding: 10px 12px; }
+.fixed-preview .fp-panel h5 { font-size: 12px; font-weight: 700; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px; color: #000; text-transform: none; letter-spacing: 0; }
+.fixed-preview .fp-panel ul { margin-left: 18px; }
+.fixed-preview .fp-adv { display: flex; justify-content: center; margin-bottom: 18px; }
+.fixed-preview .fp-person { text-align: center; }
+.fixed-preview .fp-person .fp-frame { margin: 0 auto 4px; }
+.fixed-preview .fp-person .fp-cap { font-size: 9px; color: #595959; }
+.fixed-preview .fp-name { font-weight: 700; }
+.fixed-preview .fp-rule { font-size: 12px; font-weight: 700; text-align: center; border-bottom: 1px solid #000; margin: 6px 18% 14px; padding-bottom: 3px; color: #000; text-transform: none; letter-spacing: 0; }
+.fixed-preview .fp-students { display: flex; justify-content: space-around; align-items: flex-end; gap: 10px; }
+.fixed-preview .fp-cap { color: #595959; font-size: 9px; }
+
+/* ---------- Cover page and HOD's Desk preview ---------- */
+.fixed-preview .fp-cover { margin-top: 4px; }
+.fixed-preview .fp-hodrow { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 8px; }
+.fixed-preview .fp-hodleft { flex: none; }
+.fixed-preview .fp-hodmsg { flex: 1; min-width: 0; }
+.fixed-preview .fp-hodmsg p { margin-top: 0; }

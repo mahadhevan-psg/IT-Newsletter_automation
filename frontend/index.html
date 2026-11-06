@@ -6,7 +6,7 @@
   <title>IT Chronicles · Newsletter Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header class="topbar">
@@ -14,6 +14,7 @@
     <nav class="tabs" id="main-tabs">
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="forms">Forms</button>
+      <button class="tab" data-tab="front">Front pages</button>
       <button class="tab" data-tab="layout">Layout</button>
       <button class="tab" data-tab="responses">Responses</button>
       <button class="tab" data-tab="publish">Publish</button>
@@ -54,6 +55,15 @@
       </div>
     </section>
 
+    <!-- ============ Front pages: HOD's Desk, vision / mission, editorial board ============ -->
+    <section id="tab-front" class="view">
+      <div class="front-bar">
+        <div><h3>Front pages</h3><p class="hint" style="margin:2px 0 0">These come before the sections in the master document. Anything left empty is left out, with no gap.</p></div>
+        <button class="btn primary" onclick="saveFront()">Save front pages</button>
+      </div>
+      <div id="front-form"></div>
+    </section>
+
     <!-- ============ Layout (canvas) ============ -->
     <section id="tab-layout" class="view">
       <div class="layout-bar">
@@ -78,6 +88,7 @@
           <div class="paper" id="paper">
             <div class="paper-head"><span id="paper-title">IT CHRONICLES</span><span id="paper-vol">VOL. 1 · ISSUE 1</span></div>
             <div id="grid" class="grid edit"></div>
+            <div id="fixed-preview" class="fixed-preview hidden"></div>
           </div>
         </div>
 
@@ -98,8 +109,9 @@
         <div class="pills" id="status-pills"></div>
         <span class="spacer"></span>
         <select id="filter-section" class="input compact" onchange="renderResponses()"></select>
-        <button class="btn" onclick="openAddResponses('csv')">Import CSV</button>
-        <button class="btn primary" onclick="openAddResponses('single')">+ Add response</button>
+        <button class="btn primary" id="btn-sync" onclick="syncMaster(this)" title="Bring in every submission from the master database that is not in the newsletter yet">Sync from master database</button>
+        <button class="btn ghost" onclick="openAddResponses('csv')">Import CSV</button>
+        <button class="btn ghost" onclick="openAddResponses('single')">+ Add manually</button>
       </div>
       <div id="responses-list" class="responses"></div>
     </section>
@@ -114,6 +126,7 @@
         <div class="card publish-side">
           <h3>Master newsletter</h3>
           <p class="muted">Combines every ticked section, with featured items first, into one Word document.</p>
+          <label class="check-row"><input type="checkbox" id="pub-front" checked> Include front pages (HOD's Desk, vision &amp; mission, editorial board)</label>
           <button class="btn primary large block" id="btn-master" onclick="buildMaster()">Build master document</button>
           <div id="master-result" class="result hidden"></div>
         </div>
@@ -183,7 +196,7 @@
     </div>
   </div>
 
-  <script src="sample_data.js"></script>
-  <script src="app.js"></script>
+  <script src="sample_data.js?v=4"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

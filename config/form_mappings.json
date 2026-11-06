@@ -17,21 +17,248 @@
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
-        "Submitter Full Name": "submitter_name",
         "Title of Publication / Patent / Project / Innovation": "title",
-        "Authors / Investigators / Team Members": "author_or_person",
+        "Authors / Investigators (one per line: ID - Name)": "author_or_person",
         "Venue / Journal / Publisher / Funding Agency / Organization": "organization_or_venue",
-        "Date of Publication / Award / Grant": "event_date",
-        "Impact Factor / Indexing (e.g., Scopus, Web of Science, IEEE, Q1/Q2)": "impact_or_indexing",
+        "Date of Publication / Filing / Award / Grant": "event_date",
+        "DOI / ISBN / ISSN / Patent Number / Grant Reference": "grant_or_prize_amount",
+        "Indexing": "impact_or_indexing",
+        "Abstract / Executive Summary": "description",
         "Key Impact Badge / Metric": "badge_tag",
-        "DOI / Patent Number / Grant Amount / URL Link": "grant_or_prize_amount",
-        "Abstract / Executive Summary / Highlights": "description",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
         "Photo Caption & Persons in Image": "photo_caption",
-        "Evidence / Certificate Link (Google Drive / Document URL)": "evidence_url",
-        "Is this a Landmark / Milestone Achievement?": "featured_flag"
+        "Official Evidence / Certificate / Supporting Document Link": "evidence_url"
       },
-      "column_metadata": {}
+      "column_metadata": {
+        "Timestamp": {
+          "canonical_tag": "submission_timestamp",
+          "type": "text",
+          "required": false,
+          "description": "Added by Google Forms"
+        },
+        "Email Address": {
+          "canonical_tag": "submitter_email",
+          "type": "text",
+          "required": false,
+          "description": "Collected by Google Forms"
+        },
+        "Submitting Faculty (select your name)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Research Subcategory": {
+          "canonical_tag": "category_id",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Title of Publication / Patent / Project / Innovation": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Current Status": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Authors / Investigators (one per line: ID - Name)": {
+          "canonical_tag": "author_or_person",
+          "type": "textarea",
+          "required": true,
+          "description": "In publication order, first = lead. Use the faculty Employee ID or student Roll No for people of this department, and EXT for outsiders, e.g.\nEMP012 - Dr. A. Kumar\n21IT001 - Asha K\nEXT - Dr. J. Smith - Anna University"
+        },
+        "Your Individual Contribution": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Collaborating Institutions / Organizations": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Venue / Journal / Publisher / Funding Agency / Organization": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Journal / Conference / Publisher / Funding Agency Website": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Date of Publication / Filing / Award / Grant": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": ""
+        },
+        "Project Start Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "DOI / ISBN / ISSN / Patent Number / Grant Reference": {
+          "canonical_tag": "grant_or_prize_amount",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Indexing": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Quartile": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Impact Factor (number, leave blank if none)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Conference Level": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Review Status": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Funding Status": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Funding Amount in Rupees (numbers only)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Research Problem / Motivation": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Abstract / Executive Summary": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": ""
+        },
+        "Methodology / Technical Approach": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Key Findings / Novelty / Original Contribution": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Impact, Application and Beneficiaries": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "IP Ownership / Licensing / Commercialization Status": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Dataset / Code / Supplementary Material Link": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Related Publications / Project References": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Key Impact Badge / Metric": {
+          "canonical_tag": "badge_tag",
+          "type": "text",
+          "required": false,
+          "description": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)"
+        },
+        "Photo Link (Google Drive / Cloud URL)": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": false,
+          "description": "High-resolution photo. Set sharing to 'Anyone with the link can view'."
+        },
+        "Photo Caption & Persons in Image": {
+          "canonical_tag": "photo_caption",
+          "type": "text",
+          "required": false,
+          "description": "Names of the people shown, left to right"
+        },
+        "Official Evidence / Certificate / Supporting Document Link": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Is this a Landmark / Milestone Achievement?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "Nominate for the Spotlight / Hero story card in the newsletter"
+        },
+        "Permission to Publish this Submission": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Accuracy and Authorization Confirmation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        }
+      },
+      "transforms": {
+        "Authors / Investigators (one per line: ID - Name)": "names_only"
+      },
+      "legacy_field_mappings": {
+        "Submitter Full Name": "submitter_name",
+        "Authors / Investigators / Team Members": "author_or_person",
+        "Date of Publication / Award / Grant": "event_date",
+        "Impact Factor / Indexing (e.g., Scopus, Web of Science, IEEE, Q1/Q2)": "impact_or_indexing",
+        "DOI / Patent Number / Grant Amount / URL Link": "grant_or_prize_amount",
+        "Abstract / Executive Summary / Highlights": "description",
+        "Evidence / Certificate Link (Google Drive / Document URL)": "evidence_url"
+      }
     },
     "form_faculty": {
       "form_name": "IT Chronicles - Faculty Achievements Submission Form",
@@ -48,17 +275,209 @@
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
+        "Faculty Full Name (select your name)": "author_or_person",
+        "Exact Title of Award / Certification / Lecture / Role": "title",
+        "Awarding Body / Host Institution / Organizing Organization": "organization_or_venue",
+        "Level": "impact_or_indexing",
+        "Date of Achievement / Start Date": "event_date",
+        "Description & Key Highlights": "description",
+        "Key Impact Badge / Metric": "badge_tag",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Official Evidence / Certificate / Supporting Document Link": "evidence_url"
+      },
+      "column_metadata": {
+        "Timestamp": {
+          "canonical_tag": "submission_timestamp",
+          "type": "text",
+          "required": false,
+          "description": "Added by Google Forms"
+        },
+        "Email Address": {
+          "canonical_tag": "submitter_email",
+          "type": "text",
+          "required": false,
+          "description": "Collected by Google Forms"
+        },
+        "Faculty Full Name (select your name)": {
+          "canonical_tag": "author_or_person",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Designation at the Time of Achievement": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Achievement Category": {
+          "canonical_tag": "category_id",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Exact Title of Award / Certification / Lecture / Role": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Type of Recognition or Engagement": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Awarding Body / Host Institution / Organizing Organization": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Level": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Date of Achievement / Start Date": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": ""
+        },
+        "End Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "City / Venue": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Credential / Certificate Number (if any)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Duration / Training Hours (number)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Role and Specific Contribution": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Selection Criteria / Eligibility / Competitiveness": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Description & Key Highlights": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": ""
+        },
+        "Outcome and Professional Impact": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Individual or Team Achievement": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Names, Affiliations and Roles of Other Contributors (NA if none)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Organizer Webpage (URL)": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Has this Achievement Been Reported Previously?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Additional Information for the Review Team": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Key Impact Badge / Metric": {
+          "canonical_tag": "badge_tag",
+          "type": "text",
+          "required": false,
+          "description": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)"
+        },
+        "Photo Link (Google Drive / Cloud URL)": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": false,
+          "description": "High-resolution photo. Set sharing to 'Anyone with the link can view'."
+        },
+        "Photo Caption & Persons in Image": {
+          "canonical_tag": "photo_caption",
+          "type": "text",
+          "required": false,
+          "description": "Names of the people shown, left to right"
+        },
+        "Official Evidence / Certificate / Supporting Document Link": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Is this a Landmark / Milestone Achievement?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "Nominate for the Spotlight / Hero story card in the newsletter"
+        },
+        "Permission to Publish this Submission": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Accuracy and Authorization Confirmation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        }
+      },
+      "transforms": {
+        "Faculty Full Name (select your name)": "names_only"
+      },
+      "legacy_field_mappings": {
         "Faculty Full Name": "author_or_person",
         "Title of Award / Certification / Keynote / Workshop": "title",
         "Organization / Host Institution / Awarding Body": "organization_or_venue",
         "Date of Event / Award / Completion": "event_date",
         "Level (International / National / State / University)": "impact_or_indexing",
-        "Key Impact Badge / Metric": "badge_tag",
-        "Description & Key Highlights": "description",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image": "photo_caption",
-        "Evidence / Certificate Link (Google Drive URL)": "evidence_url",
-        "Is this a Landmark / Milestone Achievement?": "featured_flag"
+        "Evidence / Certificate Link (Google Drive URL)": "evidence_url"
       }
     },
     "form_student": {
@@ -75,17 +494,223 @@
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
-        "Student Name(s)": "author_or_person",
+        "Participants (one roll number per line)": "author_or_person",
         "Name of Competition / Award / Project / Event": "title",
-        "Organizing Institute / Company / Body": "organization_or_venue",
-        "Position / Rank / Prize / CTC (e.g. 1st Place, Cash Prize of $1000)": "grant_or_prize_amount",
-        "Key Impact Badge / Metric": "badge_tag",
-        "Date of Event / Award": "event_date",
+        "Organizing Institute / Company / Awarding Body": "organization_or_venue",
+        "Position / Rank / Prize / Scholarship": "grant_or_prize_amount",
+        "Date of Achievement / Result": "event_date",
         "Project Abstract / Achievement Details": "description",
+        "Key Impact Badge / Metric": "badge_tag",
         "Photo Link (Google Drive / Cloud URL)": "photo_url",
         "Photo Caption & Persons in Image": "photo_caption",
-        "Certificate / Proof Link": "evidence_url",
-        "Is this a Landmark / Milestone Achievement?": "featured_flag"
+        "Certificate / Proof Link": "evidence_url"
+      },
+      "column_metadata": {
+        "Timestamp": {
+          "canonical_tag": "submission_timestamp",
+          "type": "text",
+          "required": false,
+          "description": "Added by Google Forms"
+        },
+        "Email Address": {
+          "canonical_tag": "submitter_email",
+          "type": "text",
+          "required": false,
+          "description": "Collected by Google Forms"
+        },
+        "Achievement or Participation": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "Choose 'Participation only' when the students took part (an event, workshop, competition, activity) without winning or ranking. List every participant's roll number below so it appears in their class record."
+        },
+        "Participants (one roll number per line)": {
+          "canonical_tag": "author_or_person",
+          "type": "textarea",
+          "required": true,
+          "description": "One student per line, roll number only, e.g.\n21IT001\n21IT014\nNames are filled in from the college records."
+        },
+        "Lead Student Roll Number": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Individual or Team Achievement": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Student Achievement Category": {
+          "canonical_tag": "category_id",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Name of Competition / Award / Project / Event": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Organizing Institute / Company / Awarding Body": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Achievement Level": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Position / Rank / Prize / Scholarship": {
+          "canonical_tag": "grant_or_prize_amount",
+          "type": "text",
+          "required": true,
+          "description": "e.g. 1st Prize, Runner-up, Scholarship. For participation only, type Participated."
+        },
+        "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Date of Achievement / Result": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": ""
+        },
+        "Event Start Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "Event End Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "Achievement Domain": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Faculty Mentor / Project Guide": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Project Statement / Objective": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Project Abstract / Achievement Details": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": ""
+        },
+        "Tools / Technologies / Methods Used": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Measurable Result or Impact": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Project Demo / Repository / Portfolio URL": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Learning Outcomes / Skills Demonstrated": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Has this Work Received Other Awards or Been Reported Previously?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Related Awards / Previous Submission Details (type NA if none)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Key Impact Badge / Metric": {
+          "canonical_tag": "badge_tag",
+          "type": "text",
+          "required": false,
+          "description": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)"
+        },
+        "Photo Link (Google Drive / Cloud URL)": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": false,
+          "description": "High-resolution photo. Set sharing to 'Anyone with the link can view'."
+        },
+        "Photo Caption & Persons in Image": {
+          "canonical_tag": "photo_caption",
+          "type": "text",
+          "required": false,
+          "description": "Names of the people shown, left to right"
+        },
+        "Certificate / Proof Link": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Is this a Landmark / Milestone Achievement?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "Nominate for the Spotlight / Hero story card in the newsletter"
+        },
+        "Permission to Publish this Submission": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Accuracy and Authorization Confirmation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        }
+      },
+      "transforms": {
+        "Participants (one roll number per line)": "names_only"
+      },
+      "legacy_field_mappings": {
+        "Student Name(s)": "author_or_person",
+        "Organizing Institute / Company / Body": "organization_or_venue",
+        "Position / Rank / Prize / CTC (e.g. 1st Place, Cash Prize of $1000)": "grant_or_prize_amount",
+        "Date of Event / Award": "event_date",
+        "Participants (one per line: ROLLNO - Student Name)": "author_or_person"
+      },
+      "legacy_transforms": {
+        "Participants (one per line: ROLLNO - Student Name)": "names_only"
       }
     },
     "form_industry": {
@@ -102,19 +727,253 @@
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
+        "Lead Coordinator": "author_or_person",
+        "Official Title of Event / Visit / MoU / Partnership": "title",
+        "Partner Company / Organization / Alumni Group": "organization_or_venue",
+        "Event / Execution Start Date": "event_date",
+        "Target Audience": "impact_or_indexing",
+        "Executive Summary and Outcomes": "description",
+        "Event Report / Brochure / Partner Announcement Link": "evidence_url",
+        "Key Impact Badge / Metric": "badge_tag",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Photo Caption & Persons in Image": "photo_caption"
+      },
+      "column_metadata": {
+        "Timestamp": {
+          "canonical_tag": "submission_timestamp",
+          "type": "text",
+          "required": false,
+          "description": "Added by Google Forms"
+        },
+        "Email Address": {
+          "canonical_tag": "submitter_email",
+          "type": "text",
+          "required": false,
+          "description": "Collected by Google Forms"
+        },
+        "Submitting Faculty (select your name)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Lead Coordinator": {
+          "canonical_tag": "author_or_person",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Other Faculty Involved (optional, one per line: EmployeeID - Name)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Outreach Category": {
+          "canonical_tag": "category_id",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Official Title of Event / Visit / MoU / Partnership": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Activity Format": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Participating Departments / Units": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Partner Company / Organization / Alumni Group": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Partner Type": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Event / Execution Start Date": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": ""
+        },
+        "End Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "Venue": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Target Audience": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Expected Participant Count (number)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Actual Attendance / Participation Count (number)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Student Participants (optional, one roll number per line)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "Roll numbers only. Lets each student's participation show in their class record."
+        },
+        "Objective and Institutional Need": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Executive Summary and Outcomes": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": ""
+        },
+        "Agenda / Key Activities": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Speakers / Mentors / Partner Representatives": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "MoU / Partnership Scope (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Agreement Effective Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "Agreement Expiry / Renewal Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "Outputs and Follow-up Commitments": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Measurable Outcomes": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Budget / Sponsorship / In-kind Support in Rupees (numbers only)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Feedback / Satisfaction Summary": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Event Report / Brochure / Partner Announcement Link": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Key Impact Badge / Metric": {
+          "canonical_tag": "badge_tag",
+          "type": "text",
+          "required": false,
+          "description": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)"
+        },
+        "Photo Link (Google Drive / Cloud URL)": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": false,
+          "description": "High-resolution photo. Set sharing to 'Anyone with the link can view'."
+        },
+        "Photo Caption & Persons in Image": {
+          "canonical_tag": "photo_caption",
+          "type": "text",
+          "required": false,
+          "description": "Names of the people shown, left to right"
+        },
+        "Official Evidence / Certificate / Supporting Document Link": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Is this a Landmark / Milestone Achievement?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "Nominate for the Spotlight / Hero story card in the newsletter"
+        },
+        "Permission to Publish this Submission": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Accuracy and Authorization Confirmation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        }
+      },
+      "transforms": {
+        "Lead Coordinator": "names_only"
+      },
+      "legacy_field_mappings": {
         "Coordinator / Faculty Name": "author_or_person",
         "Title of Event / Visit / MoU Partner": "title",
         "Company / Organization / Alumni Details": "organization_or_venue",
         "Date of Event / Execution": "event_date",
         "Target Audience & Number of Participants": "impact_or_indexing",
-        "Key Impact Badge / Metric": "badge_tag",
         "Executive Summary & Outcomes": "description",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image": "photo_caption",
-        "Event Report / Brochure Link": "evidence_url",
-        "Is this a Landmark / Milestone Achievement?": "featured_flag"
-      },
-      "active_layout": "tpl_1791824960853"
+        "Event Report / Brochure Link": "evidence_url"
+      }
     },
     "form_departmental": {
       "form_name": "IT Chronicles - Departmental Highlights Submission Form",
@@ -130,19 +989,245 @@
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
+        "Convener / Coordinator": "author_or_person",
+        "Official Title of Event / Upgrade / Milestone": "title",
+        "Start Date / Event Date": "event_date",
+        "Event Overview and Key Highlights": "description",
+        "Event Report / Brochure / Flyer Link": "evidence_url",
+        "Key Impact Badge / Metric": "badge_tag",
+        "Photo Link (Google Drive / Cloud URL)": "photo_url",
+        "Photo Caption & Persons in Image": "photo_caption"
+      },
+      "column_metadata": {
+        "Timestamp": {
+          "canonical_tag": "submission_timestamp",
+          "type": "text",
+          "required": false,
+          "description": "Added by Google Forms"
+        },
+        "Email Address": {
+          "canonical_tag": "submitter_email",
+          "type": "text",
+          "required": false,
+          "description": "Collected by Google Forms"
+        },
+        "Submitting Faculty (select your name)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Convener / Coordinator": {
+          "canonical_tag": "author_or_person",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Other Faculty Involved (optional, one per line: EmployeeID - Name)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Department Highlight Category": {
+          "canonical_tag": "category_id",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Official Title of Event / Upgrade / Milestone": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Highlight Type": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Department / Programme / Unit Involved": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Start Date / Event Date": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": ""
+        },
+        "End Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": ""
+        },
+        "Implementation Status": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": ""
+        },
+        "Venue / Campus / Facility": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Organizing / Funding / Partner Bodies": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Target Audience / Beneficiaries": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Total Participants / Direct Beneficiaries (number)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Event Overview and Key Highlights": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": ""
+        },
+        "Objectives and Rationale": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Key Outputs / Deliverables": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Measurable Impact / Success Indicators": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Infrastructure / Laboratory Upgrade Details": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Budget / Investment in Rupees (numbers only)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Funding Source": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Approvals / Compliance / Accreditation Linkage (NBA, NAAC, NIRF)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Challenges and Mitigation": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Sustainability / Maintenance / Continuation Plan": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Recognition / Ranking / External Validation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Related Initiatives / Previous Milestones": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": ""
+        },
+        "Event Report / Brochure / Flyer Link": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Key Impact Badge / Metric": {
+          "canonical_tag": "badge_tag",
+          "type": "text",
+          "required": false,
+          "description": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)"
+        },
+        "Photo Link (Google Drive / Cloud URL)": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": false,
+          "description": "High-resolution photo. Set sharing to 'Anyone with the link can view'."
+        },
+        "Photo Caption & Persons in Image": {
+          "canonical_tag": "photo_caption",
+          "type": "text",
+          "required": false,
+          "description": "Names of the people shown, left to right"
+        },
+        "Official Evidence / Certificate / Supporting Document Link": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": ""
+        },
+        "Is this a Landmark / Milestone Achievement?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "Nominate for the Spotlight / Hero story card in the newsletter"
+        },
+        "Permission to Publish this Submission": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Accuracy and Authorization Confirmation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        }
+      },
+      "transforms": {
+        "Convener / Coordinator": "names_only"
+      },
+      "legacy_field_mappings": {
         "Convener / Coordinator Name": "author_or_person",
         "Title of Event / Upgrade / Milestone": "title",
         "Coordinators / Department Leads": "author_or_person",
         "Dates & Duration": "event_date",
         "Total Participants Count": "grant_or_prize_amount",
-        "Key Impact Badge / Metric": "badge_tag",
         "Event Overview & Highlights": "description",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image": "photo_caption",
-        "Event Report / Flyer Link": "evidence_url",
-        "Is this a Landmark / Milestone Achievement?": "featured_flag"
-      },
-      "active_layout": "tpl_1791824953756"
+        "Event Report / Flyer Link": "evidence_url"
+      }
     }
   }
 }

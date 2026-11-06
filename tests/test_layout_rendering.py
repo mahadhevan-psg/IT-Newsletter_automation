@@ -65,15 +65,17 @@ class LayoutRenderingTest(unittest.TestCase):
     def test_style_from_layout_is_applied(self):
         layout = [block("headline", "title", 1, 1, 12, 2, style={"fontSize": "24px", "textColor": "#c65911", "textAlign": "center", "vAlign": "middle"})]
         p = self.render(layout).tables[0].cell(0, 0).paragraphs[0]
-        self.assertEqual(p.runs[0].font.size.pt, 18)
-        self.assertEqual(str(p.runs[0].font.color.rgb), "C65911")
+        self.assertEqual(p.runs[0].font.size.pt, 14)                    # fixed size for a main heading, whatever the layout says
+        self.assertEqual(str(p.runs[0].font.color.rgb), "000000")       # always black
         self.assertEqual(p.alignment, 1)
 
-    def test_button_is_a_real_hyperlink_with_layout_text(self):
-        layout = [block("link", "evidence_url", 1, 1, 6, 2, linkText="Read the paper", style={"buttonStyle": "accent"})]
+    def test_link_is_an_underlined_hyperlink_not_a_button(self):
+        layout = [block("link", "evidence_url", 1, 1, 6, 2)]
         xml = self.render(layout).element.xml
-        self.assertIn("Read the paper", xml)
         self.assertIn("<w:hyperlink", xml)
+        self.assertIn("https://example.org/paper", xml)
+        self.assertIn('<w:u w:val="single"/>', xml)
+        self.assertNotIn("w:shd", xml)
 
     def test_column_header_is_used_when_the_field_is_not_on_the_entry(self):
         layout = [block("text", "", 1, 1, 12, 2, column="Weird Question")]

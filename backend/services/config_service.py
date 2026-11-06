@@ -25,6 +25,15 @@ CANONICAL_FIELD_OPTIONS = [
     {"tag": "custom", "label": "Custom Field Tag", "type": "text", "description": "Any custom tag not in standard canonical registry"}
 ]
 
+# Fixed layouts that sit beside the editable canvas layouts; a section can be set to either kind
+BUILTIN_LAYOUTS = {
+    "builtin_centered": {"name": "Centered image", "mode": "centered",
+                         "description": "Image centred, the content below it."},
+    "builtin_alternating": {"name": "Alternating image", "mode": "alternating",
+                            "description": "Image left then right with the text wrapped around it; starts on the left in every section."},
+}
+
+
 class ConfigService:
     def __init__(self, normalizer=None):
         self.normalizer = normalizer
@@ -168,9 +177,9 @@ class ConfigService:
 
     def get_active_layout(self, section_id: str) -> Optional[Dict[str, Any]]:
         """Return {template_id, name, layout} for the layout assigned to a section, or None."""
-        tid = self._layout_map().get(section_id)
-        if not tid:
-            return None
+        tid = self._layout_map().get(section_id) or "builtin_centered"
+        if tid in BUILTIN_LAYOUTS:
+            return {"template_id": tid, "name": BUILTIN_LAYOUTS[tid]["name"], "layout": None, "mode": BUILTIN_LAYOUTS[tid]["mode"]}
         tpl = get_visual_template(tid)
         if tpl and tpl.get("layout"):
             return {"template_id": tid, "name": tpl["name"], "layout": tpl["layout"]}

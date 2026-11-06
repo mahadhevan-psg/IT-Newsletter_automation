@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from database.db_manager import get_issue, get_sections_and_categories, get_entries, save_generation_record
 from backend.services.docx_generator import DOCXGenerator, dedupe_entries
 from backend.services.config_service import ConfigService
+from backend.services.front_matter_service import FrontMatterService
 
 
 class NewsletterBuilder:
@@ -16,7 +17,8 @@ class NewsletterBuilder:
 
     def assemble_newsletter(self, issue_id: str, selected_section_ids: Optional[List[str]] = None,
                             selected_entry_ids: Optional[List[str]] = None,
-                            output_filename: Optional[str] = None) -> Dict[str, Any]:
+                            output_filename: Optional[str] = None,
+                            include_front_pages: bool = True) -> Dict[str, Any]:
         issue = get_issue(issue_id)
         if not issue:
             raise ValueError(f"Issue {issue_id} not found.")
@@ -26,7 +28,13 @@ class NewsletterBuilder:
             sections = [s for s in sections if s["section_id"] in selected_section_ids and s["enabled"]]
 
         doc = self.generator.new_document()
-        self.generator.add_cover(doc, issue)
+        if include_front_pages:
+            front = FrontMatterService().get()
+            front_pages = self.generator.add_front_page(doc, front, issue)      # cover + HOD's Desk + vision / mission
+            front_pages = self.generator.add_editorial_page(doc, front) or front_pages
+        else:
+            self.generator.add_cover(doc, issue)
+            front_pages = False
 
         assembled_entry_ids: List[str] = []
         layouts_used: Dict[str, Optional[str]] = {}
@@ -43,7 +51,7 @@ class NewsletterBuilder:
             layouts_used[sec["section_id"]] = active["name"] if active else None
             self.generator.add_section(doc, sec, sec.get("subcategories", []), entries,
                                        layout=active["layout"] if active else None, issue=issue,
-                                       page_break_before=included_sections > 0)
+                                       page_break_before=front_pages or included_sections > 0, mode=active.get("mode") if active else None)
             assembled_entry_ids.extend(e["entry_id"] for e in entries)
             included_sections += 1
 

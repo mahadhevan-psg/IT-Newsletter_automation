@@ -1,9 +1,9 @@
 import os
 import json
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -16,7 +16,11 @@ from backend.services.ingestion_service import IngestionService
 from backend.services.docx_generator import DOCXGenerator
 from backend.services.newsletter_builder import NewsletterBuilder
 from backend.services.template_engine import TemplateEngine
-from backend.services.config_service import ConfigService
+from backend.services.config_service import ConfigService, BUILTIN_LAYOUTS
+from backend.services.front_matter_service import FrontMatterService, UPLOAD_DIR
+from backend.services.master_sync import MasterSync
+from backend.master.api import router as master_router
+from database.master_db import init_master_db
 
 app = FastAPI(
     title="IT Chronicles - Newsletter Automation System API",
@@ -37,11 +41,53 @@ docx_generator = DOCXGenerator()
 newsletter_builder = NewsletterBuilder()
 template_engine = TemplateEngine()
 config_service = ConfigService(normalizer=ingestion_service.normalizer)
+front_matter_service = FrontMatterService()
+master_sync = MasterSync(normalizer=ingestion_service.normalizer)
 
-# Initialize Database on Startup
+# Initialize Databases on Startup
 @app.on_event("startup")
 def startup_event():
     init_db()
+    init_master_db()
+
+app.include_router(master_router)
+
+# --- The newsletter API is for the Admin and the HoD ---
+# Everything under /api/ that is not the portal, the diary or the sign-in has its own rules elsewhere; the rest (entries,
+# forms, layouts, front pages, generated documents) needs a signed-in Admin or HoD. Uploaded photos stay readable so <img> tags work.
+_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/")
+
+
+def _newsletter_denied(authorization):
+    """None when the caller may use the newsletter API, else (status, message)."""
+    from backend.master.auth import load_user, parse_token
+    from database.master_db import db
+    if not authorization or not authorization.startswith("Bearer "):
+        return 401, "Please sign in"
+    try:
+        data = parse_token(authorization[7:])
+    except HTTPException as e:
+        return e.status_code, e.detail
+    with db() as conn:
+        user = load_user(conn, data["sub"], data["typ"])
+    if not user or user.kind != "STAFF":
+        return 401, "Please sign in"
+    if not user.roles & {"ADMIN", "HOD"}:
+        return 403, "The newsletter studio is for the Admin and the HoD"
+    return None
+
+
+@app.middleware("http")
+async def newsletter_needs_login(request, call_next):
+    path = request.url.path
+    guarded = path.startswith("/api/") and not path.startswith(_OWN_AUTH) and request.method != "OPTIONS" \
+        and not (path.startswith("/api/uploads/") and request.method == "GET")
+    if guarded:
+        denied = _newsletter_denied(request.headers.get("authorization"))
+        if denied:
+            return JSONResponse({"detail": denied[1]}, status_code=denied[0])
+    return await call_next(request)
+
 
 # --- Issue Endpoints ---
 @app.get("/api/issues")
@@ -196,12 +242,40 @@ def get_section_layouts():
 class SectionLayoutPayload(BaseModel):
     template_id: Optional[str] = None   # null/empty = standard built-in style
 
+@app.get("/api/builtin-layouts")
+def list_builtin_layouts():
+    return [{"template_id": k, "name": v["name"], "description": v["description"]} for k, v in BUILTIN_LAYOUTS.items()]
+
 @app.put("/api/section-layouts/{section_id}")
 def set_section_layout(section_id: str, payload: SectionLayoutPayload):
-    if payload.template_id and not get_visual_template(payload.template_id):
+    if payload.template_id and payload.template_id not in BUILTIN_LAYOUTS and not get_visual_template(payload.template_id):
         raise HTTPException(status_code=404, detail="Layout not found")
     config_service.set_section_layout(section_id, payload.template_id)
     return {"success": True, "section_id": section_id, "template_id": payload.template_id}
+
+# --- Front pages: HOD's Desk, vision / mission, editorial board ---
+@app.get("/api/front-matter")
+def get_front_matter():
+    return front_matter_service.get()
+
+@app.put("/api/front-matter")
+def save_front_matter(payload: Dict[str, Any] = Body(...)):
+    return front_matter_service.save(payload)
+
+@app.post("/api/uploads")
+async def upload_photo(file: UploadFile = File(...)):
+    try:
+        path = front_matter_service.save_upload(file.filename, await file.read())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"path": path, "url": "/" + path.replace("output/uploads/", "api/uploads/")}
+
+@app.get("/api/uploads/{filename}")
+def get_uploaded_photo(filename: str):
+    path = os.path.join(UPLOAD_DIR, os.path.basename(filename))
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path)
 
 # --- Canonical Entries & Editorial Endpoints ---
 @app.get("/api/entries")
@@ -232,6 +306,16 @@ def update_status(entry_id: str, req: StatusUpdateRequest):
     if not success:
         raise HTTPException(status_code=404, detail="Entry not found or update failed")
     return {"success": True, "entry_id": entry_id, "new_status": req.approval_status}
+
+# --- Master database -> newsletter entries ---
+class MasterSyncRequest(BaseModel):
+    issue_id: str = "ISSUE_2026_V1I1"
+    ay_id: Optional[str] = None      # only submissions of this academic year ('2025-26'); default all
+
+@app.post("/api/entries/sync-master")
+def sync_from_master(req: MasterSyncRequest = Body(default_factory=MasterSyncRequest)):
+    """Pull form submissions that have not reached the newsletter yet out of the master database."""
+    return master_sync.sync(issue_id=req.issue_id, ay_id=req.ay_id)
 
 # --- Form Ingestion Endpoints ---
 class SubmissionPayload(BaseModel):
@@ -290,7 +374,8 @@ def generate_section_docx_endpoint(section_id: str, req: SectionGenRequest):
         approved_entries=approved,
         output_path=out_file,
         layout=active_layout["layout"] if active_layout else None,
-        issue=get_issue(req.issue_id)
+        issue=get_issue(req.issue_id),
+        mode=active_layout.get("mode") if active_layout else None
     )
 
     save_generation_record(
@@ -314,13 +399,15 @@ class MasterGenRequest(BaseModel):
     issue_id: str = "ISSUE_2026_V1I1"
     selected_section_ids: Optional[List[str]] = None
     selected_entry_ids: Optional[List[str]] = None
+    include_front_pages: bool = True
 
 @app.post("/api/generate/master")
 def generate_master_newsletter(req: MasterGenRequest):
     res = newsletter_builder.assemble_newsletter(
         issue_id=req.issue_id,
         selected_section_ids=req.selected_section_ids,
-        selected_entry_ids=req.selected_entry_ids
+        selected_entry_ids=req.selected_entry_ids,
+        include_front_pages=req.include_front_pages
     )
     res["filename"] = os.path.basename(res["master_docx_path"])
     return res
@@ -338,7 +425,18 @@ def download_generated_file(filename: str):
 def list_audit_logs():
     return get_audit_logs(limit=100)
 
-# Serve Frontend static assets
-frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
-if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+# The old sign-in address still works: /login/ -> / (keeping ?next=...)
+@app.get("/login", include_in_schema=False)
+@app.get("/login/", include_in_schema=False)
+def old_login_address(request: Request):
+    return RedirectResponse("/" + (f"?{request.url.query}" if request.url.query else ""))
+
+
+# One address per application. / is the sign-in page (the first thing anyone sees); after signing in, faculty go to
+# /homepage/ (the form links, then /portal/) and students to /diary/. /newsletter/ is the studio for Admin and HoD.
+# The sign-in page is mounted last because it matches everything else.
+_root = os.path.join(os.path.dirname(__file__), "..")
+for _url, _folder in (("/portal", "portal"), ("/diary", "diary"), ("/newsletter", "frontend"), ("/homepage", "homepage"), ("/", "signin")):
+    _dir = os.path.join(_root, _folder)
+    if os.path.exists(_dir):
+        app.mount(_url, StaticFiles(directory=_dir, html=True), name=_folder)

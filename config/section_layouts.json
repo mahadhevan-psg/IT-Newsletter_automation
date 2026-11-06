@@ -1,7 +1,7 @@
 {
-  "sec_research": "tpl_student_winner",
-  "sec_faculty": "tpl_faculty_milestone",
-  "sec_student": "tpl_student_winner",
-  "sec_industry": "tpl_1791824960853",
-  "sec_departmental": "tpl_1791825447469"
+  "sec_research": "builtin_centered",
+  "sec_faculty": "builtin_alternating",
+  "sec_student": "builtin_centered",
+  "sec_industry": "builtin_alternating",
+  "sec_departmental": "builtin_centered"
 }

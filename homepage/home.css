@@ -1,0 +1,91 @@
+:root {
+  --blue: #1f4e9c;
+  --blue-dark: #12336b;
+  --blue-soft: #e8effa;
+  --line: #d6e0f2;
+  --text: #14213d;
+  --muted: #5b6b86;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #fff; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ---------- Header ribbon: two logos left, one right, college and department in the middle ---------- */
+.ribbon { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; padding: 14px 32px; background: linear-gradient(90deg, var(--blue-dark), var(--blue)); color: #fff; box-shadow: 0 2px 10px rgba(18, 51, 107, .25); }
+.logos { display: flex; gap: 14px; align-items: center; }
+.logos.right { justify-content: flex-end; }
+.logo-slot { position: relative; width: 84px; height: 84px; border-radius: 10px; background: rgba(255, 255, 255, .12); display: grid; place-items: center; overflow: hidden; }
+.logo-slot span { font-size: 11px; color: rgba(255, 255, 255, .8); text-align: center; }
+.logo-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; padding: 3px; border-radius: 10px; }
+.ribbon-text { text-align: center; }
+.college { font-size: 26px; font-weight: 700; letter-spacing: .01em; }
+.dept { font-size: 17px; font-weight: 500; margin-top: 2px; color: #dbe6fb; }
+
+/* ---------- Body ---------- */
+.wrap { flex: 1; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 32px 56px; }
+h1 { text-align: center; font-size: 30px; font-weight: 700; color: var(--blue-dark); }
+h1::after { content: ""; display: block; width: 72px; height: 4px; border-radius: 2px; background: var(--blue); margin: 12px auto 0; }
+.lead { text-align: center; color: var(--muted); margin: 14px 0 36px; }
+
+.cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+.card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 22px 18px 18px; border: 1px solid var(--line); border-top: 4px solid var(--blue); border-radius: 12px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 2px 8px rgba(31, 78, 156, .07); transition: transform .15s, box-shadow .15s, background .15s; }
+.card:hover, .card:focus-visible { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(31, 78, 156, .18); background: var(--blue-soft); outline: none; }
+.icon { width: 46px; height: 46px; border-radius: 12px; background: var(--blue-soft); display: grid; place-items: center; margin-bottom: 6px; }
+.card:hover .icon { background: #fff; }
+.icon svg { width: 24px; height: 24px; fill: var(--blue); }
+.kicker { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.title { font-size: 17px; font-weight: 600; line-height: 1.3; color: var(--blue-dark); }
+.desc { font-size: 12.5px; line-height: 1.5; color: var(--muted); flex: 1; }
+.go { font-size: 13px; font-weight: 600; color: var(--blue); margin-top: 6px; }
+.go i { font-style: normal; display: inline-block; transition: transform .15s; }
+.card:hover .go i { transform: translateX(4px); }
+
+.foot { display: flex; justify-content: space-between; gap: 16px; padding: 14px 32px; border-top: 1px solid var(--line); background: var(--blue-soft); font-size: 12px; color: var(--muted); }
+.foot a { color: var(--blue); text-decoration: none; font-weight: 500; }
+.foot a:hover { text-decoration: underline; }
+
+/* The six cards stay in one row on desktop; narrower screens wrap rather than squash them */
+@media (max-width: 1300px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 1100px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) {
+  .ribbon { grid-template-columns: 1fr; justify-items: center; padding: 12px 16px; }
+  .logos.right { justify-content: center; }
+  .college { font-size: 20px; }
+  .dept { font-size: 14px; }
+  .logo-slot { width: 56px; height: 56px; }
+  .cards { grid-template-columns: 1fr 1fr; }
+  h1 { font-size: 24px; }
+}
+@media (max-width: 460px) { .cards { grid-template-columns: 1fr; } }
+
+.card.soon { opacity: .6; cursor: default; pointer-events: none; border-top-color: var(--muted); }
+.card.soon .go { color: var(--muted); }
+
+.login-panel { max-width: 460px; margin: 28px auto 0; padding: 26px 28px; border: 1px solid var(--line); border-top: 4px solid var(--blue); border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(31, 78, 156, .07); text-align: center; }
+.login-panel h2 { font-size: 20px; color: var(--blue-dark); }
+.login-panel p { color: var(--muted); font-size: 13px; margin: 6px 0 16px; }
+.login-panel form { display: flex; flex-direction: column; gap: 10px; }
+.login-panel input { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); }
+.login-panel input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31, 78, 156, .15); }
+.login-panel button { font: inherit; font-weight: 600; padding: 10px; border: none; border-radius: 8px; background: var(--blue); color: #fff; cursor: pointer; }
+.login-panel button:hover { background: var(--blue-dark); }
+.login-panel button:disabled { opacity: .6; cursor: default; }
+.login-error { color: #b91c1c; font-size: 13px; min-height: 18px; margin-top: 10px; }
+
+/* "Go to portal" button, with a small icon-only sign-out button on its left (saves space) */
+.portal-btn { font-weight: 600; font-size: 14px; color: #fff; background: var(--blue); padding: 9px 22px; border-radius: 8px; text-decoration: none; box-shadow: 0 2px 6px rgba(31, 78, 156, .25); transition: background .15s; }
+.portal-btn:hover, .portal-btn:focus-visible { background: var(--blue-dark); outline: none; }
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; transition: background .15s, border-color .15s; }
+.icon-btn svg { width: 18px; height: 18px; fill: var(--blue); }
+.icon-btn:hover, .icon-btn:focus-visible { background: var(--blue-soft); border-color: var(--blue); outline: none; }
+.actions { display: flex; align-items: center; gap: 8px; }
+
+/* The heading and the buttons share one row: heading centred, buttons at the right end */
+.title-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 32px 32px 0; }
+.title-row h1 { grid-column: 2; }
+.title-row .actions { grid-column: 3; justify-self: end; }
+@media (max-width: 720px) {
+  .title-row { grid-template-columns: 1fr; justify-items: center; gap: 14px; padding: 20px 16px 0; }
+  .title-row h1 { grid-column: 1; grid-row: 2; }
+  .title-row .actions { grid-column: 1; grid-row: 1; justify-self: end; }
+}

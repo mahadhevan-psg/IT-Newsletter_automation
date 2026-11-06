@@ -8,6 +8,10 @@ let canonicalTags = [];
 let savedLayouts = [];
 let auditLogs = [];
 let sectionLayouts = {};   // section_id -> layout template_id
+let builtinLayouts = [];   // fixed layouts offered beside the canvas layouts
+let issueInfo = null;
+const FRONT_PREVIEWS = [{ template_id: "front_cover", name: "Cover page" }, { template_id: "front_hod", name: "HOD's Desk" }, { template_id: "front_editorial", name: "Editorial page" }];
+let front = null;          // HOD desk, vision / mission, editorial board
 
 let currentFormId = null;          // shared by Forms + Layout
 let respFilter = "";               // "", pending, Approved, Rejected, featured
@@ -51,13 +55,24 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
+// The studio is for the Admin and the HoD: the portal sign-in token goes with every call.
+const authHeader = () => ({ Authorization: "Bearer " + (sessionStorage.getItem("tok") || "") });
+function showNoAccess(message) {
+  document.body.innerHTML = `<div style="max-width:420px;margin:18vh auto;text-align:center;font-family:Inter,system-ui,sans-serif">
+    <h3 style="font-size:18px;margin-bottom:8px">${esc(message)}</h3><p style="color:#6b7684;margin-bottom:16px">You are signed in with an account that cannot use it.</p>
+    <a href="/portal/" style="color:#1f4e78;font-weight:600">Back to the portal</a></div>`;
+}
+function signInAgain() { location.replace("/?next=/newsletter/"); }
+
 async function api(method, url, body) {
-  const opts = { method, headers: {} };
+  const opts = { method, headers: { ...authHeader() } };
   if (body instanceof FormData) opts.body = body;
   else if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
   const res = await fetch(API + url, opts);
   let data = null;
   try { data = await res.json(); } catch (e) { /* non-json */ }
+  if (res.status === 401) { signInAgain(); throw new Error("Please sign in"); }
+  if (res.status === 403 && /newsletter studio/i.test((data && data.detail) || "")) { showNoAccess(data.detail); throw new Error(data.detail); }
   if (!res.ok) throw new Error((data && (data.detail || data.message)) || `Request failed (${res.status})`);
   return data;
 }
@@ -82,17 +97,20 @@ const secName = id => sections.find(s => s.section_id === id)?.name || id;
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+  if (!sessionStorage.getItem("tok")) { signInAgain(); return; }
   document.querySelectorAll("#main-tabs .tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+  await syncMaster();     // quietly, so the Responses tab already shows what the master database holds
   try {
-    [canonicalTags, sections, forms, entries, savedLayouts, auditLogs, sectionLayouts] = await Promise.all([
+    [canonicalTags, sections, forms, entries, savedLayouts, auditLogs, sectionLayouts, builtinLayouts, front] = await Promise.all([
       api("GET", "/api/forms/canonical-tags"), api("GET", "/api/sections"), api("GET", "/api/forms"),
       api("GET", "/api/entries"), api("GET", "/api/visual-templates"), api("GET", "/api/audit-logs"),
-      api("GET", "/api/section-layouts")
+      api("GET", "/api/section-layouts"), api("GET", "/api/builtin-layouts"), api("GET", "/api/front-matter")
     ]);
   } catch (e) { toast("Could not reach the server: " + e.message, true); }
   currentFormId = forms[0]?.form_id || null;
   api("GET", "/api/issues").then(list => {
     const i = list[0];
+    issueInfo = i || null;
     if (i) {
       $("issue-chip").textContent = `${i.academic_year} · Vol ${i.volume} No ${i.issue}`;
       $("paper-vol").textContent = `VOL. ${i.volume} · ISSUE ${i.issue}`;
@@ -109,8 +127,22 @@ async function switchTab(tab) {
   document.querySelectorAll("#main-tabs .tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "tab-" + tab));
   if (tab === "layout") initLayoutView();
+  if (tab === "front") renderFront();
   if (tab === "overview") renderOverview();
   if (tab === "publish") renderPublish();
+}
+
+// Entries come from the master database: bring in whatever it holds that the newsletter does not have yet.
+async function syncMaster(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "Syncing…"; }
+  try {
+    const r = await api("POST", "/api/entries/sync-master", {});
+    if (btn) toast(r.created ? `${r.created} new response${r.created > 1 ? "s" : ""} from the master database` : "Already up to date with the master database");
+    if (r.failed?.length) toast(`${r.failed.length} could not be imported`, true);
+    if (r.created && btn) await reloadEntries();
+    return r;
+  } catch (e) { if (btn) toast(e.message, true); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = "Sync from master database"; } }
 }
 
 async function reloadEntries() {
@@ -510,9 +542,9 @@ const BLOCK_TYPES = {
   byline:   { label: "Authors",      ico: "By", tags: ["author_or_person"], w: 12, h: 1, style: {} },
   meta:     { label: "Venue & date", ico: "Vn", tags: ["organization_or_venue"], w: 12, h: 1, style: {} },
   text:     { label: "Description",  ico: "¶",  tags: ["description"], w: 12, h: 6, style: {} },
-  badge:    { label: "Badge",        ico: "◖◗", tags: ["badge_tag", "impact_or_indexing"], w: 6, h: 1, style: { badgeColor: "navy" } },
+  badge:    { label: "Badge",        ico: "◖◗", tags: ["badge_tag", "impact_or_indexing"], w: 6, h: 1, style: {} },
   image:    { label: "Photo",        ico: "▣",  tags: ["photo_url"], w: 12, h: 12, style: { showCaption: true } },
-  link:     { label: "Button link",  ico: "↗",  tags: ["evidence_url"], w: 6, h: 2, style: { buttonStyle: "solid" }, linkText: "View details" },
+  link:     { label: "Link",         ico: "↗",  tags: ["evidence_url"], w: 6, h: 2, style: {} },
   stats:    { label: "Stat callout", ico: "#",  tags: ["grant_or_prize_amount"], w: 6, h: 2, style: {} },
   label:    { label: "Text label",   ico: "T",  tags: [], w: 12, h: 2, style: {}, text: "Your text" },
   divider:  { label: "Divider",      ico: "—",  tags: [], w: 12, h: 1, style: {} }
@@ -638,13 +670,24 @@ async function onLayoutFormChange() {
 }
 
 function fillLayoutSelect(selectId) {
-  $("lay-saved").innerHTML = `<option value="">New layout</option>` +
-    savedLayouts.map(t => `<option value="${esc(t.template_id)}">${esc(t.name)}</option>`).join("");
-  $("lay-saved").value = savedLayouts.some(t => t.template_id === selectId) ? selectId : "";
+  $("lay-saved").innerHTML = `<optgroup label="Front pages">${FRONT_PREVIEWS.map(t => `<option value="${esc(t.template_id)}">${esc(t.name)}</option>`).join("")}</optgroup>` +
+    `<optgroup label="Fixed layouts">${builtinLayouts.map(t => `<option value="${esc(t.template_id)}">${esc(t.name)}</option>`).join("")}</optgroup>` +
+    `<optgroup label="Editable canvas"><option value="">New layout</option>${savedLayouts.map(t => `<option value="${esc(t.template_id)}">${esc(t.name)}</option>`).join("")}</optgroup>`;
+  $("lay-saved").value = [...FRONT_PREVIEWS, ...builtinLayouts, ...savedLayouts].some(t => t.template_id === selectId) ? selectId : "";
 }
+
+const isFrontPreview = () => FRONT_PREVIEWS.some(t => t.template_id === currentLayoutId);
+const isFixedLayout = () => isFrontPreview() || builtinLayouts.some(t => t.template_id === currentLayoutId);
 
 function onSavedLayoutChange() {
   currentLayoutId = $("lay-saved").value;
+  $("tab-layout").classList.toggle("fixed-mode", isFixedLayout());
+  if (isFixedLayout()) {
+    $("lay-name").value = [...FRONT_PREVIEWS, ...builtinLayouts].find(t => t.template_id === currentLayoutId).name;
+    selectedBlockId = null; undoStack = [];
+    renderSampleOptions(); renderCanvas(); renderInspector();
+    return;
+  }
   const tpl = savedLayouts.find(t => t.template_id === currentLayoutId);
   layout = tpl && tpl.layout?.length ? ensureGrid(JSON.parse(JSON.stringify(tpl.layout))) : DEFAULT_LAYOUT();
   $("lay-name").value = tpl ? tpl.name : "New layout";
@@ -697,7 +740,6 @@ function fontCss(st) {
   let css = "";
   if (st.fontSize) css += `font-size:${/^\d+(\.\d+)?$/.test(st.fontSize) ? st.fontSize + "px" : esc(st.fontSize)};`;
   if (st.fontWeight) css += `font-weight:${esc(st.fontWeight)};`;
-  if (/^#[0-9a-f]{6}$/i.test(st.textColor || "")) css += `color:${st.textColor};`;
   return css;
 }
 
@@ -712,13 +754,13 @@ function blockHtml(b) {
   const none = ph(b.column || "Link a column");
   const align = `text-align:${esc(st.textAlign || "left")};`;
   switch (b.type) {
-    case "badge": return `<span class="nl-badge ${esc(st.badgeColor || "navy")}" style="${fontCss(st)}">${v ? esc(v) : none}</span>`;
+    case "badge": return `<span class="nl-badge" style="${fontCss(st)}">${v ? esc(v) : none}</span>`;
     case "headline": return `<div class="nl-h" style="${align}${fontCss(st)}">${v ? esc(v) : none}</div>`;
     case "label": return `<div class="nl-h lbl" style="${align}${fontCss(st)}">${v ? esc(v) : ph("Your text")}</div>`;
     case "byline": return `<div class="nl-by" style="${align}${fontCss(st)}">By ${v ? esc(v) : none}</div>`;
     case "meta": return `<div class="nl-meta" style="${align}${fontCss(st)}">${v ? esc(v) : none}${v && sample.event_date ? " · " + esc(sample.event_date) : ""}</div>`;
     case "text": return `<p class="nl-p" style="${align}${fontCss(st)}">${v ? esc(v) : none}</p>`;
-    case "link": return `<div style="${align}"><span class="nl-btn ${esc(st.buttonStyle || "solid")}" style="${fontCss(st)}">${esc(b.linkText || "View details")}</span></div>`;
+    case "link": return `<div style="${align}"><span class="nl-link" style="${fontCss(st)}">${v ? esc(v) : none}</span></div>`;
     case "stats": return `<div class="nl-stat"><b>${v ? esc(v) : none}</b><span>${esc(sample.badge_tag || "")}</span></div>`;
     case "divider": return `<div class="nl-hr"></div>`;
     case "image": {
@@ -734,6 +776,11 @@ function blockHtml(b) {
 const V_ALIGN = { top: "flex-start", middle: "center", bottom: "flex-end" };
 
 function renderCanvas() {
+  const fixed = isFixedLayout();
+  $("paper").classList.toggle("no-head", isFrontPreview());
+  $("grid").classList.toggle("hidden", fixed);
+  $("fixed-preview").classList.toggle("hidden", !fixed);
+  if (fixed) { renderFixedPreview(); return; }
   const f = curForm();
   const sec = sections.find(s => s.section_id === f?.section_id);
   $("paper-title").textContent = "IT CHRONICLES" + (sec ? " · " + sec.name.toUpperCase() : "");
@@ -987,10 +1034,6 @@ function renderInspector() {
         <button onclick="arrangeImage('left')" title="Photo left, text wraps on the right"><span class="ar ar-left"></span>Left</button>
         <button onclick="arrangeImage('right')" title="Photo right, text wraps on the left"><span class="ar ar-right"></span>Right</button>
       </div></div>`;
-  if (b.type === "badge") typeOpts = `<div class="field"><label>Colour</label>${seg([["navy", "Navy"], ["amber", "Amber"], ["slate", "Slate"], ["green", "Green"]], st.badgeColor || "navy", "setBadge")}</div>`;
-  if (b.type === "link") typeOpts = `
-    <div class="field"><label>Button text</label><input class="input" value="${esc(b.linkText || "")}" oninput="setLinkText(this.value)"></div>
-    <div class="field"><label>Style</label>${seg([["solid", "Solid"], ["accent", "Accent"], ["outline", "Outline"]], st.buttonStyle || "solid", "setButton")}</div>`;
   if (b.type === "label") typeOpts = `<div class="field"><label>Text</label><input class="input" value="${esc(b.text || "")}" oninput="setLabelText(this.value)"></div>`;
 
   el.innerHTML = `
@@ -1014,10 +1057,6 @@ function renderInspector() {
     <div class="field"><label>Vertical position</label>${seg([["top", "Top"], ["middle", "Middle"], ["bottom", "Bottom"]], st.vAlign || "top", "setVAlign")}</div>`}
 
     ${isText ? `
-    <div class="field two">
-      <div><label>Font size</label><input class="input" type="number" min="8" max="72" placeholder="auto" value="${parseInt(st.fontSize) || ""}" onchange="setStyle('fontSize', this.value ? this.value + 'px' : '')"></div>
-      <div><label>Colour</label><input class="input color" type="color" value="${/^#[0-9a-f]{6}$/i.test(st.textColor || "") ? st.textColor : "#1f4e78"}" onchange="setStyle('textColor', this.value)"></div>
-    </div>
     <div class="field"><label>Weight</label>${seg([["", "Auto"], ["400", "Regular"], ["700", "Bold"]], st.fontWeight || "", "setWeight")}</div>` : ""}
 
     <div class="field"><label>Position &amp; size <span class="muted">(grid cells)</span></label>
@@ -1029,8 +1068,6 @@ function renderInspector() {
     </div>`;
 }
 const setCaption = v => setStyle("showCaption", v === "on");
-const setBadge = v => setStyle("badgeColor", v);
-const setButton = v => setStyle("buttonStyle", v);
 const setAlign = v => setStyle("textAlign", v);
 const setVAlign = v => setStyle("vAlign", v);
 const setWeight = v => setStyle("fontWeight", v);
@@ -1211,15 +1248,16 @@ function renderPublish() {
   const rows = sections.map(s => {
     const own = entries.filter(e => e.section_id === s.section_id);
     const appr = own.filter(e => e.approval_status === "Approved").length;
-    const chosen = savedLayouts.some(t => t.template_id === sectionLayouts[s.section_id]) ? sectionLayouts[s.section_id] : "";
+    const chosen = [...builtinLayouts, ...savedLayouts].some(t => t.template_id === sectionLayouts[s.section_id]) ? sectionLayouts[s.section_id] : "builtin_centered";
+    const opt = t => `<option value="${esc(t.template_id)}" ${t.template_id === chosen ? "selected" : ""}>${esc(t.name)}</option>`;
     return `
       <div class="pub-row ${appr ? "" : "empty-sec"}">
         <input type="checkbox" id="pub-${s.section_id}" value="${s.section_id}" ${appr ? "checked" : ""} ${appr ? "" : "disabled"}>
         <label for="pub-${s.section_id}"><span class="pub-name">${esc(s.name)}</span>
           <span class="muted">${appr ? `${appr} approved` : "Nothing approved yet"}${own.length - appr ? ` · ${own.length - appr} not approved` : ""}</span></label>
         <select class="input compact layout-pick" title="Layout used for this section's entries" onchange="setSectionLayout('${s.section_id}', this.value)">
-          <option value="">Default layout</option>
-          ${savedLayouts.map(t => `<option value="${esc(t.template_id)}" ${t.template_id === chosen ? "selected" : ""}>${esc(t.name)}</option>`).join("")}
+          <optgroup label="Fixed layouts">${builtinLayouts.map(opt).join("")}</optgroup>
+          ${savedLayouts.length ? `<optgroup label="Your canvas layouts">${savedLayouts.map(opt).join("")}</optgroup>` : ""}
         </select>
         <button class="btn sm" ${appr ? "" : "disabled"} onclick="buildSection('${s.section_id}', this)">Download section</button>
       </div>`;
@@ -1232,15 +1270,18 @@ async function setSectionLayout(sectionId, templateId) {
   try {
     await api("PUT", `/api/section-layouts/${sectionId}`, { template_id: templateId || null });
     if (templateId) sectionLayouts[sectionId] = templateId; else delete sectionLayouts[sectionId];
-    toast(templateId ? "Layout applied to this section" : "Using the default layout");
+    toast("Layout applied to this section");
   } catch (e) { toast(e.message, true); renderPublish(); }
 }
 
-function triggerDownload(filename) {
+async function triggerDownload(filename) {
+  const res = await fetch(`${API}/api/downloads/${encodeURIComponent(filename)}`, { headers: authHeader() });
+  if (!res.ok) { toast("Could not download the file", true); return; }
   const a = document.createElement("a");
-  a.href = `${API}/api/downloads/${encodeURIComponent(filename)}`;
+  a.href = URL.createObjectURL(await res.blob());
   a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 async function buildSection(id, btn) {
@@ -1261,13 +1302,168 @@ async function buildMaster() {
   const btn = $("btn-master");
   btn.disabled = true; btn.textContent = "Building…";
   try {
-    const r = await api("POST", "/api/generate/master", { selected_section_ids: chosen });
+    const r = await api("POST", "/api/generate/master", { selected_section_ids: chosen, include_front_pages: $("pub-front").checked });
     box.className = "result";
-    box.innerHTML = `${r.total_entries_included} entries from ${r.total_sections_included} sections.<br><a href="${API}/api/downloads/${encodeURIComponent(r.filename)}" download>Download ${esc(r.filename)}</a>`;
+    box.innerHTML = `${r.total_entries_included} entries from ${r.total_sections_included} sections.<br><a href="#" onclick="triggerDownload('${esc(r.filename)}'); return false;">Download ${esc(r.filename)}</a>`;
     triggerDownload(r.filename);
     api("GET", "/api/audit-logs").then(l => { auditLogs = l; });
   } catch (e) {
     box.className = "result err"; box.textContent = e.message;
   }
   btn.disabled = false; btn.textContent = "Build master document";
+}
+
+// ================================================================ FRONT PAGES
+const photoUrl = p => !p ? "" : /^https?:/.test(p) ? p : `${API}/api/uploads/${encodeURIComponent(p.split("/").pop())}`;
+
+function frontGet(path) { return path.split(".").reduce((o, k) => o?.[k], front) ?? ""; }
+function setFront(path, val) {
+  const keys = path.split("."); const last = keys.pop();
+  keys.reduce((o, k) => o[k], front)[last] = val;
+}
+
+function photoField(path, label) {
+  const url = photoUrl(frontGet(path));
+  return `<div class="photo-field">
+    <div class="photo-thumb">${url ? `<img src="${esc(url)}" alt="">` : "<span>No photo</span>"}</div>
+    <div class="photo-actions">
+      <label class="btn sm">${url ? "Replace" : "Upload"} ${esc(label)}<input type="file" accept="image/*" hidden onchange="uploadFrontPhoto('${path}', this)"></label>
+      ${url ? `<button class="btn sm ghost" onclick="setFront('${path}', ''); renderFront()">Remove</button>` : ""}
+    </div>
+  </div>`;
+}
+
+const frontInput = (path, label, ph = "") => `<div class="field"><label>${label}</label><input class="input" value="${esc(frontGet(path))}" placeholder="${esc(ph)}" oninput="setFront('${path}', this.value)"></div>`;
+
+function renderFront() {
+  if (!front) return;
+  const bullets = key => front[key].map((_, i) => frontInput(`${key}.${i}`, `Point ${i + 1}`)).join("");
+  $("front-form").innerHTML = `
+    <div class="card">
+      <div class="card-head"><h3>Cover page</h3><span class="muted">one large image under the title</span></div>
+      ${photoField("cover.photo", "cover image")}
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>The HOD's Desk</h3></div>
+      <div class="front-hod">
+        <div>${frontInput("hod.name", "Name")}${frontInput("hod.designation", "Designation")}${photoField("hod.photo", "photo")}</div>
+        <div class="field"><label>Message <span class="muted">(a new line starts a new paragraph; it is printed to the right of the photo, with the name below the photo)</span></label>
+          <textarea class="input" rows="12" oninput="setFront('hod.message', this.value)">${esc(front.hod.message)}</textarea></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Vision &amp; Mission</h3><span class="muted">up to five points each, printed in two columns</span></div>
+      <div class="front-cols"><div><h4>Vision</h4>${bullets("vision")}</div><div><h4>Mission</h4>${bullets("mission")}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Editorial page</h3></div>
+      <h4>Faculty advisor</h4>
+      <div class="front-person">${frontInput("advisor.name", "Name")}${frontInput("advisor.designation", "Caption", "Faculty Advisor")}${photoField("advisor.photo", "photo")}</div>
+      <h4 style="margin-top:14px">Student editors</h4>
+      <div class="front-students">${front.students.map((_, i) => `<div class="front-person">
+        <strong>Student ${i + 1}</strong>${frontInput(`students.${i}.name`, "Name")}${frontInput(`students.${i}.year`, "Year of study", "e.g. III Year")}${photoField(`students.${i}.photo`, "photo")}</div>`).join("")}</div>
+    </div>`;
+}
+
+async function uploadFrontPhoto(path, input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append("file", file);
+  try {
+    const res = await fetch(`${API}/api/uploads`, { method: "POST", body: fd, headers: authHeader() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Upload failed");
+    setFront(path, data.path); renderFront();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function saveFront() {
+  try { front = await api("PUT", "/api/front-matter", front); renderFront(); toast("Front pages saved"); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---- the two fixed layouts: read-only previews of what the Word document will contain
+const DEMO_PHOTO = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#d9d9d9"/><text x="200" y="158" font-family="Arial" font-size="22" text-anchor="middle" fill="#555">Photo</text></svg>');
+
+function renderFixedPreview() {
+  if (isFrontPreview()) { renderFrontPreview(); return; }
+  const s = sample || {};
+  const photo = s.photo_url || DEMO_PHOTO;
+  // the text blocks are always left-aligned; only the photo and its caption are ever centred
+  const text = () => `${s.badge_tag ? `<div class="fp-badge">${esc(s.badge_tag)}</div>` : ""}
+    ${s.title ? `<h4 class="fp-h">${esc(s.title)}</h4>` : ""}
+    ${s.author_or_person ? `<div class="fp-sub">By ${esc(s.author_or_person)}</div>` : ""}
+    ${s.organization_or_venue ? `<div>${esc(s.organization_or_venue)}${s.event_date ? " · " + esc(s.event_date) : ""}</div>` : ""}
+    ${s.description ? `<p>${esc(s.description)}</p>` : ""}
+    ${s.evidence_url ? `<a class="fp-link">${esc(s.evidence_url)}</a>` : ""}`;
+  const img = (side, cap) => `<div class="fp-img ${side}"><img src="${esc(photo)}" alt="" onerror="this.onerror=null; this.src=DEMO_PHOTO">${cap ? `<div class="fp-cap">${esc(cap)}</div>` : ""}</div>`;
+  const note = t => `<div class="fp-note">${t}</div>`;
+  let body;
+  if (currentLayoutId === "builtin_centered") {
+    body = `${note("Story with a photo: photo centred, content below it")}
+      <div class="fp-entry fp-centered">${img("center", s.photo_caption)}${text()}</div>
+      <hr>${note("Story without a photo: no photo space is left")}
+      <div class="fp-entry fp-centered">${text()}</div>`;
+  } else {
+    body = `${note("First story with a photo: photo on the left, text wrapped")}
+      <div class="fp-entry fp-alt">${img("left")}${text()}<div class="fp-clear"></div></div>
+      <hr>${note("Second story: photo on the right")}
+      <div class="fp-entry fp-alt">${img("right")}${text()}<div class="fp-clear"></div></div>
+      <hr>${note("Story without a photo: the text fills the whole width")}
+      <div class="fp-entry fp-alt">${text()}</div>
+      ${note("Every section starts again with the photo on the left.")}`;
+  }
+  $("fixed-preview").innerHTML = `<p class="hint">Fixed layout (read-only). Arial Narrow, black text; this is a preview with the example content chosen on the right.</p>${body}`;
+}
+
+// ---- front pages preview: the cover, the HOD's Desk and the editorial page as they will print
+const DEMO_FRONT = {
+  cover: { photo: "demo_images/demo_campus.jpg" },
+  hod: { name: "Dr. A. Head", designation: "Head of the Department", photo: "demo_images/demo_award.jpg",
+    message: "Dear readers, it is my pleasure to present this issue of IT Chronicles, which captures the achievements of our faculty and students over the past semester.\nOur department continues to grow in research, teaching and industry partnership, and I thank everyone who contributed to this issue." },
+  vision: ["To be a centre of excellence in information technology education and research.", "To produce graduates who lead with integrity.", "To build lasting partnerships with industry.", "To advance innovation that serves society.", "To nurture a culture of lifelong learning."],
+  mission: ["To deliver quality education through innovative teaching.", "To encourage research and publication.", "To support students through mentoring and training.", "To collaborate with industry and alumni.", "To serve the community through outreach."],
+  advisor: { name: "Dr. B. Advisor", designation: "Faculty Advisor", photo: "demo_images/demo_campus.jpg" },
+  students: [1, 2, 3, 4].map(i => ({ name: `Student ${i}`, year: ["IV Year", "III Year", "III Year", "II Year"][i - 1], photo: i === 3 ? "" : "demo_images/demo_team.jpg" })),
+};
+
+const fpPhoto = p => !p ? "" : p.startsWith("demo_images/") ? p : photoUrl(p);
+
+function renderFrontPreview() {
+  const f = front || DEMO_FRONT;
+  const sample = [];
+  const pick = (key, filled) => { if (filled) return f[key]; sample.push(key); return DEMO_FRONT[key]; };
+  const cover = pick("cover", !!(f.cover && f.cover.photo));
+  const hod = pick("hod", [f.hod.name, f.hod.message, f.hod.photo].some(v => String(v || "").trim()));
+  const vision = pick("vision", f.vision.some(x => x.trim())).filter(x => x.trim());
+  const mission = pick("mission", f.mission.some(x => x.trim())).filter(x => x.trim());
+  const adv = pick("advisor", [f.advisor.name, f.advisor.photo].some(v => String(v || "").trim()));
+  const students = pick("students", f.students.some(s => s.name.trim() || s.photo)).filter(s => s.name.trim() || s.photo);
+  const i = issueInfo || {};
+  const meta = [i.volume ? `Vol. ${i.volume} Issue ${i.issue}` : "", i.academic_year, i.semester, i.publication_period].filter(Boolean).join(" · ");
+  const sub = [i.department_name, i.cover_title].filter(Boolean).join(" · ");
+  const photo = (p, style = "") => fpPhoto(p) ? `<img class="fp-frame" style="${style}" src="${esc(fpPhoto(p))}" alt="" onerror="this.onerror=null; this.src=DEMO_PHOTO">` : "";
+  const person = (p, name, cap, w) => `<div class="fp-person">${photo(p, `width:${w}px`)}
+    ${name ? `<div class="fp-name">${esc(name)}</div>` : ""}${cap ? `<div class="fp-cap">${esc(cap)}</div>` : ""}</div>`;
+  const nameplate = `<div class="fp-nameplate"><div class="np-title">IT CHRONICLES</div>${sub ? `<div>${esc(sub)}</div>` : ""}${meta ? `<div>${esc(meta)}</div>` : ""}</div>`;
+  const used = { front_cover: ["cover"], front_hod: ["hod", "vision", "mission"], front_editorial: ["advisor", "students"] }[currentLayoutId];
+  const shown = sample.filter(k => used.includes(k));
+  const note = shown.length ? `<div class="fp-note">Sample content is shown for: ${shown.join(", ")}. Fill these in on the Front pages tab.</div>` : "";
+
+  let body;
+  if (currentLayoutId === "front_cover") {
+    body = `${nameplate}<div class="fp-cover">${photo(cover.photo, "width:100%")}</div>`;
+  } else if (currentLayoutId === "front_hod") {
+    const paras = hod.message.split("\n").map(m => m.trim()).filter(Boolean);
+    const msg = paras.map(p => `<p>${esc(p)}</p>`).join("");
+    body = `${hod.photo || hod.name || paras.length ? `<h3 class="fp-bar">THE HOD'S DESK</h3>` : ""}
+      ${hod.photo ? `<div class="fp-hodrow"><div class="fp-hodleft">${person(hod.photo, hod.name, hod.designation, 170)}</div><div class="fp-hodmsg">${msg}</div></div>`
+        : `${msg}${hod.name ? `<div class="fp-sign"><b>${esc(hod.name)}</b><br>${esc(hod.designation)}</div>` : ""}`}
+      ${(vision.length || mission.length) ? `<div class="fp-panels">${[["Vision", vision], ["Mission", mission]].filter(([, pts]) => pts.length).map(([t, pts]) =>
+        `<div class="fp-panel"><h5>${t}</h5><ul>${pts.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>`).join("")}</div>` : ""}`;
+  } else {
+    body = `<h3 class="fp-band">EDITORIAL BOARD</h3>
+      ${(adv.name || adv.photo) ? `<div class="fp-adv">${person(adv.photo, adv.name, adv.designation, 150)}</div>` : ""}
+      ${students.length ? `<h5 class="fp-rule">Student Editors</h5><div class="fp-students">${students.map(s => person(s.photo, s.name, s.year, 105)).join("")}</div>` : ""}`;
+  }
+  $("fixed-preview").innerHTML = `<p class="hint">Preview of this page in the Word document. It uses the content from the Front pages tab, even before you save it.</p>${note}${body}`;
 }

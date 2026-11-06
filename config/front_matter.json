@@ -1,0 +1,49 @@
+{
+  "hod": {
+    "name": "Dr. B. Vinoth Kumar",
+    "designation": "Head of the Department",
+    "message": "Sample message paragraph.",
+    "photo": "output/uploads/screenshot_2026_11_04_020426_79c9a3.png"
+  },
+  "vision": [
+    "point 1",
+    "point",
+    "point",
+    "point",
+    "point"
+  ],
+  "mission": [
+    "point",
+    "point",
+    "point",
+    "point",
+    "point"
+  ],
+  "advisor": {
+    "name": "Dr. D. Dhaarini",
+    "designation": "Faculty Advisor",
+    "photo": ""
+  },
+  "students": [
+    {
+      "name": "S Mahadhevan",
+      "year": "IV",
+      "photo": ""
+    },
+    {
+      "name": "Sankar",
+      "year": "III",
+      "photo": ""
+    },
+    {
+      "name": "Jitheash",
+      "year": "II",
+      "photo": ""
+    },
+    {
+      "name": "Monijaa",
+      "year": "II",
+      "photo": ""
+    }
+  ]
+}

@@ -4,6 +4,8 @@ import re
 import uuid
 from typing import Dict, Any, Tuple
 
+from backend.master.common import names_only
+
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "config")
 
 class NormalizationService:
@@ -36,7 +38,9 @@ class NormalizationService:
             form_spec = self._guess_form_spec(raw_data)
 
         section_id = form_spec.get("section_id", "sec_research")
-        field_mappings = form_spec.get("field_mappings", {})
+        # headers of earlier form versions (legacy_*) are still understood when an old sheet is imported
+        field_mappings = {**form_spec.get("legacy_field_mappings", {}), **form_spec.get("field_mappings", {})}
+        transforms = {**form_spec.get("legacy_transforms", {}), **form_spec.get("transforms", {})}
         category_field = form_spec.get("category_field")
         category_map = form_spec.get("category_map", {})
 
@@ -83,6 +87,8 @@ class NormalizationService:
 
             # Check field mapping
             canonical_key = field_mappings.get(q_clean)
+            if transforms.get(q_clean) == "names_only":
+                str_val = names_only(str_val)   # '21IT001 - Asha K' lines -> 'Asha K' for the newsletter
             if canonical_key and canonical_key in canonical_entry:
                 canonical_entry[canonical_key] = self._clean_value(canonical_key, str_val)
             else:

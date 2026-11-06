@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Optional
 from database.db_manager import save_raw_response, create_canonical_entry, get_entries
 from backend.services.normalization_service import NormalizationService
 from backend.services.validation_service import ValidationService
+from backend.master.ingest import ingest_form_row
 
 def entry_key(e: Dict[str, Any]):
     """Identity of a submission: same title, people, date and sub-section means the same entry."""
@@ -30,6 +31,7 @@ class IngestionService:
         key = entry_key(canonical_entry)
         for existing in get_entries(issue_id=issue_id, section_id=canonical_entry.get("section_id")):
             if entry_key(existing) == key:
+                ingest_form_row(form_id, raw_data, existing["entry_id"])   # keep the master DB in step even for repeat imports
                 return {"success": True, "duplicate": True, "entry_id": existing["entry_id"],
                         "response_id": existing.get("response_id"), "validation_errors": [], "canonical_entry": existing}
 
@@ -48,12 +50,16 @@ class IngestionService:
         entry_id = create_canonical_entry(canonical_entry)
         canonical_entry["entry_id"] = entry_id
 
+        # 6. Same response goes into the master database (students, faculty, analytics); never blocks the newsletter
+        master = ingest_form_row(form_id, raw_data, entry_id)
+
         return {
             "success": True,
             "entry_id": entry_id,
             "response_id": response_id,
             "validation_errors": validation_errors,
-            "canonical_entry": canonical_entry
+            "canonical_entry": canonical_entry,
+            "master": master
         }
 
     def process_csv_upload(self, form_id: str, csv_content: str, issue_id: str = "ISSUE_2026_V1I1") -> List[Dict[str, Any]]:

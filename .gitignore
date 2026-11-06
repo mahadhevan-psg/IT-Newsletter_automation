@@ -1,0 +1,20 @@
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary & output files
+*.tmp
+*.log
+
+
+# Master database (credentials, local secrets)
+database/master_system.db*
+database/INITIAL_ADMIN_PASSWORD.txt
+database/.master_secret

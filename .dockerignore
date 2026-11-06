@@ -1,0 +1,37 @@
+# Keep the image small and make sure no local data or secrets are baked into it.
+
+# local environments and tooling
+venv/
+.venv/
+.git/
+.gitignore
+.claude/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+node_modules/
+
+# DATA: databases and secrets must never be shipped; the server creates fresh ones on the disk
+**/*.db
+**/*.db-wal
+**/*.db-shm
+database/INITIAL_ADMIN_PASSWORD.txt
+database/.master_secret
+
+# generated while running (lives on the persistent disk instead)
+output/
+
+# only used on a developer's computer
+tests/
+requirements-dev.txt
+seed_*.py
+make_excel_templates.py
+excel_templates/
+gform_scripts/
+run_server.py
+Newsletter_Automation_System_5_Phase_Plan.docx
+plan_readable.md
+plan_text.txt
+
+# deployment notes
+DEPLOY.md

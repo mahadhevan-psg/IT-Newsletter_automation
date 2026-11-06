@@ -1,0 +1,26 @@
+# Render "Blueprint": one click deploys the whole system (see DEPLOY.md).
+# Dashboard -> New -> Blueprint -> pick this repository -> Apply.
+services:
+  - type: web
+    name: it-department-portal
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # A persistent disk (needed so the databases survive deploys and restarts) is only available on paid plans.
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: it-data
+      mountPath: /data
+      sizeGB: 2
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: MASTER_DB_PATH
+        value: /data/master_system.db
+      - key: NEWSLETTER_DB_PATH
+        value: /data/newsletter_system.db
+      # Random values created by Render on first deploy. Read the admin password in the service's Environment tab.
+      - key: MASTER_SECRET
+        generateValue: true
+      - key: MASTER_ADMIN_PASSWORD
+        generateValue: true

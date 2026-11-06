@@ -120,6 +120,7 @@ async function init() {
   renderFormsView();
   renderResponses();
   renderPublish();
+  Tours.fetchMe('tok').then(r => { if (r) Tours.studio(r.me, r.token); });     // Help button + first-visit tour
 }
 
 async function switchTab(tab) {

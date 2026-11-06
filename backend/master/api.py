@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, Response, UploadFile
 
 from backend.master import analytics, diary, excel_templates, ingest, people, placements, profiles, submissions, works
-from backend.master.auth import User, admin_user, change_password, current_user, editor_user, login, staff_user
+from backend.master.auth import User, admin_user, change_password, current_user, editor_user, login, mark_tour_seen, staff_user
 from backend.master.common import make_xlsx
 from database.master_db import db
 
@@ -45,6 +45,11 @@ def api_me(user: User = Depends(current_user)):
 def api_change_password(payload: Dict[str, str] = Body(...), user: User = Depends(current_user)):
     change_password(user, payload.get("old_password", ""), payload.get("new_password", ""))
     return {"success": True}
+
+
+@router.post("/api/auth/tour-seen")
+def api_tour_seen(payload: Dict[str, str] = Body(...), user: User = Depends(current_user)):
+    return {"tours_seen": sorted(mark_tour_seen(user, payload.get("tour", "")))}
 
 
 # ================================================================ reference data

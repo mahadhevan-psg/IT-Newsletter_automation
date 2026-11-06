@@ -123,6 +123,7 @@ async function boot() {
   const deep = location.hash.match(/^#\/(faculty|student)\/([^/]+)$/);       // a copied link to someone's page opens it directly
   show(me.must_change ? 'account' : tabs[0][0]);
   if (deep && !me.must_change) go(openProfile)(deep[1], decodeURIComponent(deep[2]));
+  Tours.portal(me, token);                    // Help button; the welcome tour the first time this person opens the portal
 }
 function show(id) {
   current = id;

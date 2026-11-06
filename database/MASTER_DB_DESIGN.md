@@ -79,3 +79,7 @@ python run_server.py                     # http://127.0.0.1:8000
 - Tests: `python -m pytest tests/test_master.py`
 
 Not yet protected: the newsletter studio (`/`) and its `/api/*` endpoints keep their previous open behaviour; put it behind the same login or a network boundary before exposing the server beyond the department.
+
+## Guided tours
+
+Each application (`home` = forms page, `portal`, `diary`, `studio`) has a skippable spotlight tour (`portal/tour.js` engine, `portal/tours.js` wording, `portal/tour.css`). It starts by itself the first time a person opens that application, and the server remembers it per person in `users.tours_seen` (so it does not come back on another device). Finishing or skipping both count as seen. Afterwards the **Help** button at the top replays the full tour or explains one section; tours only cover the tabs the person's role can open. To change what a tour says, edit `portal/tours.js`.

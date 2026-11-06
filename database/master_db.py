@@ -100,6 +100,13 @@ def repair_publish_permission(conn):
                  "(SELECT 1 FROM json_each(raw_json) WHERE key LIKE '%Permission to Publish%' AND trim(ifnull(value, '')) <> '')")
 
 
+def add_tours_seen(conn):
+    """Remember which guided tours a person has already seen: add the column to a database created before tours existed."""
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(users)")}
+    if have and "tours_seen" not in have:
+        conn.execute("ALTER TABLE users ADD COLUMN tours_seen TEXT NOT NULL DEFAULT ''")
+
+
 def init_master_db():
     """Create tables, the 10 fixed classes and the first admin account (idempotent)."""
     from backend.master.auth import hash_password
@@ -110,6 +117,7 @@ def init_master_db():
         migrate_classes(conn)
         repair_class_years(conn)
         add_entry_kind(conn)
+        add_tours_seen(conn)
         repair_publish_permission(conn)
         cur_ay = ensure_ay(conn, ay_for(date.today()))
         conn.execute("UPDATE academic_years SET is_current = (ay_id = ?)", (cur_ay,))
@@ -121,12 +129,16 @@ def init_master_db():
                     "INSERT INTO classes (class_code, programme, grp, year_no, current_semester, ay_id) VALUES (?,?,?,?,?,?)",
                     (code, prog, grp, year, year * 2 - 1, cur_ay))
         if conn.execute("SELECT COUNT(*) FROM role_assignments WHERE role='ADMIN'").fetchone()[0] == 0:
-            pw = os.environ.get("MASTER_ADMIN_PASSWORD") or secrets.token_urlsafe(9)
+            chosen = os.environ.get("MASTER_ADMIN_PASSWORD")
+            pw = chosen or secrets.token_urlsafe(9)
             conn.execute("INSERT OR IGNORE INTO faculty (emp_id, full_name, email, designation) VALUES ('ADMIN','System Administrator','admin@localhost','Administrator')")
             conn.execute("INSERT INTO role_assignments (emp_id, role) VALUES ('ADMIN','ADMIN')")
             conn.execute("INSERT OR REPLACE INTO users (user_id, user_type, password_hash, must_change) VALUES ('ADMIN','STAFF',?,1)",
                          (hash_password(pw),))
-            note = os.path.join(os.path.dirname(os.path.abspath(db_path())), "INITIAL_ADMIN_PASSWORD.txt")
-            with open(note, "w", encoding="utf-8") as f:
-                f.write(f"Portal login  ID: ADMIN   Password: {pw}\nChange it after the first login, then delete this file.\n")
-            print(f"[master-db] First admin created. ID=ADMIN, password saved in {note}")
+            if chosen:
+                print("[master-db] First admin created. ID=ADMIN, password = the MASTER_ADMIN_PASSWORD you set (it must be changed at first sign-in).")
+            else:
+                note = os.path.join(os.path.dirname(os.path.abspath(db_path())), "INITIAL_ADMIN_PASSWORD.txt")
+                with open(note, "w", encoding="utf-8") as f:
+                    f.write(f"Portal login  ID: ADMIN   Password: {pw}\nChange it after the first login, then delete this file.\n")
+                print(f"[master-db] First admin created. ID=ADMIN, password saved in {note}")

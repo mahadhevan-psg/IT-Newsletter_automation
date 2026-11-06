@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="/portal/tour.css">
   <script>
     // This page is for signed-in faculty only: students go to their Diary, everyone else to the sign-in page (/).
     (async () => {
@@ -42,6 +43,7 @@
   <div class="title-row">
     <h1>IT Department Data collection Forum</h1>
     <div class="actions">
+      <span id="help-host"></span>
       <button type="button" class="icon-btn" id="signout" title="Sign out" aria-label="Sign out">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 00-2 2v14a2 2 0 002 2h5v-2H5V5h5V3zm6.6 4.6L15.2 9l2 2H9v2h8.2l-2 2 1.4 1.4L21 12l-4.4-4.4z"/></svg>
       </button>
@@ -104,7 +106,10 @@
     <a href="/newsletter/">Newsletter studio</a>
   </footer>
 
+  <script src="/portal/tour.js"></script>
+  <script src="/portal/tours.js"></script>
   <script>
+    Tours.fetchMe('tok').then(r => { if (r && r.me.kind === 'STAFF') Tours.home(r.me, r.token); });   // Help button + first-visit tour
     document.getElementById('signout').addEventListener('click', () => {
       sessionStorage.removeItem('tok'); sessionStorage.removeItem('dtok');
       location.replace('/');

@@ -52,6 +52,21 @@ def startup_event():
 
 app.include_router(master_router)
 
+
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    """The hosting platform calls this to know the service is up: answers only if both databases can be read."""
+    import sqlite3
+    from database.db_manager import get_connection
+    from database.master_db import db
+    try:
+        get_connection().execute("SELECT 1").fetchone()
+        with db() as conn:
+            conn.execute("SELECT 1").fetchone()
+    except sqlite3.Error as e:
+        return JSONResponse({"status": "unavailable", "detail": str(e)}, status_code=503)
+    return {"status": "ok"}
+
 # --- The newsletter API is for the Admin and the HoD ---
 # Everything under /api/ that is not the portal, the diary or the sign-in has its own rules elsewhere; the rest (entries,
 # forms, layouts, front pages, generated documents) needs a signed-in Admin or HoD. Uploaded photos stay readable so <img> tags work.

@@ -5,7 +5,7 @@ import uuid
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "newsletter_system.db")
+DB_PATH = os.environ.get("NEWSLETTER_DB_PATH") or os.path.join(os.path.dirname(__file__), "newsletter_system.db")
 SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 def get_connection():

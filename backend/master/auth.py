@@ -75,6 +75,7 @@ class User:
     class_ids: Set[int] = field(default_factory=set)   # classes this person may see (tutor + PC scope)
     tutor_class_ids: Set[int] = field(default_factory=set)
     must_change: bool = False
+    tours_seen: Set[str] = field(default_factory=set)
 
     @property
     def is_admin(self):
@@ -88,7 +89,8 @@ class User:
 
     def public(self):
         return {"id": self.id, "name": self.name, "kind": self.kind, "roles": sorted(self.roles), "all_access": self.all_access,
-                "class_ids": sorted(self.class_ids), "tutor_class_ids": sorted(self.tutor_class_ids), "must_change": self.must_change}
+                "class_ids": sorted(self.class_ids), "tutor_class_ids": sorted(self.tutor_class_ids), "must_change": self.must_change,
+                "tours_seen": sorted(self.tours_seen)}
 
 
 def _load_staff(conn, emp_id: str) -> Optional[User]:
@@ -144,8 +146,27 @@ def login(user_id: str, password: str) -> dict:
             raise HTTPException(401, "Wrong ID or password")
         _fails.pop(uid.upper(), None)
         conn.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?", (key,))
-        user.must_change = bool(conn.execute("SELECT must_change FROM users WHERE user_id = ?", (key,)).fetchone()[0])
+        row = conn.execute("SELECT must_change, tours_seen FROM users WHERE user_id = ?", (key,)).fetchone()
+        user.must_change, user.tours_seen = bool(row[0]), _split(row[1])
     return {"token": make_token(key, kind), "user": user.public()}
+
+
+TOURS = ("home", "portal", "diary", "studio")      # the guided tours: forms page, staff portal, student diary, newsletter studio
+
+
+def _split(text) -> Set[str]:
+    return {t for t in (text or "").split(",") if t in TOURS}
+
+
+def mark_tour_seen(user: User, tour: str) -> Set[str]:
+    """Called when someone finishes or skips a tour, so it is not pushed on them again (they can still replay it from Help)."""
+    if tour not in TOURS:
+        raise HTTPException(400, "Unknown tour")
+    with db() as conn:
+        row = conn.execute("SELECT tours_seen FROM users WHERE user_id = ?", (user.id,)).fetchone()
+        seen = _split(row[0] if row else "") | {tour}
+        conn.execute("UPDATE users SET tours_seen = ? WHERE user_id = ?", (",".join(sorted(seen)), user.id))
+    return seen
 
 
 def change_password(user: User, old: str, new: str):
@@ -173,8 +194,8 @@ def current_user(authorization: Optional[str] = Header(None)) -> User:
         user = load_user(conn, data["sub"], data["typ"])
         if not user:
             raise HTTPException(401, "Account is no longer active")
-        row = conn.execute("SELECT must_change FROM users WHERE user_id = ?", (user.id,)).fetchone()
-        user.must_change = bool(row and row[0])
+        row = conn.execute("SELECT must_change, tours_seen FROM users WHERE user_id = ?", (user.id,)).fetchone()
+        user.must_change, user.tours_seen = bool(row and row[0]), _split(row[1] if row else "")
     return user
 
 

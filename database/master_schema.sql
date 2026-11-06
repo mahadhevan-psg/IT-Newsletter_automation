@@ -88,7 +88,8 @@ CREATE TABLE IF NOT EXISTS users (
     user_type       TEXT NOT NULL CHECK (user_type IN ('STAFF','STUDENT')),
     password_hash   TEXT NOT NULL,
     must_change     INTEGER NOT NULL DEFAULT 1,
-    last_login      TIMESTAMP
+    last_login      TIMESTAMP,
+    tours_seen      TEXT NOT NULL DEFAULT ''                -- guided tours this person has finished or skipped, e.g. 'home,portal'
 );
 
 -- Roles beyond Tutor (which is derived from classes.tutor_id). PC scope = programme + grp (UG/G1, UG/G2, PG/NULL).

@@ -46,3 +46,45 @@ def test_applications_still_served_and_send_signed_out_users_to_root():
     for path in ("/portal/portal.js", "/diary/diary.js", "/newsletter/app.js"):
         js = client.get(path).text
         assert "/login/" not in js and ("location.replace('/')" in js or 'location.replace("/?next=/newsletter/")' in js), path
+
+
+def test_every_application_loads_the_guided_tour_and_has_a_help_slot():
+    """Forms page, staff portal, student diary and newsletter studio each load the tour engine and the shared tour texts."""
+    for page in ("/homepage/", "/portal/", "/diary/", "/newsletter/"):
+        html = client.get(page).text
+        assert 'id="help-host"' in html, page                              # where the Help button is placed
+        assert "tour.css" in html and "tour.js" in html and "tours.js" in html, page
+    for asset in ("/portal/tour.js", "/portal/tours.js", "/portal/tour.css"):
+        assert client.get(asset).status_code == 200, asset
+    tours = client.get("/portal/tours.js").text
+    for entry in ("Tours.fetchMe('tok')", "app: 'home'", "app: 'portal'", "app: 'diary'", "app: 'studio'"):
+        assert entry in tours or entry in client.get("/homepage/").text, entry
+    # each app starts its tour from its own start-up code
+    assert "Tours.portal(me, token)" in client.get("/portal/portal.js").text
+    assert "Tours.diary(me, token)" in client.get("/diary/diary.js").text
+    assert "Tours.studio(r.me, r.token)" in client.get("/newsletter/app.js").text
+    assert "Tours.home(r.me, r.token)" in client.get("/homepage/").text
+
+
+def test_health_check_answers_without_signing_in(monkeypatch, tmp_path):
+    """The hosting platform polls /healthz; it must work with no login and fail loudly if a database is unreadable."""
+    from database import db_manager
+    monkeypatch.setenv("MASTER_DB_PATH", str(tmp_path / "master.db"))
+    monkeypatch.setattr(db_manager, "DB_PATH", str(tmp_path / "news.db"))
+    from database.master_db import init_master_db
+    db_manager.init_db()
+    init_master_db()
+    r = client.get("/healthz")
+    assert r.status_code == 200 and r.json() == {"status": "ok"}
+
+
+def test_deployment_files_exist_and_agree():
+    root = os.path.join(os.path.dirname(__file__), "..")
+    read = lambda n: open(os.path.join(root, n), encoding="utf-8").read()
+    docker, blueprint, ignore = read("Dockerfile"), read("render.yaml"), read(".dockerignore")
+    assert "healthz" in blueprint and "mountPath: /data" in blueprint and "plan: starter" in blueprint       # a paid plan: the free one has no disk
+    for var in ("MASTER_DB_PATH", "NEWSLETTER_DB_PATH", "MASTER_SECRET", "MASTER_ADMIN_PASSWORD"):
+        assert var in blueprint, var
+    assert "/data/master_system.db" in docker and "/data/newsletter_system.db" in docker
+    assert "**/*.db" in ignore and "output/" in ignore and "venv/" in ignore                                  # no local data or secrets in the image
+    assert "pytest" not in read("requirements.txt") and "pytest" in read("requirements-dev.txt")

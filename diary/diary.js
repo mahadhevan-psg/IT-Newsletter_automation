@@ -28,6 +28,7 @@ async function boot() {
   $('#app').classList.remove('hidden');
   $('#banner').innerHTML = me.must_change ? '<div class="banner">Please change your password (top right) - you are still using your roll number.</div>' : '';
   await route();
+  Tours.diary(me, token);                     // Help button; the welcome tour the first time this student opens the diary
 }
 function changePassword() {
   const o = document.createElement('div'); o.className = 'overlay';

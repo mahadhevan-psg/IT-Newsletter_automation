@@ -5,16 +5,38 @@ The whole system - sign-in page, forms page, staff portal, student diary and new
 ## 1. Put the code on GitHub
 Render deploys from a Git repository. Make sure everything is committed and pushed (the new folders `signin/`, `portal/`, `diary/`, `homepage/` and the files `Dockerfile`, `render.yaml`, `docker-entrypoint.sh` must be in the repository).
 
-## 2. Deploy
-Render dashboard -> **New** -> **Blueprint** -> choose the repository -> **Apply**.
+## 2. Deploy as a Web Service (no Blueprint needed)
+Render dashboard -> **New +** -> **Web Service** -> connect your GitHub account and choose the repository, then fill in:
 
-That is the whole deployment. Render reads [render.yaml](render.yaml), builds the [Dockerfile](Dockerfile), attaches a 2 GB disk, generates the secrets and starts the service. The first build takes a few minutes.
+| Field | Value |
+|---|---|
+| Language | **Docker** (Render finds the `Dockerfile` by itself) |
+| Branch | `main` |
+| Root Directory | leave empty |
+| Instance Type | **Starter** or higher if you want your data kept (see the note below) |
 
-> **Plan:** the blueprint uses the **Starter** plan because a *persistent disk* is required (see "Where the data lives") and Render does not offer disks on the free plan. On a free web service all data would be erased every time it restarts.
+Open **Advanced** and set:
+
+1. **Environment Variables** -> add these two (the rest are already built into the image):
+
+   | Key | Value |
+   |---|---|
+   | `MASTER_ADMIN_PASSWORD` | a first password of your choice for the `ADMIN` account (you must change it at first sign-in) |
+   | `MASTER_SECRET` | any long random text, e.g. 40+ characters (it signs sign-in sessions) |
+
+2. **Health Check Path** -> `/healthz`
+3. **Disks** -> **Add Disk**: Name `it-data`, Mount Path **`/data`**, Size 2 GB. (This is what keeps the data. It needs a paid instance type.)
+
+Click **Create Web Service**. The first build takes a few minutes; when it shows **Live**, open the address at the top of the page.
+
+> **Free instance type?** It works, but a free service has **no disk**: the databases are erased every time it restarts or goes to sleep (after ~15 minutes without visits), so it is only good for a demo. For real use choose Starter and add the disk.
+
+### Or: Blueprint (one click, if your account offers it)
+**New** -> **Blueprint** -> pick the repository -> **Apply**. [render.yaml](render.yaml) does everything above for you and generates the two secrets (read the password in the service's Environment tab).
 
 ## 3. First sign-in
 1. Open the service's address (shown at the top of its page, `https://it-department-portal-xxxx.onrender.com`). You land on the sign-in page.
-2. Get the first password: service -> **Environment** -> `MASTER_ADMIN_PASSWORD` -> reveal.
+2. The first password is the `MASTER_ADMIN_PASSWORD` you entered (with a Blueprint: service -> **Environment** -> reveal it).
 3. Sign in with ID **`ADMIN`** and that password. You are asked to change it straight away.
 4. From the portal: **Faculty & roles** (upload faculty), **Classes** (set tutors), then tutors upload their class lists. The guided tour on each page explains the rest.
 
@@ -31,7 +53,7 @@ Everything the system changes is on the persistent disk mounted at `/data`, so i
 Render takes automatic snapshots of the disk (see the service's **Disks** tab) so you can restore an earlier day. Never delete the disk: that deletes the data.
 
 ## Settings (environment variables)
-Set by `render.yaml`; change them under the service's **Environment** tab.
+Add the two marked below yourself; the others are built into the image (or set by `render.yaml`). Change them under the service's **Environment** tab.
 
 | Variable | Meaning |
 |---|---|

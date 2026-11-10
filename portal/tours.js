@@ -48,9 +48,9 @@
     const welcome = () => {
       const blocks = [];
       if (has('ADMIN')) blocks.push(role('Admin', 'You run the system: add faculty and give them roles, choose each class\'s tutor, upload form responses and placement sheets, and see every analytic.'));
-      if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. Your view is read-only.'));
+      if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. You also <b>approve the form responses</b> pulled from Google Sheets (see <b>Approvals</b>).'));
       if (has('PC')) blocks.push(role('Programme Coordinator', 'You see all the classes of your programme (for UG that means both G1 and G2): students, placements and statistics. Your view is read-only.'));
-      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, set the class\'s semester, and follow its achievements, participation and placements.'));
+      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, set the class\'s semester, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Approvals</b>).'));
       blocks.push(role('Faculty', blocks.length
         ? 'You also have your own page of everything you have submitted through the forms (see <b>My activities</b>).'
         : 'Your own page lists everything you have submitted through the forms, neatly sorted: papers, patents, awards, events and students you mentored.'));
@@ -84,6 +84,17 @@
       { target: '#dash-out .grid-2', title: 'Student achievements', body: '<p>By category, level, domain and year, then class-wise participation and the <b>top students</b>. Click a roll number to open that student\'s page.</p>', place: 'top' },
       { target: () => find('#dash-out h2', /Placements/)()?.nextElementSibling, title: 'Placements', body: '<p>Opted in and out, who is still unplaced, package distribution, top recruiters, offer types and the reasons students opt out.</p>' },
       ...(me.all_access ? [{ target: () => find('#dash-out h2', /Department/)()?.nextElementSibling, title: 'The whole department', body: '<p>Research funding, event participants, outreach attendance, submissions by form and year, research by indexing and quartile, faculty achievements, <b>MoU status</b> and the most active faculty.</p>' }] : []),
+    ] });
+    S.push({ id: 'review', label: 'Approvals', hint: 'Check, edit and approve responses', steps: () => [
+      { before: goTab('review'), target: '#rv-tabs', title: 'Where responses wait', body: `<p>${me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Responses pulled from the Google Sheets wait here until you decide. <b>Nothing is used in the application before it is approved.</b>' : me.tutor_class_ids.length ? 'The placement details of your students wait here for your approval.' : 'Responses sent back to you for correction appear here, and you can follow what you submitted.'}</p><p>The red number on the tab is how many need you.</p>`, place: 'bottom' },
+      { target: '#rv-list', title: 'The queue', body: '<p>Click a response to read it. An orange mark means something needs a look (a roll number that matches nobody, a missing link). Tick several and use <b>Approve selected</b>, or <b>Approve all clean</b> for those with no marks.</p>', place: 'right' },
+      { target: '#rv-detail', optional: true, title: 'Read, then decide', body: '<p>Answers are grouped as in the form, and the people the IDs belong to are shown, so mistakes stand out. Hover a value and click the pencil to fix it.</p>', place: 'left' },
+      { target: '#rv-foot', optional: true, title: 'Four ways to decide', body: '<p><b>Approve</b> as it is. <b>Edit &amp; approve</b> to fix it first (both versions are kept). <b>Reject with reason</b> sends it back to a faculty member you choose, who corrects it and resubmits. <b>Reject without reason</b> sets it aside.</p>', place: 'top' },
+    ] });
+    if (has('ADMIN') || has('HOD') || me.tutor_class_ids.length) S.push({ id: 'sync', label: 'Sheet sync', hint: 'Pull responses from Google Sheets', steps: () => [
+      { before: goTab('sync'), target: '#sy-run', title: 'Pull now', body: '<p>Fetches new responses from the Google Sheets straight away. The sheets are only <b>read</b>; nothing in Google is changed.</p>', place: 'bottom' },
+      { target: '#sy-sched', title: 'Automatic pull', body: `<p>Every few days or once a week, at a time you choose.${has('ADMIN') ? '' : ' Only the Admin changes the schedule.'}</p>`, place: 'left' },
+      { target: () => document.querySelector('.sy-url'), optional: true, title: 'Your sheets', body: '<p>The responses sheet link of each form goes here. <b>Test</b> checks that it can be read and that its columns match the form.</p>', place: 'top' },
     ] });
     if (hasClasses()) S.push({ id: 'students', label: 'Students', hint: 'Find, add and open students', steps: () => [
       { before: goTab('students'), target: '#view .filters', title: 'Find students', body: `<p>${document.getElementById('f-grp') ? 'Choose <b>both groups, G1 or G2</b>, then a class, a status, or search by roll number or name.' : 'Pick a class, a status, or search by roll number or name.'}</p>`, place: 'bottom' },

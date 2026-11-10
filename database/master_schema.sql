@@ -429,3 +429,87 @@ JOIN student_achievements a ON a.submission_id = p.submission_id
 JOIN form_submissions fs    ON fs.submission_id = a.submission_id
 LEFT JOIN classes c         ON c.class_id = p.class_id_snapshot
 WHERE p.roll_no IS NOT NULL;
+
+-- =====================================================================
+-- 6. REVIEW (staging area) AND GOOGLE SHEET SYNC
+-- Responses pulled from the Google Sheets land HERE first. Nothing reaches the live tables above until an authority approves it:
+-- Admin or HoD for the five submission forms, the class tutor for placements. Everything else in the application only ever reads
+-- the live tables, so unapproved data cannot appear anywhere.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS staged_items (
+    item_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind             TEXT NOT NULL CHECK (kind IN ('FORM','PLACEMENT')),
+    form_id          TEXT NOT NULL,                      -- form_student ... form_industry, or 'placement'
+    source_key       TEXT NOT NULL,                      -- the response's identity in the sheet (timestamp|email), or roll|year for placements
+    content_hash     TEXT NOT NULL,                      -- of the answers as pulled, to notice changes
+    answers_json     TEXT NOT NULL,                      -- the CURRENT answers (what the approver / faculty edit): a list of {column title: value}
+    original_json    TEXT NOT NULL,                      -- the answers exactly as they were in the sheet, never changed
+    status           TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','APPROVED','RETURNED','REJECTED')),
+    title            TEXT,
+    category         TEXT,
+    event_date       TEXT,
+    submitter_email  TEXT,
+    submitter_emp_id TEXT REFERENCES faculty(emp_id),    -- the faculty member who entered it (form items): who a returned item goes back to by default
+    roll_no          TEXT,                               -- placements: the student
+    ay_id            TEXT,                               -- placements: the placement year
+    class_id         INTEGER REFERENCES classes(class_id),-- placements: the class whose tutor approves
+    warnings_json    TEXT NOT NULL DEFAULT '[]',         -- things an approver should look at (unknown roll numbers, missing date ...)
+    blockers_json    TEXT NOT NULL DEFAULT '[]',         -- things that stop approval until fixed (no title, unknown student ...)
+    assigned_emp_id  TEXT REFERENCES faculty(emp_id),    -- RETURNED: the faculty member asked to correct it
+    reason           TEXT,                               -- why it was returned / rejected
+    decided_by       TEXT,
+    decided_at       TIMESTAMP,
+    submission_id    INTEGER,                            -- the live record created when it was approved (form items)
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (form_id, source_key)
+);
+CREATE INDEX IF NOT EXISTS idx_staged_status ON staged_items(status, kind);
+CREATE INDEX IF NOT EXISTS idx_staged_class  ON staged_items(class_id, status);
+CREATE INDEX IF NOT EXISTS idx_staged_assignee ON staged_items(assigned_emp_id, status);
+CREATE INDEX IF NOT EXISTS idx_staged_submitter ON staged_items(submitter_emp_id);
+
+-- Everything that happened to an item: pulled, edited (with what changed), approved, returned, resubmitted ...
+CREATE TABLE IF NOT EXISTS review_events (
+    event_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id     INTEGER NOT NULL REFERENCES staged_items(item_id) ON DELETE CASCADE,
+    action      TEXT NOT NULL,
+    actor       TEXT,
+    note        TEXT,
+    detail_json TEXT,
+    at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_events_item ON review_events(item_id, event_id);
+
+-- Where each form's responses live (a Google Sheet) and when they were last pulled
+CREATE TABLE IF NOT EXISTS sync_sources (
+    form_id        TEXT PRIMARY KEY,
+    sheet_url      TEXT,
+    last_pulled_at TIMESTAMP,
+    last_result    TEXT                                   -- JSON of the last pull for this source (counts or the error)
+);
+
+-- One row: how often to pull. next_run_at is kept in UTC.
+CREATE TABLE IF NOT EXISTS sync_settings (
+    id          INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled     INTEGER NOT NULL DEFAULT 0,
+    mode        TEXT NOT NULL DEFAULT 'days' CHECK (mode IN ('days','week')),
+    every_days  INTEGER NOT NULL DEFAULT 2,
+    weekday     INTEGER NOT NULL DEFAULT 0,               -- 0 = Monday ... 6 = Sunday (mode 'week')
+    hour        INTEGER NOT NULL DEFAULT 2,
+    minute      INTEGER NOT NULL DEFAULT 0,
+    timezone    TEXT NOT NULL DEFAULT 'Asia/Kolkata',
+    next_run_at TEXT,
+    last_run_at TEXT,
+    updated_by  TEXT
+);
+
+CREATE TABLE IF NOT EXISTS sync_runs (
+    run_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    finished_at TIMESTAMP,
+    trigger     TEXT NOT NULL,                            -- 'schedule' or 'manual'
+    actor       TEXT,
+    status      TEXT NOT NULL DEFAULT 'running',          -- running / done / failed
+    summary_json TEXT
+);

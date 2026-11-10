@@ -116,3 +116,17 @@ Click **Create Web Service**. (With Blueprints available you could use [render.d
 - Demo mode **refuses to start on a database that holds real data**: it wipes only a database that is empty or that it created itself, otherwise the service stops with an error. So pointing it at the real disk by mistake cannot erase anything.
 - Everything in it is invented, including names and numbers; no real person or company result is described.
 - Keep the real service and the demo as two services with their own addresses.
+
+
+## Google Sheet sync and approvals
+
+Form responses are pulled from the Google Sheets into an **Approvals** queue; nothing is used in the application until the right person approves it
+(placements: the student's class tutor; the other five forms: Admin or HoD). The sheets are only ever read.
+
+* **Sheet links**: Admin pastes each form's responses-sheet link under *Sheet sync*. Either share the sheet as "Anyone with the link can view", or use a service account.
+* **Private sheets**: create a Google service account, enable the Google Sheets API, and set the environment variable `GOOGLE_SERVICE_ACCOUNT_JSON` to the key file's full contents.
+  Share each sheet with the service account's e-mail address as Viewer.
+* **Schedule**: set in the portal (every N days or weekly, time and time zone). The timer runs inside the server, so use an always-on instance
+  (a free Render service that sleeps will pull when it next wakes). *Pull now* always works.
+* **Demo**: the demo service uses pretend sheets (`demo://...`); each *Pull now* adds a few new responses.
+* The new Python dependencies (`requests`, `google-auth`, `cryptography`, `tzdata`) are in `requirements.txt`, so the Docker image picks them up on the next build.

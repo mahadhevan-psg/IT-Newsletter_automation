@@ -47,13 +47,28 @@ def _can_edit_student(conn, user: User, roll: str) -> bool:
     return cid is not None and user.can_edit_class(cid)
 
 
-def upload_placements(conn, user: User, content: bytes, default_ay: Optional[str]) -> Dict[str, Any]:
+def keyed(rows: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    """Rows as they stand in a sheet ({column title: text}) -> {field name: text}, empty cells dropped."""
     keymap = {norm_header(q["q"]): q["key"] for q in questions()}
+    out = []
+    for rec in rows:
+        row = {keymap[norm_header(k)]: str(v).strip() for k, v in rec.items() if norm_header(k) in keymap and v is not None and str(v).strip()}
+        if row:
+            out.append(row)
+    return out
+
+
+def group_by_roll(rows: List[Dict[str, str]]) -> Dict[str, List[Dict[str, str]]]:
     by_roll: Dict[str, List[Dict[str, str]]] = {}
-    for rec in read_xlsx(content):
-        row = {keymap[norm_header(k)]: v.strip() for k, v in rec.items() if norm_header(k) in keymap and v.strip()}
+    for row in rows:
         if row.get("roll_no"):
             by_roll.setdefault(row["roll_no"].upper(), []).append(row)
+    return by_roll
+
+
+def apply_rows(conn, user: User, by_roll: Dict[str, List[Dict[str, str]]], default_ay: Optional[str]) -> Dict[str, Any]:
+    """Write placement rows into the live tables: for each student, what is there for that year is REPLACED by these rows.
+    Used by the Excel upload and by the approval of a student's placement record."""
     stats = {"students": 0, "offers": 0, "interview_experiences": 0, "internship_experiences": 0, "replaced_students": 0, "errors": []}
     for roll, rows in by_roll.items():
         conn.execute("SAVEPOINT p")
@@ -113,6 +128,11 @@ def upload_placements(conn, user: User, content: bytes, default_ay: Optional[str
             conn.execute("ROLLBACK TO p")
             conn.execute("RELEASE p")
             stats["errors"].append({"roll_no": roll, "message": str(e)})
+    return stats
+
+
+def upload_placements(conn, user: User, content: bytes, default_ay: Optional[str]) -> Dict[str, Any]:
+    stats = apply_rows(conn, user, group_by_roll(keyed(read_xlsx(content))), default_ay)
     audit(conn, user.id, "PLACEMENT_UPLOAD", "placements", None, f"{stats['students']} students, {stats['offers']} offers")
     return stats
 
@@ -179,3 +199,62 @@ def student_detail(conn, user: User, roll: str) -> Dict[str, Any]:
         "interviews": q("SELECT e.*, g.name AS company FROM interview_experiences e JOIN organizations g ON g.org_id = e.org_id WHERE e.roll_no = ?"),
         "internships": q("SELECT e.*, g.name AS company FROM internship_experiences e JOIN organizations g ON g.org_id = e.org_id WHERE e.roll_no = ?"),
     }
+
+
+# ---------------------------------------------------------------- review support (placements waiting for a tutor's approval)
+def student_class(conn, roll: str) -> Optional[int]:
+    """The class whose tutor reviews this student's placement data: the current class, else the last one they were in."""
+    row = conn.execute(f"SELECT {EFF_CLASS} FROM students s WHERE s.roll_no = ?", (roll,)).fetchone()
+    return row[0] if row else None
+
+
+def describe_rows(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    """Plain-language view of a student's rows plus the problems an approver should see. rows are {field: text} (see keyed)."""
+    notes: List[str] = []
+    blockers: List[str] = []
+    summary: List[str] = []
+    ay = next((r["ay_id"] for r in rows if r.get("ay_id")), None)
+    if ay and not re.fullmatch(r"\d{4}-\d{2}", ay):
+        blockers.append(f"The academic year '{ay}' must look like 2026-27")
+    opt = next((r["opt_status"] for r in reversed(rows) if r.get("opt_status")), "")
+    offers = [r for r in rows if r.get("company")]
+    for n, r in enumerate(rows, 1):
+        if r.get("company"):
+            pkg, stp = parse_num(r.get("package_lpa")), parse_num(r.get("stipend_per_month"))
+            otype = _offer_type(r.get("offer_type"), pkg, stp)
+            summary.append(f"{r['company']} - {(otype or 'offer type?').replace('_', ' ')}" + (f" - {pkg:g} LPA" if pkg else "") + (f" - Rs {stp:,.0f}/month" if stp else ""))
+            if not otype:
+                notes.append(f"Offer {n}: no offer type, package or stipend was given for {r['company']}")
+            elif otype in ("FTE", "FTE+INTERN", "INTERN_CONVERTED_FTE") and not pkg:
+                notes.append(f"Offer {n}: {r['company']} is a full-time offer but the package is empty")
+            if r.get("package_lpa") and pkg is None:
+                notes.append(f"Offer {n}: the package '{r['package_lpa']}' is not a number")
+    if not offers:
+        if "out" in opt.lower():
+            reason = next((r["opt_out_reason"] for r in rows if r.get("opt_out_reason")), None)
+            summary.append("Opted out of placements" + (f" ({reason})" if reason else ""))
+        else:
+            summary.append("Opted in, no offer yet")
+    if offers and "out" in opt.lower():
+        notes.append("The student says 'Opted out' but also listed an offer: they will be recorded as opted in")
+    if not offers and not opt:
+        notes.append("Neither an offer nor an opt-in / opt-out choice was given")
+    return {"ay": ay, "summary": summary, "warnings": notes, "blockers": blockers}
+
+
+def preview_student(conn, rows: List[Dict[str, str]], roll: str) -> Dict[str, Any]:
+    d = describe_rows(rows)
+    student = conn.execute("SELECT full_name FROM students WHERE roll_no = ?", (roll,)).fetchone()
+    class_id = None
+    if not student:
+        d["blockers"].append(f"Roll number {roll} is not in the student list. Add the student first, or correct the roll number.")
+    else:
+        class_id = student_class(conn, roll)
+        tutor = conn.execute("SELECT f.full_name FROM classes c LEFT JOIN faculty f ON f.emp_id = c.tutor_id WHERE c.class_id = ?", (class_id,)).fetchone() if class_id else None
+        if not class_id or not tutor or not tutor[0]:
+            d["warnings"].append("This student's class has no tutor, so only the Admin can approve this")
+        ay = d["ay"] or ay_for(__import__("datetime").date.today())
+        if conn.execute("SELECT 1 FROM placement_profiles WHERE roll_no = ? AND ay_id = ?", (roll, ay)).fetchone():
+            d["warnings"].append(f"This student already has placement records for {ay}; approving replaces them with these")
+    d.update(student_name=student[0] if student else None, class_id=class_id)
+    return d

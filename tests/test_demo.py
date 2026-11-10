@@ -175,3 +175,26 @@ def test_outside_demo_mode_nothing_demo_is_active(monkeypatch, tmp_path):
     assert client.post("/api/auth/login", json={"id": "ADMIN", "password": PASSWORD}).status_code == 401   # the demo password opens nothing real
     assert client.post("/api/auth/change-password", json={"old_password": "RealAdmin-Pass-1", "new_password": "A-Better-Pass-2"},
                        headers={"Authorization": "Bearer " + r.json()["token"]}).status_code == 200
+
+
+def test_demo_has_approvals_and_a_working_pretend_sheet(demo):
+    from backend.demo import data as D
+    hod, tutor = sign_in(D.HOD), sign_in(D.TUTORS[2])
+    s = client.get("/api/review/summary", headers=auth(hod)).json()
+    assert s["to_review"] >= 8, s
+    items = client.get("/api/review/items?scope=review", headers=auth(hod)).json()["items"]
+    assert any(i["warnings"] for i in items), "some responses should be flagged for the walkthrough"
+    assert client.get("/api/review/items?scope=returned", headers=auth(hod)).json()["total"] >= 1
+    mine = client.get("/api/review/items?scope=review", headers=auth(tutor)).json()
+    assert mine["total"] >= 1 and all(i["kind"] == "PLACEMENT" for i in mine["items"]), mine["total"]
+    # a returned response reaches the faculty member it was sent to
+    ret = client.get("/api/review/items?scope=returned", headers=auth(hod)).json()["items"][0]
+    with db() as conn:
+        emp = conn.execute("SELECT assigned_emp_id FROM staged_items WHERE item_id = ?", (ret["item_id"],)).fetchone()[0]
+    f = sign_in(emp)
+    assert client.get("/api/review/summary", headers=auth(f)).json()["returned_to_me"] >= 1
+    # Pull now brings in a few new responses
+    before = client.get("/api/review/summary", headers=auth(hod)).json()["to_review"]
+    r = client.post("/api/sync/run", json={}, headers=auth(hod))
+    assert r.status_code == 200 and r.json()["new_or_updated"] >= 5, r.text
+    assert client.get("/api/review/summary", headers=auth(hod)).json()["to_review"] > before

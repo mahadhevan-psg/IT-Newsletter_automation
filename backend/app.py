@@ -22,6 +22,8 @@ from backend.services.master_sync import MasterSync
 from backend.master.api import router as master_router
 from backend.demo import mode as demo_mode
 from backend.demo.api import router as demo_router
+from backend.review.api import router as review_router
+from backend.review import schedule as sheet_schedule
 from database.master_db import init_master_db
 
 app = FastAPI(
@@ -55,9 +57,11 @@ def startup_event():
         demo_seed.start()
     else:
         init_master_db()
+    sheet_schedule.start()                       # the timer that pulls the Google Sheets (when the Admin has switched it on)
 
 app.include_router(master_router)
 app.include_router(demo_router)
+app.include_router(review_router)
 
 
 @app.get("/healthz", include_in_schema=False)
@@ -77,7 +81,7 @@ def healthz():
 # --- The newsletter API is for the Admin and the HoD ---
 # Everything under /api/ that is not the portal, the diary or the sign-in has its own rules elsewhere; the rest (entries,
 # forms, layouts, front pages, generated documents) needs a signed-in Admin or HoD. Uploaded photos stay readable so <img> tags work.
-_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/")
+_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/", "/api/review/", "/api/sync/")
 
 
 def _newsletter_denied(authorization):

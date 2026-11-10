@@ -288,3 +288,91 @@ def ingest_form_row(form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opti
             return ingest_row(conn, form_id, raw, newsletter_entry_id)
     except Exception as e:
         return {"status": "error", "errors": [str(e)]}
+
+
+# ---------------------------------------------------------------- review support (responses waiting for approval)
+def row_hash(form_id: str, raw: Dict[str, Any]) -> str:
+    """The same fingerprint ingest_row stores as source_row_hash, so a response that is already live is recognised."""
+    return _hash(form_id, {norm_header(k): str(v) for k, v in raw.items() if v is not None and str(v).strip() != ""})
+
+
+def answer_values(form_id: str, raw: Dict[str, Any]) -> Dict[str, str]:
+    """{field name: answer} for one response (what ingest_row works from)."""
+    spec = specs()["forms"][form_id]
+    by_norm = {norm_header(k): str(v).strip() for k, v in raw.items() if v is not None and str(v).strip() != ""}
+    vals = {}
+    for q in spec["questions"]:
+        if q["type"] != "section" and q.get("key"):
+            for title in (q["q"], *q.get("aliases", [])):
+                if norm_header(title) in by_norm:
+                    vals[q["key"]] = by_norm[norm_header(title)]
+                    break
+    return vals
+
+
+def summarize(form_id: str, raw: Dict[str, Any]) -> Dict[str, Optional[str]]:
+    """Title, category and date as they will appear in the review list."""
+    spec = specs()["forms"][form_id]
+    vals = answer_values(form_id, raw)
+    return {"title": vals.get("title"), "category": vals.get("category"), "event_date": parse_date(vals.get(spec["date_key"]))}
+
+
+def guess_submitter(conn, form_id: str, raw: Dict[str, Any]) -> Optional[str]:
+    """The faculty member who entered this response (the form's 'select your name' answer, else the e-mail), or None."""
+    spec = specs()["forms"][form_id]
+    vals = answer_values(form_id, raw)
+    emp = None
+    for q in spec["questions"]:
+        if q.get("submitter") and q.get("key") in vals:
+            emp = resolve_faculty(conn, vals[q["key"]])
+    if not emp:
+        email = {norm_header(k): str(v) for k, v in raw.items()}.get("email address", "").strip()
+        emp = resolve_faculty(conn, email) if email else None
+    return emp
+
+
+def _name_of(conn, emp: Optional[str]) -> Optional[str]:
+    row = conn.execute("SELECT full_name FROM faculty WHERE emp_id = ?", (emp,)).fetchone() if emp else None
+    return row[0] if row else None
+
+
+def preview_row(conn, form_id: str, raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Dry run of ingest_row: what is wrong and who the typed IDs turn out to be. NOTHING is saved (rolled back).
+    Returns {errors, warnings, already_live, people: [{label, items: [{text, ok}]}]}."""
+    conn.execute("SAVEPOINT review_preview")
+    try:
+        res = ingest_row(conn, form_id, raw)
+        out: Dict[str, Any] = {"errors": res.get("errors", []), "warnings": res.get("warnings", []), "already_live": res["status"] == "duplicate", "people": []}
+        if res["status"] == "inserted":
+            sid, people = res["submission_id"], out["people"]
+            ftype = specs()["forms"][form_id]["form_type"]
+            row = conn.execute("SELECT submitter_emp_id FROM form_submissions WHERE submission_id = ?", (sid,)).fetchone()
+            if row and row[0]:
+                people.append({"label": "Entered by", "items": [{"text": _name_of(conn, row[0]), "ok": True}]})
+            grp = lambda label, items: items and people.append({"label": label, "items": items})
+            if ftype == "STUDENT":
+                grp("Students", [{"text": (f"{r['name'] or r['sname']} ({r['roll_no']})" if r["roll_no"] else f"{r['raw_text']}  - not in the student list"), "ok": bool(r["roll_no"])}
+                                 for r in conn.execute("SELECT p.roll_no, p.raw_text, p.name, s.full_name AS sname FROM student_achievement_participants p LEFT JOIN students s ON s.roll_no = p.roll_no "
+                                                       "WHERE p.submission_id = ? ORDER BY p.line_no", (sid,))])
+                m = conn.execute("SELECT mentor_emp_id FROM student_achievements WHERE submission_id = ?", (sid,)).fetchone()
+                grp("Faculty mentor", [{"text": _name_of(conn, m[0]), "ok": True}] if m and m[0] else [])
+            elif ftype == "RESEARCH":
+                grp("Authors", [{"text": (f"{r['full_name'] or r['sname'] or r['name']}" + (" (outside)" if r["person_type"] == "EXTERNAL" else "")), "ok": True}
+                                for r in conn.execute("SELECT c.person_type, c.name, f.full_name, s.full_name AS sname FROM research_contributors c LEFT JOIN faculty f ON f.emp_id = c.emp_id "
+                                                      "LEFT JOIN students s ON s.roll_no = c.roll_no WHERE c.submission_id = ? ORDER BY c.author_order", (sid,))])
+            elif ftype == "FACULTY":
+                e = conn.execute("SELECT emp_id FROM faculty_achievements WHERE submission_id = ?", (sid,)).fetchone()
+                grp("Faculty", [{"text": _name_of(conn, e[0]), "ok": True}] if e and e[0] else [])
+            else:
+                col = "convener_emp_id" if ftype == "DEPARTMENT" else "lead_emp_id"
+                table = DETAIL_TABLE[ftype]
+                lead = conn.execute(f"SELECT {col} FROM {table} WHERE submission_id = ?", (sid,)).fetchone()
+                grp("Convener" if ftype == "DEPARTMENT" else "Lead coordinator", [{"text": _name_of(conn, lead[0]), "ok": True}] if lead and lead[0] else [])
+                grp("Other faculty", [{"text": r[0], "ok": True} for r in conn.execute(
+                    "SELECT f.full_name FROM submission_faculty s JOIN faculty f ON f.emp_id = s.emp_id WHERE s.submission_id = ? AND s.role = 'Involved'", (sid,))])
+                n = conn.execute("SELECT COUNT(*) FROM event_participants WHERE submission_id = ?", (sid,)).fetchone()[0]
+                grp("Students who attended", [{"text": f"{n} student{'s' if n != 1 else ''} found", "ok": True}] if n else [])
+        return out
+    finally:
+        conn.execute("ROLLBACK TO review_preview")
+        conn.execute("RELEASE review_preview")

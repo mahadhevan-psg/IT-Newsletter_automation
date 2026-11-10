@@ -115,11 +115,13 @@ async function boot() {
   $('#who').textContent = `${me.name} · ${me.roles.filter(r => r !== 'FACULTY').join(', ') || 'Faculty'}`;
   if (me.roles.includes('ADMIN') || me.roles.includes('HOD')) $('#who').insertAdjacentHTML('beforeend', ' <a class="btn sm" href="/newsletter/">Newsletter studio</a>');
   const tabs = [
-    ['dash', 'Dashboard', () => true], ['students', 'Students', hasClasses], ['classes', 'Classes', hasClasses], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
+    ['dash', 'Dashboard', () => true], ['review', 'Approvals', () => true], ['sync', 'Sheet sync', () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0],
+    ['students', 'Students', hasClasses], ['classes', 'Classes', hasClasses], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
     ['placements', 'Placements', hasClasses], ['subs', 'Submissions', () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['works', 'By work', () => me.all_access], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
     .filter(t => t[2]());
   $('#tabs').innerHTML = tabs.map(t => `<button class="tab" data-t="${t[0]}">${t[1]}</button>`).join('');
-  $('#tabs').onclick = e => e.target.dataset.t && show(e.target.dataset.t);
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); };
+  if (window.refreshReviewBadge) refreshReviewBadge();
   const deep = location.hash.match(/^#\/(faculty|student)\/([^/]+)$/);       // a copied link to someone's page opens it directly
   show(me.must_change ? 'account' : tabs[0][0]);
   if (deep && !me.must_change) go(openProfile)(deep[1], decodeURIComponent(deep[2]));
@@ -556,7 +558,7 @@ async function openProfile(kind, id, opt = {}) {
       <div class="p-tools">${profileBack ? '<button class="btn sm" id="p-back">← Back</button>' : ''}
         <select class="compact" id="p-ay"><option value="">All academic years</option>${p.academic_years.map(y => `<option ${y === p.ay_id ? 'selected' : ''}>${esc(y)}</option>`).join('')}</select>
         <input class="input compact" id="p-find" placeholder="Search this page" value="${esc(q)}" style="width:160px">
-        <button class="btn sm" id="p-open">Expand all</button><button class="btn sm" id="p-print">Print</button></div></div></div>
+        <button class="btn sm" id="p-open">Expand all</button><button class="btn sm" id="p-print">Print</button><button class="btn sm" id="p-dl" title="Download everything on this page as a spreadsheet-ready CSV file">⬇ Download</button></div></div></div>
     <div class="kpis">${p.summary.map(s => kpi(s.value, s.label)).join('')}</div>
     ${p.total ? `<div class="snav">${p.sections.map(s => `<a data-jump="sec-${s.id}">${esc(s.title)}<b>${s.count}</b></a>`).join('')}</div>` + p.sections.map(s => `
       <section class="card sec" id="sec-${s.id}"><div class="card-head"><h3>${esc(s.title)} <span class="pill">${s.count}</span></h3></div>${s.note ? `<p class="sec-note">${esc(s.note)}</p>` : ''}
@@ -574,6 +576,15 @@ async function openProfile(kind, id, opt = {}) {
   let open = false;
   $('#p-open').onclick = () => { open = !open; document.querySelectorAll('details.act').forEach(d => d.open = open); $('#p-open').textContent = open ? 'Collapse all' : 'Expand all'; };
   $('#p-print').onclick = () => { document.querySelectorAll('details.act').forEach(d => d.open = true); window.print(); };
+  $('#p-dl').onclick = () => {                                   // everything on the page (for the chosen academic year) as CSV
+    const cell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const rows = [['Person', 'ID', 'Section', 'Group', 'Title', 'Date', 'Role', 'Tags', 'Details', 'Notes', 'Links']];
+    p.sections.forEach(sec => sec.groups.forEach(g => g.items.forEach(i => rows.push([h.name, h.id, sec.title, g.title, i.title, i.date || i.ay_id || '', i.role || '',
+      i.badges.map(b => b.text).join('; '), i.facts.map(([k, v]) => k + ': ' + v).join(' | '), i.notes.map(([k, v]) => k + ': ' + v).join(' | '), i.links.map(l => l.url).join(' ')]))));
+    if (rows.length === 1) return toast('There is nothing to download yet', true);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv' }));
+    a.download = `${h.id}_${h.name.replace(/[^A-Za-z0-9]+/g, '_')}${p.ay_id ? '_' + p.ay_id : ''}.csv`; a.click();
+  };
   const nav = $('.snav'); if (nav) nav.onclick = e => { const a = e.target.closest('[data-jump]'); if (a) document.getElementById(a.dataset.jump).scrollIntoView({ behavior: 'smooth' }); };
   window.scrollTo(0, 0);
 }

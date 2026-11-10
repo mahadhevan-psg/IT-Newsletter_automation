@@ -6,6 +6,7 @@
 The data goes through the same importer the real uploads use, so profiles, the by-work view, the diary and the newsletter
 studio all have something meaningful to show. Nothing here describes real people.
 """
+import json
 import os
 import random
 import shutil
@@ -402,6 +403,31 @@ def _seed_placements(conn, cohorts: List[Cohort]) -> None:
                                   _R.choice(D.INTERN_LEARN), _R.choice([3, 4, 4, 5, 5]), _R.choice(D.INTERN_TEXT), share))
 
 
+# ---------------------------------------------------------------- approvals and sheet sync
+def _seed_review(conn) -> None:
+    """Pretend sheets, a few responses waiting for approval (some with problems), some already sent back to a faculty member, and a pull history."""
+    from backend.demo import fake_sheets
+    from backend.master.auth import load_user
+    from backend.review import schedule, service
+    fake_sheets.reset()
+    fake_sheets.prime(conn)
+    for src in schedule.SOURCES:
+        conn.execute("INSERT INTO sync_sources (form_id, sheet_url) VALUES (?, ?)", (src, f"demo://{src}"))
+        result = service.stage_rows(conn, src, fake_sheets.initial(src))
+        conn.execute("UPDATE sync_sources SET last_pulled_at = CURRENT_TIMESTAMP, last_result = ? WHERE form_id = ?", (json.dumps({"rows": sum(result.values()), **result}), src))
+    conn.execute("INSERT OR IGNORE INTO sync_settings (id) VALUES (1)")
+    conn.execute("UPDATE sync_settings SET enabled = 1, mode = 'days', every_days = 2, hour = 2, minute = 0, timezone = 'Asia/Kolkata' WHERE id = 1")
+    conn.execute("INSERT INTO sync_runs (trigger, actor, status, finished_at, summary_json) VALUES ('schedule', NULL, 'done', CURRENT_TIMESTAMP, ?)",
+                 (json.dumps({"sources": {}, "new_or_updated": 0, "failed": [], "none_configured": False}),))
+    hod = load_user(conn, D.HOD, "STAFF")
+    pending = [dict(r) for r in conn.execute("SELECT item_id, form_id, submitter_emp_id FROM staged_items WHERE kind = 'FORM' AND status = 'PENDING' ORDER BY item_id")]
+    # one research and one student response were already looked at and sent back to the person who entered them
+    for it in [x for x in pending if x["form_id"] in ("form_research", "form_student") and x["submitter_emp_id"]][:2]:
+        service.reject(conn, hod, it["item_id"], "Please check the details and the evidence link before this goes in.", it["submitter_emp_id"])
+    for it in [x for x in pending if x["form_id"] == "form_faculty"][:1]:           # and one already approved
+        service.approve(conn, hod, it["item_id"])
+
+
 # ---------------------------------------------------------------- newsletter side
 def _seed_newsletter() -> None:
     from backend.services import front_matter_service as fms
@@ -442,6 +468,7 @@ def seed_all() -> Dict[str, int]:
         cohorts = _seed_people(conn)
         _seed_submissions(conn, cohorts)
         _seed_placements(conn, cohorts)
+        _seed_review(conn)
         roll = _student_account(conn)
         if roll:
             conn.execute("INSERT OR REPLACE INTO users (user_id, user_type, password_hash, must_change) VALUES (?, 'STUDENT', ?, 0)", (roll, hash_password(PASSWORD)))

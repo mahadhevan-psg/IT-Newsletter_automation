@@ -52,12 +52,18 @@ def using_service_account() -> bool:
         return True
 
 
+class Rows(list):
+    """The responses, which also remember the sheet's column titles (a sheet with no responses yet still has its titles)."""
+    headers: List[str] = []
+
+
 def _table(values: List[List[Any]]) -> List[Dict[str, str]]:
     """First row = column titles; the rest = one response each. Empty rows and untitled columns are dropped."""
     if not values:
-        return []
+        return Rows()
     heads = [str(h).strip() for h in values[0]]
-    out = []
+    out = Rows()
+    out.headers = [h for h in heads if h]
     for row in values[1:]:
         rec = {heads[i]: ("" if v is None else str(v).strip()) for i, v in enumerate(row) if i < len(heads) and heads[i]}
         if any(rec.values()):
@@ -79,6 +85,26 @@ def _fetch_csv(sid: str, gid: Optional[str]) -> List[Dict[str, str]]:
     return _table(list(csv.reader(io.StringIO(r.content.decode("utf-8-sig")))))
 
 
+def _explain(resp, email: str) -> None:
+    """Turn Google's refusal into the real reason (it is not always 'not shared')."""
+    try:
+        err = resp.json().get("error", {})
+    except ValueError:
+        err = {}
+    text = (err.get("message") or "") + " " + " ".join(str(d.get("reason", "")) for d in err.get("details", []) if isinstance(d, dict))
+    low = text.lower()
+    if "has not been used" in low or "service_disabled" in low or "is disabled" in low:
+        raise SheetError("The Google Sheets API is not switched on for the Google Cloud project that owns this key. In Google Cloud, open 'APIs & Services', "
+                         "search for 'Google Sheets API' and press Enable (use the same project as the service account), then wait a minute and test again.")
+    if "not supported for this document" in low or resp.status_code == 400:
+        raise SheetError("This file is not a native Google Sheet (it may be an uploaded Excel file). Open it and use File > Save as Google Sheets, then use the new link.")
+    if resp.status_code == 404:
+        raise SheetError("Google could not find that sheet. Check the link is the responses sheet's address.")
+    if resp.status_code == 403:
+        raise SheetError(f"The service account cannot open this sheet. Share it with {email} (Viewer or Editor), exactly that address. Google said: {err.get('message', 'permission denied')}")
+    raise SheetError(f"Google refused the request ({resp.status_code}): {err.get('message', 'no details')}")
+
+
 def _fetch_api(sid: str, gid: Optional[str]) -> List[Dict[str, str]]:
     try:
         from google.auth.transport.requests import AuthorizedSession
@@ -86,8 +112,8 @@ def _fetch_api(sid: str, gid: Optional[str]) -> List[Dict[str, str]]:
         creds = service_account.Credentials.from_service_account_info(service_account_info(), scopes=[SCOPE])
         session = AuthorizedSession(creds)
         meta = session.get(f"https://sheets.googleapis.com/v4/spreadsheets/{sid}?fields=sheets.properties(sheetId,title)", timeout=TIMEOUT)
-        if meta.status_code in (403, 404):
-            raise SheetError("The service account cannot open this sheet. Share the sheet with the service account's e-mail address (Viewer is enough).")
+        if meta.status_code >= 400:
+            _explain(meta, service_account_info().get("client_email", "the service account"))
         meta.raise_for_status()
         sheets = meta.json().get("sheets", [])
         pick = next((s for s in sheets if gid is not None and str(s["properties"]["sheetId"]) == gid), sheets[0] if sheets else None)
@@ -118,7 +144,7 @@ def fetch_rows(url: str) -> List[Dict[str, str]]:
 def check_source(form_id: str, url: str) -> Dict[str, Any]:
     """'Test this link': can it be read, and do its columns look like this form's questions?"""
     rows = fetch_rows(url)
-    heads = list(dict.fromkeys(k for r in rows for k in r)) if rows else []
+    heads = list(getattr(rows, "headers", None) or dict.fromkeys(k for r in rows for k in r))
     found = {norm_header(h) for h in heads}
     qs = ingest.specs()["placement" if form_id == "placement" else "forms"]
     questions = (qs["questions"] if form_id == "placement" else qs[form_id]["questions"])

@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS canonical_entries (
     badge_tag TEXT,
     featured_flag BOOLEAN DEFAULT 0,
     display_order INTEGER DEFAULT 100,
-    approval_status TEXT DEFAULT 'Draft', -- Draft, Reviewed, Approved, Rejected
+    approval_status TEXT DEFAULT 'Approved', -- Approved (the default: in the newsletter) or Rejected
     rejection_reason TEXT,
     submitter_email TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

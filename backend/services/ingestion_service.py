@@ -42,8 +42,7 @@ class IngestionService:
 
         # 4. Validate Entry
         validation_errors = self.validator.validate_entry(canonical_entry)
-        if validation_errors:
-            canonical_entry["approval_status"] = "Draft"
+        if validation_errors:                                       # stays approved (the default); the warnings are kept as a note for the editor
             canonical_entry["rejection_reason"] = f"Validation warnings: {'; '.join(validation_errors)}"
 
         # 5. Store Canonical Entry in DB

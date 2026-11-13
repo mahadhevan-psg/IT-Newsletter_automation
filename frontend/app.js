@@ -14,7 +14,7 @@ const FRONT_PREVIEWS = [{ template_id: "front_cover", name: "Cover page" }, { te
 let front = null;          // HOD desk, vision / mission, editorial board
 
 let currentFormId = null;          // shared by Forms + Layout
-let respFilter = "";               // "", pending, Approved, Rejected, featured
+let respFilter = "";               // "", Approved, Rejected, featured
 let layout = [];                   // blocks on the canvas
 let layoutLoaded = false;
 let currentLayoutId = "";          // "" = unsaved / default
@@ -111,10 +111,6 @@ async function init() {
   api("GET", "/api/issues").then(list => {
     const i = list[0];
     issueInfo = i || null;
-    if (i) {
-      $("issue-chip").textContent = `${i.academic_year} · Vol ${i.volume} No ${i.issue}`;
-      $("paper-vol").textContent = `VOL. ${i.volume} · ISSUE ${i.issue}`;
-    }
   }).catch(() => {});
   renderOverview();
   renderFormsView();
@@ -158,11 +154,9 @@ async function reloadFormsAndSections() {
 }
 
 // ================================================================ OVERVIEW
-const isPending = e => e.approval_status === "Draft" || e.approval_status === "Reviewed";
-
 function renderOverview() {
   $("stat-total").textContent = entries.length;
-  $("stat-pending").textContent = entries.filter(isPending).length;
+  $("stat-rejected").textContent = entries.filter(e => e.approval_status === "Rejected").length;
   $("stat-approved").textContent = entries.filter(e => e.approval_status === "Approved").length;
   $("stat-featured").textContent = entries.filter(e => e.featured_flag).length;
 
@@ -1111,7 +1105,6 @@ function renderResponses() {
   const inSec = entries.filter(e => (!secSel.value || e.section_id === secSel.value) && inRange(e, ranges.resp));
   const pills = [
     ["", "All", inSec.length],
-    ["pending", "Needs review", inSec.filter(isPending).length],
     ["Approved", "Approved", inSec.filter(e => e.approval_status === "Approved").length],
     ["Rejected", "Rejected", inSec.filter(e => e.approval_status === "Rejected").length],
     ["featured", "Featured", inSec.filter(e => e.featured_flag).length]
@@ -1120,7 +1113,7 @@ function renderResponses() {
     `<button class="pill ${respFilter === k ? "on" : ""}" onclick="setRespFilter('${k}')">${l}<span class="n">${n}</span></button>`).join("");
 
   const shown = inSec.filter(e =>
-    !respFilter ? true : respFilter === "pending" ? isPending(e) : respFilter === "featured" ? e.featured_flag : e.approval_status === respFilter);
+    !respFilter ? true : respFilter === "featured" ? e.featured_flag : e.approval_status === respFilter);
 
   $("responses-list").innerHTML = shown.map(e => `
     <article class="resp">
@@ -1128,6 +1121,8 @@ function renderResponses() {
         <div class="resp-title">${esc(e.title)}</div>
         <div class="resp-meta">${esc(e.author_or_person || "—")} · ${esc(e.organization_or_venue || "—")} · ${esc(e.event_date || "")} · ${esc(secName(e.section_id))}${e.badge_tag ? ` · <span class="tag">${esc(e.badge_tag)}</span>` : ""}</div>
         <div class="resp-desc">${esc(e.description || "")}</div>
+        ${e.rejection_reason && e.approval_status !== "Rejected" ? `<div class="resp-note">⚠ ${esc(e.rejection_reason)}</div>` : ""}
+        ${e.rejection_reason && e.approval_status === "Rejected" ? `<div class="resp-note">Rejected: ${esc(e.rejection_reason)}</div>` : ""}
       </div>
       <div class="resp-side">
         <div style="display:flex; align-items:center; gap:8px">
@@ -1251,7 +1246,6 @@ async function submitAdd() {
       toast("Response added");
     }
     closeDlg("dlg-add");
-    respFilter = "pending";
     await reloadEntries();
   } catch (e) { toast(e.message, true); }
 }
@@ -1263,7 +1257,7 @@ function renderPublish() {
   const noDate = entries.filter(e => e.approval_status === "Approved" && !e.date_iso).length;
   $("pub-range-note").textContent = ranged
     ? `Only responses dated ${rangeText(r)} go into the newsletter.${noDate ? ` ${noDate} approved ${noDate === 1 ? "response has" : "responses have"} no readable date and ${noDate === 1 ? "is" : "are"} left out.` : ""}`
-    : "No dates chosen: every approved response is used. Pick a start and an end date to use only that period.";
+    : "No dates chosen: every approved response (everything not rejected) is used. Pick a start and an end date to use only that period.";
   const rows = sections.map(s => {
     const own = entries.filter(e => e.section_id === s.section_id && inRange(e, r));
     const appr = own.filter(e => e.approval_status === "Approved").length;
@@ -1273,7 +1267,7 @@ function renderPublish() {
       <div class="pub-row ${appr ? "" : "empty-sec"}">
         <input type="checkbox" id="pub-${s.section_id}" value="${s.section_id}" ${appr ? "checked" : ""} ${appr ? "" : "disabled"}>
         <label for="pub-${s.section_id}"><span class="pub-name">${esc(s.name)}</span>
-          <span class="muted">${appr ? `${appr} approved` : "Nothing approved yet"}${own.length - appr ? ` · ${own.length - appr} not approved` : ""}</span></label>
+          <span class="muted">${appr ? `${appr} included` : "Nothing to include yet"}${own.length - appr ? ` · ${own.length - appr} rejected` : ""}</span></label>
         <select class="input compact layout-pick" title="Layout used for this section's entries" onchange="setSectionLayout('${s.section_id}', this.value)">
           <optgroup label="Fixed layouts">${builtinLayouts.map(opt).join("")}</optgroup>
           ${savedLayouts.length ? `<optgroup label="Your canvas layouts">${savedLayouts.map(opt).join("")}</optgroup>` : ""}

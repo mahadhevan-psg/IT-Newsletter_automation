@@ -2,7 +2,7 @@
 The newsletter reads its entries from the master database.
 
 Every form submission lives in the master database (form_submissions and its detail tables). This service turns the
-submissions that have not reached the newsletter yet into newsletter entries (Draft, awaiting an editor's approval)
+submissions that have not reached the newsletter yet into newsletter entries (approved by default: an editor only has to reject what should stay out)
 and records the link on the submission (newsletter_entry_id), so running it again never creates a second entry.
 Names of students and faculty are looked up from the master records, so the forms only need roll numbers / employee IDs.
 """
@@ -68,7 +68,6 @@ class MasterSync:
         entry["response_id"] = save_raw_response(form_id, issue_id, email, raw)
         problems = self.validator.validate_entry(entry)
         if problems:
-            entry["approval_status"] = "Draft"
             entry["rejection_reason"] = f"Validation warnings: {'; '.join(problems)}"
         return create_canonical_entry(entry)
 

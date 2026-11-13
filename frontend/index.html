@@ -20,7 +20,6 @@
       <button class="tab" data-tab="responses">Responses</button>
       <button class="tab" data-tab="publish">Publish</button>
     </nav>
-    <span class="issue-chip" id="issue-chip">Issue 2026 · Vol 1 No 1</span>
     <span id="help-host"></span>
   </header>
 
@@ -29,8 +28,8 @@
     <section id="tab-overview" class="view active">
       <div class="stats">
         <button class="stat" onclick="openResponses('')"><span class="stat-num" id="stat-total">0</span><span class="stat-lbl">Responses</span></button>
-        <button class="stat warn" onclick="openResponses('pending')"><span class="stat-num" id="stat-pending">0</span><span class="stat-lbl">Need review</span></button>
-        <button class="stat ok" onclick="openResponses('Approved')"><span class="stat-num" id="stat-approved">0</span><span class="stat-lbl">Approved</span></button>
+        <button class="stat ok" onclick="openResponses('Approved')"><span class="stat-num" id="stat-approved">0</span><span class="stat-lbl">In the newsletter</span></button>
+        <button class="stat warn" onclick="openResponses('Rejected')"><span class="stat-num" id="stat-rejected">0</span><span class="stat-lbl">Rejected</span></button>
         <button class="stat" onclick="openResponses('featured')"><span class="stat-num" id="stat-featured">0</span><span class="stat-lbl">Featured</span></button>
       </div>
       <div class="grid-2">
@@ -88,7 +87,7 @@
 
         <div class="canvas-area" id="canvas-area">
           <div class="paper" id="paper">
-            <div class="paper-head"><span id="paper-title">IT CHRONICLES</span><span id="paper-vol">VOL. 1 · ISSUE 1</span></div>
+            <div class="paper-head"><span id="paper-title">IT CHRONICLES</span></div>
             <div id="grid" class="grid edit"></div>
             <div id="fixed-preview" class="fixed-preview hidden"></div>
           </div>
@@ -120,6 +119,7 @@
         <button class="btn ghost" onclick="openAddResponses('csv')">Import CSV</button>
         <button class="btn ghost" onclick="openAddResponses('single')">+ Add manually</button>
       </div>
+      <p class="muted range-note">Every response is in the newsletter unless you reject it. Reject the ones that should stay out; you can approve them again at any time.</p>
       <div id="responses-list" class="responses"></div>
     </section>
 

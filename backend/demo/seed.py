@@ -445,8 +445,8 @@ def _seed_newsletter() -> None:
         "students": [{"name": n, "year": y, "photo": ""} for n, y in (("Aarthi Krishnan", "IV Year"), ("Surya Natarajan", "IV Year"), ("Divya Iyer", "III Year"), ("Karthik Raman", "III Year"))]})
     MasterSync().sync(issue_id=ISSUE_ID)
     for n, e in enumerate(get_entries(issue_id=ISSUE_ID)):
-        status = "Draft" if n % 9 == 4 else "Reviewed" if n % 17 == 6 else "Approved"         # most are approved; a few still need an editor's eye
-        update_entry_status(e["entry_id"], status, performer="Demo")
+        if n % 23 == 5:                                                                  # everything is in unless rejected: a few the editor left out
+            update_entry_status(e["entry_id"], "Rejected", rejection_reason="Left out of this issue", performer="Demo")
 
 
 # ---------------------------------------------------------------- orchestration

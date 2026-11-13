@@ -34,7 +34,7 @@ h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacin
 .tab { background: none; border: none; padding: 0 14px; font: inherit; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
 .tab:hover { color: var(--text); }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.issue-chip { margin-left: auto; font-size: 12px; color: var(--muted); background: var(--bg); padding: 4px 10px; border-radius: 99px; }
+#help-host { margin-left: auto; }
 
 .page { max-width: 1280px; margin: 24px auto; padding: 0 24px; }
 .view { display: none; }
@@ -249,7 +249,6 @@ textarea.input { resize: vertical; }
   .stats { grid-template-columns: 1fr 1fr; }
   .grid-2, .forms-layout, .publish-grid { grid-template-columns: 1fr; }
   .topbar { overflow-x: auto; gap: 14px; }
-  .issue-chip { display: none; }
   .q-row { grid-template-columns: 1fr 28px; }
   .q-arrow { display: none; }
   .q-sel { grid-column: 1 / 2; }
@@ -384,3 +383,4 @@ textarea.input { resize: vertical; }
 .date-range label { display: inline-flex; align-items: center; gap: 6px; }
 .pub-range { padding-bottom: 6px; } .pub-range b { color: var(--text); }
 .range-note { margin: 2px 0 14px; font-size: 12.5px; }
+.resp-note { margin-top: 4px; font-size: 12px; color: var(--warn, #b45309); }

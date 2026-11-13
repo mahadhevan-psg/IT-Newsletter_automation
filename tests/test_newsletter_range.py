@@ -51,3 +51,24 @@ def test_a_bad_range_is_refused():
         assert e.value.status_code == 400
     studio._check_range(None, None)
     studio._check_range("2026-01-01", "2026-01-01")
+
+
+def test_entries_are_approved_by_default_and_only_a_rejection_keeps_them_out(tmp_path, monkeypatch):
+    monkeypatch.setattr(db_manager, "DB_PATH", str(tmp_path / "news.db"))
+    db_manager.init_db()
+    issue = db_manager.get_all_issues()[0]["issue_id"]
+    sec = db_manager.get_sections_and_categories()[0]
+    base = {"issue_id": issue, "section_id": sec["section_id"], "category_id": (sec.get("subcategories") or [{}])[0].get("category_id"), "title": "T", "event_date": "2026-03-15", "author_or_person": "A", "organization_or_venue": "V", "description": "d"}
+    new = db_manager.create_canonical_entry(dict(base))                                   # nothing said about approval: it is in
+    assert [e["approval_status"] for e in db_manager.get_entries(issue_id=issue)] == ["Approved"]
+    db_manager.update_entry_status(new, "Rejected", rejection_reason="Not this time")
+    assert db_manager.get_entries(issue_id=issue, approval_status="Approved") == []
+    db_manager.update_entry_status(new, "Approved")
+    assert len(db_manager.get_entries(issue_id=issue, approval_status="Approved")) == 1
+    # entries left as Draft / Reviewed by the old workflow count as approved after start-up; rejected ones stay rejected
+    a = db_manager.create_canonical_entry({**base, "approval_status": "Draft"})
+    b = db_manager.create_canonical_entry({**base, "approval_status": "Reviewed"})
+    c = db_manager.create_canonical_entry({**base, "approval_status": "Rejected"})
+    db_manager.init_db()
+    status = {e["entry_id"]: e["approval_status"] for e in db_manager.get_entries(issue_id=issue)}
+    assert status[a] == status[b] == "Approved" and status[c] == "Rejected"

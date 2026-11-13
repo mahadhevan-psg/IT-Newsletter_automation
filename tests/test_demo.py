@@ -68,7 +68,7 @@ def test_the_demo_department_is_rich_enough_for_every_feature(demo):
     # the newsletter has entries, mostly approved, and front pages
     n = db_manager.get_connection()
     by = dict(n.execute("SELECT approval_status, COUNT(*) FROM canonical_entries GROUP BY 1").fetchall())
-    assert by["Approved"] > 250 and by.get("Draft", 0) > 0 and sum(by.values()) >= 300
+    assert by["Approved"] > 250 and by.get("Rejected", 0) > 0 and not by.get("Draft") and sum(by.values()) >= 300      # approved by default, a few rejected
     import json
     assert "Venkatesan" in json.load(open(demo / "demo_front_matter.json"))["hod"]["name"]
 

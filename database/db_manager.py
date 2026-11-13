@@ -31,6 +31,8 @@ def init_db():
         cursor.execute("ALTER TABLE canonical_entries ADD COLUMN badge_tag TEXT")
     if "extra_data_json" not in cols:
         cursor.execute("ALTER TABLE canonical_entries ADD COLUMN extra_data_json TEXT")
+    # Every entry is in the newsletter unless an editor rejected it: older Draft / Reviewed entries count as approved too.
+    cursor.execute("UPDATE canonical_entries SET approval_status = 'Approved' WHERE approval_status IN ('Draft', 'Reviewed')")
     conn.commit()
 
     # Create visual_templates table
@@ -141,7 +143,7 @@ def create_canonical_entry(entry_data: dict) -> str:
             entry_data.get("badge_tag", ""),
             1 if entry_data.get("featured_flag") else 0,
             entry_data.get("display_order", 100),
-            entry_data.get("approval_status", "Draft"),
+            entry_data.get("approval_status", "Approved"),
             entry_data.get("submitter_email", ""),
             extra_json
         )

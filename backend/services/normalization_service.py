@@ -62,7 +62,7 @@ class NormalizationService:
             "badge_tag": "",
             "featured_flag": False,
             "display_order": 100,
-            "approval_status": "Draft",
+            "approval_status": "Approved",         # in the newsletter unless an editor rejects it
             "submitter_email": "",
             "extra_fields": {}
         }

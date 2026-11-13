@@ -28,17 +28,18 @@ def test_old_login_address_redirects_to_root_keeping_next():
         assert r.status_code in (302, 307) and r.headers["location"] == dst, (src, r.status_code, r.headers.get("location"))
 
 
-def test_forms_homepage_is_login_gated_with_portal_and_signout_buttons():
+def test_forms_homepage_is_login_gated_with_two_choices_and_signout_button():
     r = client.get("/homepage/")
     assert r.status_code == 200
     html = r.text
     assert 'style="visibility:hidden"' in html and "sessionStorage.getItem('tok')" in html      # hidden until the check passes
     assert html.count("Open form") == 6                                                          # all the form links are there for faculty
-    assert 'href="/portal/">Go to portal</a>' in html
+    assert "<h1>IT Matrix</h1>" in html and "IT Chronicles" not in html
+    assert 'id="go-entry"' in html and 'id="go-retrieval" href="/portal/"' in html                # exactly two choices: Data Entry and Data Retrieval
+    assert "Go to portal" not in html and 'class="portal-btn"' not in html                        # the old button is gone
     assert ">Sign in<" not in html                                                               # the old Sign in button is gone
     signout = html[html.index('id="signout"') - 40: html.index("</button>", html.index('id="signout"')) + 9]
     assert "<svg" in signout and "Sign out" in signout.split("<svg")[0]                          # an icon button: the label is only title / aria-label
-    assert html.index('id="signout"') < html.index('class="portal-btn"')                          # sign-out sits to the LEFT of Go to portal
 
 
 def test_applications_still_served_and_send_signed_out_users_to_root():

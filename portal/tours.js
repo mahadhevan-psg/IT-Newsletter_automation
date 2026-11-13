@@ -14,8 +14,15 @@
   function home(me, token) {
     const formCard = re => find('.cards .card', re);
     const sections = () => [{
-      id: 'forms', label: 'The forms page', hint: 'The six forms and the buttons', steps: () => [
-        { target: 'h1', title: 'The Data Collection Forum', body: '<p>Every Google Form the department uses lives on this page, so nobody has to hunt for links.</p>', place: 'bottom' },
+      id: 'start', label: 'The two options', hint: 'Data Entry and Data Retrieval', steps: () => [
+        { before: () => window.showHomeView && showHomeView('choose'), target: 'h1', title: 'IT Matrix', body: '<p>The starting point for the department: one place to enter your work and one to look at everything that has been entered.</p>', place: 'bottom' },
+        { target: '#go-entry', title: 'Data Entry', body: '<p>Opens the six Google Forms: departmental highlights, faculty achievements, research, student achievements, industry and outreach, and placements.</p>', place: 'bottom' },
+        { target: '#go-retrieval', title: 'Data Retrieval', body: '<p>Opens the department portal: your own activity page and, depending on your role, students, classes, placements, approvals and analytics.</p>', place: 'bottom' },
+        { target: '#signout', title: 'Sign out', body: '<p>Small icon button. Use it when you finish, especially on a shared computer.</p>', place: 'bottom' },
+      ],
+    }, {
+      id: 'forms', label: 'The forms', hint: 'The six forms', steps: () => [
+        { before: () => window.showHomeView && showHomeView('entry'), target: '#entry .lead', title: 'Data Entry', body: '<p>Every Google Form the department uses is here, so nobody has to hunt for links. <b>Back</b> returns to the two options.</p>', place: 'bottom' },
         { target: '.cards', title: 'Six forms', body: '<p>Pick the one that matches what you want to report. Each opens in <b>Google Forms in a new tab</b>, and what you submit flows into the department database, the portal and the newsletter.</p>', place: 'top', pad: 10 },
         { target: formCard(/Departmental/), title: 'Departmental Highlights', body: '<p>Workshops, conferences, lab upgrades, club activities and milestones. Choose the convener and the other faculty involved from the list.</p>' },
         { target: formCard(/Faculty Achievements/), title: 'Faculty Achievements', body: '<p>Awards, certifications, invited lectures, FDPs and professional roles. <b>Select your own name</b> from the list: that is what puts it on your page.</p>' },
@@ -23,14 +30,12 @@
         { target: formCard(/Student Achievements/), title: 'Student Achievements', body: '<p>Competitions, hackathons, projects and higher studies, or <b>participation only</b>. Enter students by roll number, one per line.</p>' },
         { target: formCard(/Industry/), title: 'Industry, Alumni & Outreach', body: '<p>Industry visits, expert talks, MoUs, alumni interactions and community outreach. You can add the students who attended.</p>' },
         { target: formCard(/Placement/), title: 'Student Placement Details', body: '<p>This one is <b>for students</b>: tutors share it so each student records their offers and interview experience. One response per offer.</p>' },
-        { target: '.portal-btn', title: 'Go to portal', body: '<p>Opens the department portal: your own activity page, and (depending on your role) students, classes, placements and analytics.</p>', place: 'bottom' },
-        { target: '#signout', title: 'Sign out', body: '<p>Small icon button. Use it when you finish, especially on a shared computer.</p>', place: 'bottom' },
         { target: find('.foot a', /Newsletter/), optional: true, title: 'Newsletter studio', body: '<p>Only the <b>Admin and the HoD</b> can open the newsletter studio, where approved responses become the newsletter.</p>', place: 'top' },
       ],
     }];
     const welcome = () => [{
       welcome: true, title: `Welcome, ${esc(firstName(me.name))}!`,
-      body: `<p>This is the <b>IT Department Data Collection Forum</b>: the starting point for faculty. From here you open the forms and move on to the portal.</p>
+      body: `<p>This is <b>IT Matrix</b>, the starting point for faculty. Choose <b>Data Entry</b> to open the forms, or <b>Data Retrieval</b> to go to the portal.</p>
         ${role('Your job', 'Submit your work (papers, awards, events, students you mentored) through the right form. It appears on your page in the portal automatically.')}
         <p>A short tour takes about a minute. You can skip it now and replay it any time from <b>Help</b>.</p>`,
     }];

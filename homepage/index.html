@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Collection Forum</title>
+  <title>IT Matrix</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="home.css">
@@ -41,17 +41,36 @@
   </header>
 
   <div class="title-row">
-    <h1>IT Department Data collection Forum</h1>
+    <h1>IT Matrix</h1>
     <div class="actions">
       <span id="help-host"></span>
       <button type="button" class="icon-btn" id="signout" title="Sign out" aria-label="Sign out">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 00-2 2v14a2 2 0 002 2h5v-2H5V5h5V3zm6.6 4.6L15.2 9l2 2H9v2h8.2l-2 2 1.4 1.4L21 12l-4.4-4.4z"/></svg>
       </button>
-      <a class="portal-btn" href="/portal/">Go to portal</a>
     </div>
   </div>
 
   <main class="wrap">
+    <section id="choose">
+      <p class="lead">What would you like to do?</p>
+      <div class="choices">
+        <button type="button" class="choice" id="go-entry">
+          <span class="icon big"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></span>
+          <span class="title">Data Entry</span>
+          <span class="desc">Submit your work through the department's forms: achievements, research, events, outreach and placements.</span>
+          <span class="go">Open the forms <i>→</i></span>
+        </button>
+        <a class="choice" id="go-retrieval" href="/portal/">
+          <span class="icon big"><svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg></span>
+          <span class="title">Data Retrieval</span>
+          <span class="desc">Open the portal: your own page, students, classes, placements, approvals and analytics.</span>
+          <span class="go">Go to the portal <i>→</i></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="entry" hidden>
+    <button type="button" class="back-link" id="back-choose">← Back</button>
     <p class="lead">Choose the form that matches your submission. Each one opens in Google Forms.</p>
 
     <div class="cards">
@@ -92,6 +111,7 @@
         <span class="go">Open form <i>→</i></span>
       </a>
     </div>
+    </section>
 
   </main>
 
@@ -104,6 +124,16 @@
   <script src="/portal/tours.js"></script>
   <script>
     Tours.fetchMe('tok').then(r => { if (r && r.me.kind === 'STAFF') Tours.home(r.me, r.token); });   // Help button + first-visit tour
+    // Two views on one page: the choice (Data Entry / Data Retrieval) and the six forms. #entry in the address opens the forms.
+    window.showHomeView = view => {
+      document.getElementById('choose').hidden = view === 'entry';
+      document.getElementById('entry').hidden = view !== 'entry';
+      history.replaceState(null, '', view === 'entry' ? '#entry' : location.pathname);
+      window.scrollTo(0, 0);
+    };
+    document.getElementById('go-entry').onclick = () => showHomeView('entry');
+    document.getElementById('back-choose').onclick = () => showHomeView('choose');
+    if (location.hash === '#entry') showHomeView('entry');
     document.getElementById('signout').addEventListener('click', () => {
       sessionStorage.removeItem('tok'); sessionStorage.removeItem('dtok');
       location.replace('/');

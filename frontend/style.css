@@ -378,3 +378,9 @@ textarea.input { resize: vertical; }
 .fixed-preview .fp-hodleft { flex: none; }
 .fixed-preview .fp-hodmsg { flex: 1; min-width: 0; }
 .fixed-preview .fp-hodmsg p { margin-top: 0; }
+
+/* date range (Responses and Publish) */
+.date-range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.date-range label { display: inline-flex; align-items: center; gap: 6px; }
+.pub-range { padding-bottom: 6px; } .pub-range b { color: var(--text); }
+.range-note { margin: 2px 0 14px; font-size: 12.5px; }

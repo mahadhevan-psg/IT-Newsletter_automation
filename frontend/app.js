@@ -1090,13 +1090,25 @@ async function saveLayout() {
 }
 
 // ================================================================ RESPONSES
+// ---- date range (Responses: what you look at; Publish: what goes into the newsletter). Each tab keeps its own range.
+const ranges = { resp: { from: "", to: "" }, pub: { from: "", to: "" } };
+const inRange = (e, r) => (!r.from && !r.to) || (!!e.date_iso && (!r.from || e.date_iso >= r.from) && (!r.to || e.date_iso <= r.to));
+function setRange(k) {
+  ranges[k] = { from: $(k + "-from").value, to: $(k + "-to").value };
+  if (ranges[k].from && ranges[k].to && ranges[k].from > ranges[k].to) { toast("The start date is after the end date", true); }
+  if (k === "resp") renderResponses(); else renderPublish();
+}
+function clearRange(k) { $(k + "-from").value = ""; $(k + "-to").value = ""; setRange(k); }
+const rangeText = r => r.from && r.to ? `${r.from} to ${r.to}` : r.from ? `from ${r.from}` : r.to ? `up to ${r.to}` : "";
+
 function renderResponses() {
+  $("resp-clear").hidden = !(ranges.resp.from || ranges.resp.to);
   const secSel = $("filter-section");
   const prevSec = secSel.value;
   secSel.innerHTML = `<option value="">All sections</option>` + sections.map(s => `<option value="${s.section_id}">${esc(s.name)}</option>`).join("");
   secSel.value = sections.some(s => s.section_id === prevSec) ? prevSec : "";
 
-  const inSec = entries.filter(e => !secSel.value || e.section_id === secSel.value);
+  const inSec = entries.filter(e => (!secSel.value || e.section_id === secSel.value) && inRange(e, ranges.resp));
   const pills = [
     ["", "All", inSec.length],
     ["pending", "Needs review", inSec.filter(isPending).length],
@@ -1246,8 +1258,14 @@ async function submitAdd() {
 
 // ================================================================ PUBLISH
 function renderPublish() {
+  const r = ranges.pub, ranged = !!(r.from || r.to);
+  $("pub-clear").hidden = !ranged;
+  const noDate = entries.filter(e => e.approval_status === "Approved" && !e.date_iso).length;
+  $("pub-range-note").textContent = ranged
+    ? `Only responses dated ${rangeText(r)} go into the newsletter.${noDate ? ` ${noDate} approved ${noDate === 1 ? "response has" : "responses have"} no readable date and ${noDate === 1 ? "is" : "are"} left out.` : ""}`
+    : "No dates chosen: every approved response is used. Pick a start and an end date to use only that period.";
   const rows = sections.map(s => {
-    const own = entries.filter(e => e.section_id === s.section_id);
+    const own = entries.filter(e => e.section_id === s.section_id && inRange(e, r));
     const appr = own.filter(e => e.approval_status === "Approved").length;
     const chosen = [...builtinLayouts, ...savedLayouts].some(t => t.template_id === sectionLayouts[s.section_id]) ? sectionLayouts[s.section_id] : "builtin_centered";
     const opt = t => `<option value="${esc(t.template_id)}" ${t.template_id === chosen ? "selected" : ""}>${esc(t.name)}</option>`;
@@ -1264,7 +1282,7 @@ function renderPublish() {
       </div>`;
   });
   $("publish-sections").innerHTML = rows.join("") || `<div class="empty">No sections yet.</div>`;
-  $("publish-count").textContent = `${entries.filter(e => e.approval_status === "Approved").length} approved responses`;
+  $("publish-count").textContent = `${entries.filter(e => e.approval_status === "Approved" && inRange(e, r)).length} approved responses${ranged ? " in this range" : ""}`;
 }
 
 async function setSectionLayout(sectionId, templateId) {
@@ -1288,7 +1306,7 @@ async function triggerDownload(filename) {
 async function buildSection(id, btn) {
   btn.disabled = true; const old = btn.textContent; btn.textContent = "Building…";
   try {
-    const r = await api("POST", `/api/generate/section/${id}`, { section_id: id });
+    const r = await api("POST", `/api/generate/section/${id}`, { section_id: id, date_from: ranges.pub.from || null, date_to: ranges.pub.to || null });
     triggerDownload(r.filename);
     toast(`${r.total_entries} entries · ${r.layout_used ? "layout: " + r.layout_used : "default layout"}`);
     api("GET", "/api/audit-logs").then(l => { auditLogs = l; });
@@ -1303,7 +1321,7 @@ async function buildMaster() {
   const btn = $("btn-master");
   btn.disabled = true; btn.textContent = "Building…";
   try {
-    const r = await api("POST", "/api/generate/master", { selected_section_ids: chosen, include_front_pages: $("pub-front").checked });
+    const r = await api("POST", "/api/generate/master", { selected_section_ids: chosen, include_front_pages: $("pub-front").checked, date_from: ranges.pub.from || null, date_to: ranges.pub.to || null });
     box.className = "result";
     box.innerHTML = `${r.total_entries_included} entries from ${r.total_sections_included} sections.<br><a href="#" onclick="triggerDownload('${esc(r.filename)}'); return false;">Download ${esc(r.filename)}</a>`;
     triggerDownload(r.filename);

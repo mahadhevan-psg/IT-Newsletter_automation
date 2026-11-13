@@ -18,7 +18,8 @@ class NewsletterBuilder:
     def assemble_newsletter(self, issue_id: str, selected_section_ids: Optional[List[str]] = None,
                             selected_entry_ids: Optional[List[str]] = None,
                             output_filename: Optional[str] = None,
-                            include_front_pages: bool = True) -> Dict[str, Any]:
+                            include_front_pages: bool = True,
+                            date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict[str, Any]:
         issue = get_issue(issue_id)
         if not issue:
             raise ValueError(f"Issue {issue_id} not found.")
@@ -40,7 +41,7 @@ class NewsletterBuilder:
         layouts_used: Dict[str, Optional[str]] = {}
         included_sections = 0
         for sec in sections:
-            entries = get_entries(issue_id=issue_id, section_id=sec["section_id"], approval_status="Approved")
+            entries = get_entries(issue_id=issue_id, section_id=sec["section_id"], approval_status="Approved", date_from=date_from, date_to=date_to)
             if selected_entry_ids is not None:
                 entries = [e for e in entries if e["entry_id"] in selected_entry_ids]
             entries = dedupe_entries(entries)

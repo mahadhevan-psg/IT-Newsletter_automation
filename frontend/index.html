@@ -110,6 +110,11 @@
       <div class="toolbar">
         <div class="pills" id="status-pills"></div>
         <span class="spacer"></span>
+        <div class="date-range" title="Show only responses dated inside this range">
+          <label>From <input type="date" id="resp-from" class="input compact" onchange="setRange('resp')"></label>
+          <label>To <input type="date" id="resp-to" class="input compact" onchange="setRange('resp')"></label>
+          <button class="btn ghost sm" id="resp-clear" onclick="clearRange('resp')" hidden>Clear dates</button>
+        </div>
         <select id="filter-section" class="input compact" onchange="renderResponses()"></select>
         <button class="btn primary" id="btn-sync" onclick="syncMaster(this)" title="Bring in every submission from the master database that is not in the newsletter yet">Sync from master database</button>
         <button class="btn ghost" onclick="openAddResponses('csv')">Import CSV</button>
@@ -122,6 +127,13 @@
     <section id="tab-publish" class="view">
       <div class="publish-grid">
         <div class="card">
+          <div class="date-range pub-range">
+            <b>Date range</b>
+            <label>From <input type="date" id="pub-from" class="input compact" onchange="setRange('pub')"></label>
+            <label>To <input type="date" id="pub-to" class="input compact" onchange="setRange('pub')"></label>
+            <button class="btn ghost sm" id="pub-clear" onclick="clearRange('pub')" hidden>Clear dates</button>
+          </div>
+          <p class="muted range-note" id="pub-range-note"></p>
           <div class="card-head"><h3>Sections in this issue</h3><span class="muted" id="publish-count"></span></div>
           <div id="publish-sections"></div>
         </div>

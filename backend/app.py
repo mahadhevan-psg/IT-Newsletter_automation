@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from database.db_manager import (
     init_db, get_all_issues, get_issue, get_sections_and_categories,
-    get_entries, update_entry_status, get_audit_logs, save_generation_record,
+    get_entries, entry_date, update_entry_status, get_audit_logs, save_generation_record,
     get_visual_templates, get_visual_template, save_visual_template, delete_visual_template
 )
 from backend.services.ingestion_service import IngestionService
@@ -308,9 +308,14 @@ def get_uploaded_photo(filename: str):
 def list_entries(
     issue_id: Optional[str] = None,
     section_id: Optional[str] = None,
-    approval_status: Optional[str] = None
+    approval_status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None
 ):
-    return get_entries(issue_id=issue_id, section_id=section_id, approval_status=approval_status)
+    rows = get_entries(issue_id=issue_id, section_id=section_id, approval_status=approval_status, date_from=date_from, date_to=date_to)
+    for r in rows:
+        r["date_iso"] = entry_date(r)          # the date in one format, so the pages can filter by range whatever way the form wrote it
+    return rows
 
 class StatusUpdateRequest(BaseModel):
     approval_status: str # Draft, Reviewed, Approved, Rejected
@@ -377,16 +382,27 @@ class SectionGenRequest(BaseModel):
     issue_id: str = "ISSUE_2026_V1I1"
     section_id: str
     entry_ids: Optional[List[str]] = None
+    date_from: Optional[str] = None      # only entries dated inside this range are used (both ends included)
+    date_to: Optional[str] = None
+
+def _check_range(date_from: Optional[str], date_to: Optional[str]) -> None:
+    import re
+    for d in (date_from, date_to):
+        if d and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+            raise HTTPException(status_code=400, detail="Dates must look like 2026-03-31")
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(status_code=400, detail="The start date is after the end date")
 
 @app.post("/api/generate/section/{section_id}")
 def generate_section_docx_endpoint(section_id: str, req: SectionGenRequest):
+    _check_range(req.date_from, req.date_to)
     sections = get_sections_and_categories()
     sec_info = next((s for s in sections if s["section_id"] == section_id), None)
     if not sec_info:
         raise HTTPException(status_code=404, detail="Section not found")
 
     # Fetch approved entries
-    approved = get_entries(issue_id=req.issue_id, section_id=section_id, approval_status="Approved")
+    approved = get_entries(issue_id=req.issue_id, section_id=section_id, approval_status="Approved", date_from=req.date_from, date_to=req.date_to)
     if req.entry_ids:
         approved = [e for e in approved if e["entry_id"] in req.entry_ids]
 
@@ -426,14 +442,19 @@ class MasterGenRequest(BaseModel):
     selected_section_ids: Optional[List[str]] = None
     selected_entry_ids: Optional[List[str]] = None
     include_front_pages: bool = True
+    date_from: Optional[str] = None      # only entries dated inside this range go into the newsletter
+    date_to: Optional[str] = None
 
 @app.post("/api/generate/master")
 def generate_master_newsletter(req: MasterGenRequest):
+    _check_range(req.date_from, req.date_to)
     res = newsletter_builder.assemble_newsletter(
         issue_id=req.issue_id,
         selected_section_ids=req.selected_section_ids,
         selected_entry_ids=req.selected_entry_ids,
-        include_front_pages=req.include_front_pages
+        include_front_pages=req.include_front_pages,
+        date_from=req.date_from,
+        date_to=req.date_to
     )
     res["filename"] = os.path.basename(res["master_docx_path"])
     return res

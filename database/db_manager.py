@@ -151,7 +151,22 @@ def create_canonical_entry(entry_data: dict) -> str:
     log_audit("canonical_entries", entry_id, "CREATE_ENTRY", details=f"Canonical entry {entry_id} created")
     return entry_id
 
-def get_entries(issue_id: Optional[str] = None, section_id: Optional[str] = None, approval_status: Optional[str] = None) -> List[dict]:
+def entry_date(entry: dict) -> Optional[str]:
+    """An entry's date as YYYY-MM-DD, whatever way the form wrote it ('2026-03-15', '15/03/2026', 'March 2026' ...); None if it has no readable date."""
+    from backend.master.common import parse_date
+    return parse_date(entry.get("event_date"))
+
+
+def in_date_range(entry: dict, date_from: Optional[str], date_to: Optional[str]) -> bool:
+    """With no range everything counts. With a range, an entry counts only if its date is readable and inside it (both ends included)."""
+    if not date_from and not date_to:
+        return True
+    d = entry_date(entry)
+    return bool(d) and (not date_from or d >= date_from) and (not date_to or d <= date_to)
+
+
+def get_entries(issue_id: Optional[str] = None, section_id: Optional[str] = None, approval_status: Optional[str] = None,
+                date_from: Optional[str] = None, date_to: Optional[str] = None) -> List[dict]:
     conn = get_connection()
     cursor = conn.cursor()
     query = "SELECT * FROM canonical_entries WHERE 1=1"
@@ -170,7 +185,7 @@ def get_entries(issue_id: Optional[str] = None, section_id: Optional[str] = None
     cursor.execute(query, params)
     rows = [dict(r) for r in cursor.fetchall()]
     conn.close()
-    return rows
+    return [r for r in rows if in_date_range(r, date_from, date_to)]
 
 def update_entry_status(entry_id: str, status: str, rejection_reason: Optional[str] = None, featured_flag: Optional[bool] = None, display_order: Optional[int] = None, performer: str = "Editor") -> bool:
     conn = get_connection()

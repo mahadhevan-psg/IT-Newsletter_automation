@@ -403,7 +403,7 @@ def _seed_placements(conn, cohorts: List[Cohort]) -> None:
                                   _R.choice(D.INTERN_LEARN), _R.choice([3, 4, 4, 5, 5]), _R.choice(D.INTERN_TEXT), share))
 
 
-# ---------------------------------------------------------------- approvals and sheet sync
+# ---------------------------------------------------------------- approvals and data sync
 def _seed_review(conn) -> None:
     """Pretend sheets, a few responses waiting for approval (some with problems), some already sent back to a faculty member, and a pull history."""
     from backend.demo import fake_sheets

@@ -1,5 +1,5 @@
-"""The 'by work' view for the HoD and Admin: pick a kind of work (patents, hackathons, awards, journal papers ...) and see every
-one of them across the department. The filters describe the WORK (year, level, status, indexing, funding ...), never a person.
+"""The Reports view for the Admin, HoD and programme coordinators: pick a kind of work (patents, hackathons, awards, journal papers ...)
+and see every one of them across the department. The filters describe the WORK (year, level, status, indexing, funding ...), never a person.
 
 A kind of work is (form, category): the categories are the ones on the forms, so a new category added to a form appears here
 by itself. Rows are formatted by the same builders the person pages use, so a card looks the same in both views.
@@ -41,9 +41,10 @@ EXTRA_OPTIONS = {("STUDENT", "entry_kind"): [("ACHIEVEMENT", "Achievement (won /
 DATE_COL = "fs.event_date"
 
 
-def _need_all(user: User):
-    if not user.all_access:
-        raise HTTPException(403, "The by-work view is for the Admin and the HoD")
+def _scope(user: User, where: list, args: list) -> None:
+    """Only the Admin, HoD and programme coordinators have this view; they see the whole department."""
+    if not (user.all_access or "PC" in user.roles):
+        raise HTTPException(403, "Reports are for the Admin, the HoD and programme coordinators")
 
 
 def _options(form_id: str, group: str, param: str) -> List[Dict[str, str]]:
@@ -60,9 +61,13 @@ def _filter_defs(group: str) -> List[Dict[str, Any]]:
 
 def catalog(conn, user: User, ay: Optional[str] = None) -> Dict[str, Any]:
     """Every kind of work with how many there are (for the chosen academic year, or all), plus each group's filters."""
-    _need_all(user)
     counts: Dict[tuple, int] = {}
-    sql, args = "SELECT form_type, category, COUNT(*) FROM form_submissions" + (" WHERE ay_id = ?" if ay else "") + " GROUP BY form_type, category", ([ay] if ay else [])
+    where, args = ["1=1"], []
+    if ay:
+        where.append("fs.ay_id = ?")
+        args.append(ay)
+    _scope(user, where, args)
+    sql = f"SELECT fs.form_type, fs.category, COUNT(*) FROM form_submissions fs WHERE {' AND '.join(where)} GROUP BY fs.form_type, fs.category"
     for ft, cat, n in conn.execute(sql, args):
         counts[(ft, cat)] = n
     groups = []
@@ -80,7 +85,7 @@ def _join(group: str) -> str:
     return f"JOIN {table} {alias} USING (submission_id)" + (" LEFT JOIN organizations g ON g.org_id = o.partner_org_id" if group == "OUTREACH" else "")
 
 
-def _where(group: str, category: str, f: Dict[str, Any]):
+def _where(group: str, category: str, f: Dict[str, Any], user: Optional[User] = None):
     """The WHERE clause (and bound values) for one kind of work plus the work filters. Shared by the list and the CSV export."""
     title, form_id, table, alias, text_col = GROUPS[group]
     where, args = ["fs.form_type = ?"], [group]
@@ -99,8 +104,6 @@ def _where(group: str, category: str, f: Dict[str, Any]):
     if f.get("q"):
         where.append(f"(fs.title LIKE ? OR {text_col} LIKE ?)")
         args += [f"%{f['q']}%"] * 2
-    if f.get("landmark"):
-        where.append("fs.is_landmark = 1")
     if f.get("has_media"):
         where.append("fs.media_url IS NOT NULL AND fs.media_url != ''")
     for param, col, _label, kind in FILTERS[group]:                       # columns come from this table only, values are always bound
@@ -117,7 +120,11 @@ def _where(group: str, category: str, f: Dict[str, Any]):
         else:
             where.append(f"{col} = ?")
             args.append(v)
+    if user is not None:
+        _scope(user, where, args)
     if group == "STUDENT" and f.get("class_id"):                          # the class the students were in when it happened
+        if user is not None and not user.sees_class(int(f["class_id"])) and not (user.all_access or "PC" in user.roles):
+            raise HTTPException(403, "That class is outside your scope")
         where.append("fs.submission_id IN (SELECT submission_id FROM student_achievement_participants WHERE class_id_snapshot = ?)")
         args.append(int(f["class_id"]))
 
@@ -125,11 +132,10 @@ def _where(group: str, category: str, f: Dict[str, Any]):
 
 
 def list_works(conn, user: User, group: str, category: str, f: Dict[str, Any], limit: int = 50, offset: int = 0) -> Dict[str, Any]:
-    _need_all(user)
     if group not in GROUPS:
         raise HTTPException(400, "Unknown kind of work")
     title, form_id, table, alias, text_col = GROUPS[group]
-    where, args = _where(group, category, f)
+    where, args = _where(group, category, f, user)
     base = f"FROM form_submissions fs {_join(group)} WHERE {' AND '.join(where)}"
     total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
     ids = [r[0] for r in conn.execute(f"SELECT fs.submission_id {base} ORDER BY fs.event_date DESC, fs.submission_id DESC LIMIT ? OFFSET ?", args + [limit, offset])]
@@ -161,7 +167,7 @@ def _build(conn, group: str, ids: List[int]) -> List[Dict[str, Any]]:
 def _stats(conn, group: str, base: str, args: list) -> List[Dict[str, Any]]:
     """A couple of totals over the WHOLE filtered set (not just the page shown)."""
     one = lambda expr: conn.execute(f"SELECT {expr} {base}", args).fetchone()[0]
-    out = [{"label": "Landmark entries", "value": one("COALESCE(SUM(fs.is_landmark), 0)")}]
+    out = []
     if group == "RESEARCH":
         out += [{"label": "Total funding (₹)", "value": one("COALESCE(SUM(r.funding_amount), 0)")}, {"label": "Scopus / WoS indexed", "value": one("COALESCE(SUM(r.indexing IN ('Scopus','Web of Science')), 0)")}]
     elif group == "DEPARTMENT":
@@ -192,7 +198,7 @@ def _col(table_alias, column, key, label, part="Details"):
 
 _COMMON = [
     _c("kind", "Kind of work", "fs.category", "Basics"), _c("title", "Title", "fs.title", "Basics"), _c("date", "Date", "fs.event_date", "Basics"),
-    _c("ay", "Academic year", "fs.ay_id", "Basics"), _c("landmark", "Landmark entry", YN("fs.is_landmark"), "Basics"), _c("badge", "Impact badge / tag", "fs.badge_tag", "Basics"),
+    _c("ay", "Academic year", "fs.ay_id", "Basics"), _c("badge", "Impact badge / tag", "fs.badge_tag", "Basics"),
     _c("submitted_by", "Submitted by (faculty)", "u.full_name", "Submission"), _c("submitter_email", "Submitter e-mail", "fs.submitter_email", "Submission"),
     _c("submitted_on", "Submitted on", "fs.submitted_at", "Submission"), _c("publish", "Permission to publish", YN("fs.publish_permission"), "Submission"),
     _c("evidence", "Evidence link", "fs.evidence_url", "Links"), _c("photo", "Photo link", "fs.media_url", "Links"), _c("photo_caption", "Photo caption", "fs.photo_caption", "Links"),
@@ -279,14 +285,13 @@ def _safe(v):
 def export_csv(conn, user: User, group: str, category: str, f: Dict[str, Any], columns: List[str]) -> bytes:
     import csv
     import io
-    _need_all(user)
     if group not in GROUPS:
         raise HTTPException(400, "Unknown kind of work")
     by_key = {c["key"]: c for c in COLUMNS[group]}
     bad = [k for k in columns if k not in by_key]
     if bad or not columns:
         raise HTTPException(400, "Choose at least one column" if not columns else "Unknown column: " + ", ".join(bad))
-    where, args = _where(group, category, f)
+    where, args = _where(group, category, f, user)
     chosen = list(dict.fromkeys(columns))                                  # the caller's order, no repeats
     sql = (f"SELECT {', '.join(by_key[k]['expr'] for k in chosen)} FROM form_submissions fs {_join(group)}{_EXPORT_JOINS[group]} "
            f"LEFT JOIN faculty u ON u.emp_id = fs.submitter_emp_id WHERE {' AND '.join(where)} ORDER BY fs.event_date DESC, fs.submission_id DESC LIMIT {EXPORT_LIMIT}")

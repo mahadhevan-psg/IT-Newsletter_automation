@@ -215,15 +215,16 @@ def test_work_cards_show_who_was_involved(world):
         assert all(i["role"] is None for i in works.list_works(c, ADMIN, "RESEARCH", "", {})["items"])      # a role belongs to a person's page, not here
 
 
-def test_by_work_view_is_for_admin_and_hod_only_and_pages_through(world):
+def test_reports_are_for_admin_hod_and_coordinators_only_and_page_through(world):
     tutor = User("EMP001", "Dr. Asha Rao", "STAFF", {"FACULTY", "TUTOR"}, class_ids={1}, tutor_class_ids={1})
     hod = User("HOD1", "HoD", "STAFF", {"HOD", "FACULTY"}, all_access=True)
     with db() as c:
-        for call in (lambda: works.catalog(c, tutor), lambda: works.list_works(c, tutor, "RESEARCH", "", {})):
+        for call in (lambda: works.catalog(c, tutor), lambda: works.list_works(c, tutor, "RESEARCH", "", {})):          # tutors and faculty do not get Reports
             with pytest.raises(HTTPException) as e:
                 call()
             assert e.value.status_code == 403
-        assert works.catalog(c, hod)["total"] == 10
+        pc = User("EMP002", "Coordinator", "STAFF", {"PC", "FACULTY"}, class_ids={1, 2})
+        assert works.catalog(c, hod)["total"] == works.catalog(c, pc)["total"] == 10                                    # the coordinator sees all of it
         with pytest.raises(HTTPException) as e:
             works.list_works(c, ADMIN, "NOPE", "", {})
         assert e.value.status_code == 400

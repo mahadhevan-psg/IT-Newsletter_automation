@@ -78,7 +78,7 @@
     const S = [];                                                   // sections, in tab order, only the ones this person can open
     S.push({ id: 'basics', label: 'The top bar', hint: 'Tabs, Help, sign out', steps: () => [
       { before: () => { document.querySelector('#view') && window.scrollTo(0, 0); }, target: '#tabs', title: 'Your tabs', body: '<p>Each tab is a part of the portal. <b>What you see depends on your role</b>, so you only get what you can use. We will visit them one by one.</p>', place: 'bottom' },
-      { target: '.topbar .brand', title: 'The logo', body: '<p>Takes you back to the <b>forms page</b>, where every Google Form the department uses is listed.</p>', place: 'bottom' },
+      { target: '.topbar .back-home', title: 'Back to home', body: '<p>Takes you back to the <b>IT Matrix home page</b>, where you choose Data Entry (the forms) or Data Retrieval (this portal).</p>', place: 'bottom' },
       { target: '.tour-help', title: 'Help', body: '<p>Replay this tour, or have just the page you are on explained.</p>', place: 'bottom' },
       { target: '#who', title: 'Who you are', body: '<p>Your name and role(s). If you can open the Newsletter studio, its button sits right here.</p>', place: 'bottom' },
       { target: '#logout', title: 'Sign out', body: '<p>Always sign out on a shared computer.</p>', place: 'bottom' },
@@ -96,7 +96,7 @@
       { target: '#rv-detail', optional: true, title: 'Read, then decide', body: '<p>Answers are grouped as in the form, and the people the IDs belong to are shown, so mistakes stand out. Hover a value and click the pencil to fix it.</p>', place: 'left' },
       { target: '#rv-foot', optional: true, title: 'Four ways to decide', body: '<p><b>Approve</b> as it is. <b>Edit &amp; approve</b> to fix it first (both versions are kept). <b>Reject with reason</b> sends it back to a faculty member you choose, who corrects it and resubmits. <b>Reject without reason</b> sets it aside.</p>', place: 'top' },
     ] });
-    if (has('ADMIN') || has('HOD') || me.tutor_class_ids.length) S.push({ id: 'sync', label: 'Sheet sync', hint: 'Pull responses from Google Sheets', steps: () => [
+    if (has('ADMIN') || has('HOD') || me.tutor_class_ids.length) S.push({ id: 'sync', label: 'Data sync', hint: 'Pull responses from Google Sheets', steps: () => [
       { before: goTab('sync'), target: '#sy-run', title: 'Pull now', body: '<p>Fetches new responses from the Google Sheets straight away. The sheets are only <b>read</b>; nothing in Google is changed.</p>', place: 'bottom' },
       { target: '#sy-sched', title: 'Automatic pull', body: `<p>Every few days or once a week, at a time you choose.${has('ADMIN') ? '' : ' Only the Admin changes the schedule.'}</p>`, place: 'left' },
       { target: () => document.querySelector('.sy-url'), optional: true, title: 'Your sheets', body: '<p>The responses sheet link of each form goes here. <b>Test</b> checks that it can be read and that its columns match the form.</p>', place: 'top' },
@@ -124,8 +124,8 @@
       { target: () => document.querySelector('#p-ay')?.closest('.filters'), title: 'Filters', body: '<p>Year, class, company, offer type, package range and search. Click a roll number to open the student\'s page.</p>', place: 'bottom' },
       { target: '#p-out', title: 'The results', body: '<p>Placement sheets are uploaded by the Admin; the data then shows up here and on the Dashboard.</p>', place: 'top' },
     ] });
-    S.push({ id: 'subs', label: 'Submissions', hint: 'Every form response', steps: () => [
-      { before: goTab('subs'), target: '#view .filters', title: 'Every form response', body: `<p>Filter by form, year, category, class, level, roll number, dates or words in the title.</p><p>${me.all_access ? 'You see everything.' : 'You see what you submitted' + (hasClasses() ? ', plus responses involving your students.' : '.')}</p>`, place: 'bottom' },
+    S.push({ id: 'subs', label: subsLabel(), hint: 'Every form response', steps: () => [
+      { before: goTab('subs'), target: '#view .filters', title: 'Every form response', body: `<p>Filter by form, year, category, class, level, roll number, dates or words in the title.</p><p>${me.all_access || has('PC') ? 'You see everything.' : 'You see what you submitted' + (hasClasses() ? ', plus responses involving your students.' : '.')}</p>`, place: 'bottom' },
       { target: '#s-out', title: 'Open a response', body: '<p><b>Click a row</b> for the full answer: people involved, every detail and the links.</p>', place: 'top' },
     ] });
     if (me.all_access) S.push({ id: 'faculty', label: has('ADMIN') ? 'Faculty & roles' : 'Faculty', hint: 'Directory, activity counts, roles', steps: () => [
@@ -135,8 +135,8 @@
       { target: '#copy-choices', optional: true, title: 'Copy list for the Apps Script', body: '<p>Copies the faculty drop-down list to paste into the Google Forms script, so people choose their name instead of typing it.</p>', place: 'bottom' },
       { target: card('#view .drop'), optional: true, title: 'Upload faculty', body: '<p>Upload an Excel list: existing employee IDs are updated and new ones get temporary passwords (shown once).</p>', place: 'top' },
     ] });
-    if (me.all_access) S.push({ id: 'works', label: 'By work', hint: 'One kind of work across the department', steps: () => [
-      { before: goTab('works'), target: '#wk-bar', title: 'Pick a kind of work', body: '<p>Five drop-downs: <b>Research & Innovation, Faculty achievements, Departmental highlights, Industry & outreach, Student achievements</b>. Each lists its kinds (patents, journal papers, hackathons, awards &hellip;) with counts. This looks at the <b>work itself</b>, across the whole department.</p>', place: 'bottom' },
+    if (has('ADMIN') || has('HOD') || has('PC')) S.push({ id: 'works', label: 'Reports', hint: 'One kind of work, with filters and download', steps: () => [
+      { before: goTab('works'), target: '#wk-bar', title: 'Pick a kind of work', body: `<p>Five drop-downs: <b>Research & Innovation, Faculty achievements, Departmental highlights, Industry & outreach, Student achievements</b>. Each lists its kinds (patents, journal papers, hackathons, awards &hellip;) with counts. This looks at the <b>work itself</b>, across the whole department.</p>`, place: 'bottom' },
       { target: '#wk-filters', title: 'Filters about the work', body: '<p>Year, dates, search, and filters that depend on the kind: indexing and quartile for papers, level for awards, status for events. They describe the work, not the people.</p>', place: 'bottom' },
       { target: '#wk-stats', title: 'Totals', body: '<p>Totals over <b>everything that matches</b> the filters, not only what is on screen (funding, participants, prize money &hellip;).</p>', place: 'bottom' },
       { target: '#wk-results', title: 'The list', body: '<p>Each card is one piece of work. Click to open its details and evidence links; the people involved are named inside.</p>', place: 'top' },

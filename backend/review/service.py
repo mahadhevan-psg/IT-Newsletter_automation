@@ -297,6 +297,8 @@ def _layout(form_id: str, rows: List[Dict[str, str]], originals: List[Dict[str, 
             ov, _ = _field_value(orig, q)
             if col:
                 seen.add(col)
+            if q.get("key") == "is_landmark":                  # every entry is treated alike: no separate 'landmark' flag is shown to approvers
+                continue
             fields.append({"q": q["q"], "type": q["type"], "req": bool(q.get("req")), "help": q.get("help"), "choices": q.get("choices"), "value": value, "original": ov,
                            "changed": norm_header(value) != norm_header(ov)})
         meta = {k: v for k, v in row.items() if norm_header(k) in ("timestamp", "email address") and v}

@@ -59,6 +59,9 @@ function bars(series, unit = '') {
   return '<div class="bars">' + series.map(s => `<div class="bar-row"><span class="lbl" title="${esc(s.label)}">${esc(s.label)}</span><div class="bar"><i style="width:${Math.round(100 * s.value / max)}%"></i></div><span class="val">${esc(s.value)}${unit}</span></div>`).join('') + '</div>';
 }
 const kpi = (n, l) => `<div class="kpi"><b>${esc(n ?? '–')}</b><span>${esc(l)}</span></div>`;
+// The Submissions tab is called what it holds: everything (Admin, HoD, coordinators), a tutor's class, or just your own
+const seesAll = () => me.roles.some(r => ['ADMIN', 'HOD', 'PC'].includes(r));
+const subsLabel = () => seesAll() ? 'All submissions' : me.tutor_class_ids.length ? 'Class submissions' : 'My submissions';
 const isEditor = () => me.roles.includes('ADMIN') || me.tutor_class_ids.length > 0;
 const hasClasses = () => me.all_access || me.class_ids.length > 0;
 const fmtMoney = n => n == null ? '' : Number(n).toLocaleString('en-IN');
@@ -115,9 +118,9 @@ async function boot() {
   $('#who').textContent = `${me.name} · ${me.roles.filter(r => r !== 'FACULTY').join(', ') || 'Faculty'}`;
   if (me.roles.includes('ADMIN') || me.roles.includes('HOD')) $('#who').insertAdjacentHTML('beforeend', ' <a class="btn sm" href="/newsletter/">Newsletter studio</a>');
   const tabs = [
-    ['dash', 'Dashboard', () => true], ['review', 'Approvals', () => true], ['sync', 'Sheet sync', () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0],
+    ['dash', 'Dashboard', () => true], ['review', 'Approvals', () => true], ['sync', 'Data sync', () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0],
     ['students', 'Students', hasClasses], ['classes', 'Classes', hasClasses], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
-    ['placements', 'Placements', hasClasses], ['subs', 'Submissions', () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['works', 'By work', () => me.all_access], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
+    ['placements', 'Placements', hasClasses], ['subs', subsLabel(), () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['works', 'Reports', seesAll], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
     .filter(t => t[2]());
   $('#tabs').innerHTML = tabs.map(t => `<button class="tab" data-t="${t[0]}">${t[1]}</button>`).join('');
   $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); };
@@ -170,7 +173,7 @@ async function viewDash() {
   $('#view').innerHTML = `<div class="filters"><h2>Dashboard</h2><span class="spacer"></span>
     <select class="compact" id="d-ay">${ayOpts('', 'All years')}</select>
     ${me.all_access ? '<select class="compact" id="d-prog"><option value="">UG + PG</option><option>UG</option><option>PG</option></select>' : '<input type="hidden" id="d-prog" value="">'}
-    ${classFilter('d-cls', 'All my classes')}</div><div id="dash-out"></div>`;
+    ${classFilter('d-cls', 'All Classes')}</div><div id="dash-out"></div>`;
   for (const [id, k] of [['d-ay', 'ay'], ['d-prog', 'prog'], ['d-cls', 'cls']]) $('#' + id).onchange = go(async e => { st[k] = e.target.value; await draw(); });
   await draw();
 }
@@ -179,7 +182,7 @@ async function viewDash() {
 async function viewStudents() {
   const st = { class_id: '', status: 'Active', q: '', offset: 0 };
   $('#view').innerHTML = `<div class="card-head"><h2>Students</h2><div>${isEditor() ? '<button class="btn primary" id="add-st">+ Add student</button>' : ''}</div></div>
-    <div class="filters">${hasBothGroups() ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${classFilter('f-class', 'All my classes')}
+    <div class="filters">${hasBothGroups() ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${classFilter('f-class', 'All Classes')}
       <select class="compact" id="f-status"><option>Active</option><option>Graduated</option><option>Removed</option><option value="">Any status</option></select>
       <input class="input compact" id="f-q" placeholder="Search roll no / name"></div>
     <div class="card" id="st-list"></div>
@@ -231,8 +234,8 @@ async function viewClasses() {
   const admin = me.roles.includes('ADMIN');
   $('#view').innerHTML = `<div class="card-head"><h2>Classes</h2>${admin ? '<button class="btn primary" id="add-class">+ Add class</button>' : ''}</div>
     <p class="hint">A class is known by its tutor and its semester. Two semesters make a year (UG has 8 semesters, PG has 4), so the year and the class code follow the semester the tutor sets: nobody is promoted, the students simply stay in their class as it moves up. Two classes can be in the same year at once. Only the Admin changes a class's tutor or adds a class.</p>` +
-    (classes.map(c => `<div class="card" data-c="${c.class_id}"><div class="card-head"><div><h3>${esc(c.tutor_name || 'No tutor')} · Semester ${c.current_semester}</h3>
-      <span class="muted">${esc(c.class_code)} · year ${c.year_no} · ${c.student_count} active students · AY ${esc(c.ay_id)}</span></div>
+    (classes.map(c => `<div class="card" data-c="${c.class_id}"><div class="card-head"><div><h3>${esc(c.class_code)} · ${esc(c.ay_id)}</h3>
+      <span class="muted">${c.student_count} active students</span></div>
       <div class="filters" style="margin:0">
         ${admin ? `<select class="compact tutor">${opts(meta.faculty, f => f.emp_id, f => f.emp_id + ' - ' + f.full_name, c.tutor_id, '(no tutor)')}</select><button class="btn sm save-tutor">Set tutor</button>` : ''}
       </div></div>
@@ -283,7 +286,7 @@ async function viewUploads() {
 async function viewPlacements() {
   let mode = 'offers';
   $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button></div></div>
-    <div class="filters"><select class="compact" id="p-ay">${ayOpts('', 'All years')}</select>${classFilter('p-class', 'All my classes')}
+    <div class="filters"><select class="compact" id="p-ay">${ayOpts('', 'All years')}</select>${classFilter('p-class', 'All Classes')}
       <span id="p-extra" class="filters" style="margin:0"></span></div><div class="card" id="p-out"></div>`;
   const draw = async () => {
     const qs = new URLSearchParams({ limit: 200 });
@@ -313,20 +316,19 @@ async function viewPlacements() {
 // ---------------------------------------------------------------- submissions
 async function viewSubs() {
   const catOpts = [...new Set(Object.values(meta.categories).flat())];
-  $('#view').innerHTML = `<div class="card-head"><h2>Submissions</h2></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>${subsLabel()}</h2></div>
     <div class="filters"><select class="compact" id="s-type"><option value="">All forms</option><option value="STUDENT">Student</option><option value="RESEARCH">Research</option><option value="FACULTY">Faculty</option><option value="DEPARTMENT">Department</option><option value="OUTREACH">Outreach</option></select>
       <select class="compact" id="s-ay">${ayOpts('', 'All years')}</select><select class="compact" id="s-cat">${opts(catOpts, x => x, x => x, '', 'All categories')}</select>
-      ${classFilter('s-class', 'All my classes')}
+      ${classFilter('s-class', 'All Classes')}
       <select class="compact" id="s-level"><option value="">Any level</option>${['Department', 'College', 'Inter-college', 'State', 'National', 'International'].map(l => `<option>${l}</option>`).join('')}</select>
       <input class="input compact" id="s-roll" placeholder="Roll no" style="width:110px"><input class="input compact" type="date" id="s-from"><input class="input compact" type="date" id="s-to">
-      <input class="input compact" id="s-q" placeholder="Title contains"><label><input type="checkbox" id="s-lm"> Landmark only</label></div><div class="card" id="s-out"></div>`;
+      <input class="input compact" id="s-q" placeholder="Title contains"></div><div class="card" id="s-out"></div>`;
   let rows = [];
   const draw = async () => {
     const qs = new URLSearchParams({ limit: 200 });
     for (const [k, id] of [['form_type', 's-type'], ['ay_id', 's-ay'], ['category', 's-cat'], ['class_id', 's-class'], ['level', 's-level'], ['roll_no', 's-roll'], ['date_from', 's-from'], ['date_to', 's-to'], ['q', 's-q']]) if ($('#' + id).value) qs.set(k, $('#' + id).value);
-    if ($('#s-lm').checked) qs.set('landmark', 'true');
     const r = await api('/api/master/submissions?' + qs); rows = r.rows;
-    $('#s-out').innerHTML = `<p class="hint">${r.total} submissions</p>` + table([{ h: 'Date', k: 'event_date' }, { h: 'Form', k: 'form_type' }, { h: 'Category', k: 'category' }, { h: 'Title', k: 'title' }, { h: 'Submitted by', f: x => x.submitter || x.submitter_email || '' }, { h: '', html: x => x.is_landmark ? '<span class="pill warn">Landmark</span>' : '' }], rows, { click: 1 });
+    $('#s-out').innerHTML = `<p class="hint">${r.total} submissions</p>` + table([{ h: 'Date', k: 'event_date' }, { h: 'Form', k: 'form_type' }, { h: 'Category', k: 'category' }, { h: 'Title', k: 'title' }, { h: 'Submitted by', f: x => x.submitter || x.submitter_email || '' }], rows, { click: 1 });
     $('#s-out').onclick = go(async e => { const tr = e.target.closest('tr.click'); if (tr) submissionDetail(rows[tr.dataset.i].submission_id); });
   };
   document.querySelectorAll('#view .filters select, #view .filters input').forEach(el => el.onchange = el.oninput = go(draw));
@@ -399,10 +401,10 @@ async function viewFaculty() {
   });
 }
 
-// ---------------------------------------------------------------- by work (Admin / HoD): one kind of work across the department
+// ---------------------------------------------------------------- Reports: one kind of work, within the signed-in person's scope
 async function viewWorks() {
   const sel = { group: '', category: '' };            // what is being looked at
-  const fv = { ay_id: '', date_from: '', date_to: '', q: '', landmark: false, has_media: false, class_id: '' };   // filters on the work
+  const fv = { ay_id: '', date_from: '', date_to: '', q: '', has_media: false, class_id: '' };   // filters on the work
   let tv = {}, cat = null, items = [], total = 0, labels = {};
   const loadCatalog = async () => {
     cat = await api('/api/master/works/catalog' + (fv.ay_id ? '?ay_id=' + encodeURIComponent(fv.ay_id) : ''));
@@ -417,7 +419,7 @@ async function viewWorks() {
         <option value="${g.id}|" ${sel.group === g.id && !sel.category ? 'selected' : ''}>All ${esc(g.title.toLowerCase())} (${g.count})</option>
         ${g.types.map(t => `<option value="${g.id}|${esc(t.category)}" ${sel.group === g.id && sel.category === t.category ? 'selected' : ''}>${esc(t.label)} (${t.count})</option>`).join('')}</select>`).join('') +
       '';
-    $('#wk-hint').textContent = `${cat.total} entries in the department${fv.ay_id ? ' in ' + fv.ay_id : ''}. Every filter describes the work itself, not a person.`;
+    $('#wk-hint').textContent = `${cat.total} entr${cat.total === 1 ? 'y' : 'ies'} in the department${fv.ay_id ? ' in ' + fv.ay_id : ''}. Every filter describes the work itself, not a person.`;
   };
   const drawFilters = () => {
     const g = group();
@@ -428,7 +430,7 @@ async function viewWorks() {
         ? `<select class="compact wf" data-p="${f.param}"><option value="">Any ${esc(f.label.toLowerCase())}</option>${f.options.map(o => `<option value="${esc(o.value)}" ${tv[f.param] === o.value ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`
         : `<input class="input compact wf" type="number" min="0" data-p="${f.param}" placeholder="${esc(f.label)}" value="${esc(tv[f.param] || '')}" style="width:${Math.max(120, f.label.length * 7.5)}px">`).join('')}
       ${g.id === 'STUDENT' ? `<select class="compact" id="w-class"><option value="">Any class</option>${meta.classes.map(c => `<option value="${c.class_id}" ${String(fv.class_id) === String(c.class_id) ? 'selected' : ''}>${esc(classLabel(c))}</option>`).join('')}</select>` : ''}
-      <label><input type="checkbox" id="w-lm" ${fv.landmark ? 'checked' : ''}> Landmark only</label><label><input type="checkbox" id="w-media" ${fv.has_media ? 'checked' : ''}> Has photo</label>
+      <label><input type="checkbox" id="w-media" ${fv.has_media ? 'checked' : ''}> Has photo</label>
       <button class="btn sm" id="w-clear">Clear filters</button>`;
     let timer;
     const reload = () => go(load)(true);
@@ -438,9 +440,8 @@ async function viewWorks() {
     $('#w-q').oninput = e => { fv.q = e.target.value; clearTimeout(timer); timer = setTimeout(reload, 300); };
     document.querySelectorAll('.wf').forEach(el => el.onchange = el.oninput = e => { tv[el.dataset.p] = e.target.value; clearTimeout(timer); timer = setTimeout(reload, 300); });
     const cls = $('#w-class'); if (cls) cls.onchange = e => { fv.class_id = e.target.value; reload(); };
-    $('#w-lm').onchange = e => { fv.landmark = e.target.checked; reload(); };
     $('#w-media').onchange = e => { fv.has_media = e.target.checked; reload(); };
-    $('#w-clear').onclick = go(async () => { Object.assign(fv, { ay_id: '', date_from: '', date_to: '', q: '', landmark: false, has_media: false, class_id: '' }); tv = {}; await loadCatalog(); drawBar(); drawFilters(); await load(true); });
+    $('#w-clear').onclick = go(async () => { Object.assign(fv, { ay_id: '', date_from: '', date_to: '', q: '', has_media: false, class_id: '' }); tv = {}; await loadCatalog(); drawBar(); drawFilters(); await load(true); });
   };
   const query = (limit, offset) => {
     const qs = new URLSearchParams({ group: sel.group, category: sel.category, limit, offset });
@@ -537,8 +538,8 @@ function actCard(i) {
   const facts = i.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
   const notes = i.notes.map(([k, v]) => `<h5>${esc(k)}</h5><p>${esc(v)}</p>`).join('');
   const links = i.links.map(l => `<a class="chip-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)} ↗</a>`).join('');
-  return `<details class="act${i.landmark ? ' landmark' : ''}"><summary><div class="act-top"><span class="act-title">${esc(i.title)}</span><span class="act-date">${esc(i.date || i.ay_id || '')}</span></div>
-    <div class="act-badges">${i.role ? `<span class="pill role">${esc(i.role)}</span>` : ''}${i.landmark ? '<span class="pill warn">★ Landmark</span>' : ''}${i.badges.map(b => `<span class="pill ${b.tone || ''}">${esc(b.text)}</span>`).join('')}</div></summary>
+  return `<details class="act"><summary><div class="act-top"><span class="act-title">${esc(i.title)}</span><span class="act-date">${esc(i.date || i.ay_id || '')}</span></div>
+    <div class="act-badges">${i.role ? `<span class="pill role">${esc(i.role)}</span>` : ''}${i.badges.map(b => `<span class="pill ${b.tone || ''}">${esc(b.text)}</span>`).join('')}</div></summary>
     <div class="act-body">${facts ? `<dl class="facts">${facts}</dl>` : ''}${notes}${links ? `<div class="links">${links}</div>` : ''}${!facts && !notes && !links ? '<p class="muted">No more details were entered.</p>' : ''}</div></details>`;
 }
 async function openProfile(kind, id, opt = {}) {

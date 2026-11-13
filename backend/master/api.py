@@ -212,7 +212,7 @@ def api_student_profile(roll_no: str, ay_id: Optional[str] = None, user: User = 
         return profiles.student_profile(conn, user, roll_no, ay_id or None)
 
 
-# ================================================================ by work (Admin / HoD): one kind of work across the whole department
+# ================================================================ Reports (Admin, HoD, programme coordinators): one kind of work across the department
 @router.get("/api/master/works/catalog")
 def api_works_catalog(ay_id: Optional[str] = None, user: User = Depends(staff_user)):
     with db() as conn:

@@ -123,7 +123,7 @@ Click **Create Web Service**. (With Blueprints available you could use [render.d
 Form responses are pulled from the Google Sheets into an **Approvals** queue; nothing is used in the application until the right person approves it
 (placements: the student's class tutor; the other five forms: Admin or HoD). The sheets are only ever read.
 
-* **Sheet links**: Admin pastes each form's responses-sheet link under *Sheet sync*. Either share the sheet as "Anyone with the link can view", or use a service account.
+* **Sheet links**: Admin pastes each form's responses-sheet link under *Data sync*. Either share the sheet as "Anyone with the link can view", or use a service account.
 * **Private sheets**: create a Google service account, enable the Google Sheets API, and set the environment variable `GOOGLE_SERVICE_ACCOUNT_JSON` to the key file's full contents.
   Share each sheet with the service account's e-mail address as Viewer.
 * **Schedule**: set in the portal (every N days or weekly, time and time zone). The timer runs inside the server, so use an always-on instance

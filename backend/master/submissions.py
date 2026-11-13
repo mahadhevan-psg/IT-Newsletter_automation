@@ -8,7 +8,7 @@ from backend.master.ingest import DETAIL_TABLE
 
 
 def _visible(user: User, where, args):
-    if user.all_access:
+    if user.all_access or "PC" in user.roles:          # Admin, HoD and programme coordinators see every submission
         return
     ids = sorted(user.class_ids) or [-1]
     marks = ",".join("?" * len(ids))
@@ -35,8 +35,6 @@ def list_submissions(conn, user: User, f: Dict[str, Any], limit: int = 100, offs
     if f.get("q"):
         where.append("fs.title LIKE ?")
         args.append(f"%{f['q']}%")
-    if f.get("landmark"):
-        where.append("fs.is_landmark = 1")
     if f.get("has_media"):
         where.append("fs.media_url IS NOT NULL AND fs.media_url != ''")
     # student-linked filters

@@ -1,4 +1,4 @@
-/* Approvals and Sheet sync screens for the staff portal. Uses portal.js's helpers (api, esc, toast, modal, go, show, kpi ...).
+/* Approvals and Data sync screens for the staff portal. Uses portal.js's helpers (api, esc, toast, modal, go, show, kpi ...).
 
    Approvals: a queue on the left, the chosen response on the right, laid out so that correcting something takes two clicks:
      - answers are shown as a clean read-out; click any value (or "Edit & approve") and it turns into the right kind of input
@@ -10,7 +10,7 @@
   const ACTION_TEXT = { pulled: 'Pulled from the Google Sheet', updated: 'Changed in the sheet before review', already_live: 'Already in the system', edited: 'Edited', approved: 'Approved',
                         approved_edited: 'Edited and approved', returned: 'Sent back for correction', rejected: 'Rejected', resubmitted: 'Corrected and sent for approval again', revoked: 'Approval withdrawn', reopened: 'Brought back for review' };
   const QUICK_REASONS = ['Some details are unclear', 'Evidence link is missing or does not open', 'Wrong category', 'The date looks wrong', 'Looks like a duplicate entry', 'Names or roll numbers need checking'];
-  const RV = { scope: '', items: [], total: 0, sel: null, detail: null, edit: false, edits: {}, checked: new Set(), form: '', q: '', flagged: false, summary: {}, showEmpty: false, timer: null };
+  const RV = { scope: '', items: [], total: 0, sel: null, detail: null, edit: false, edits: {}, checked: new Set(), form: '', q: '', flagged: false, summary: {}, showEmpty: false, timer: null, status: 'APPROVED', ticket: 0 };
 
   const canDecide = () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0;
   const fmtDate = s => { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T')); return isNaN(d) ? esc(s) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
@@ -39,8 +39,8 @@
     const s = RV.summary, list = [];
     if (canDecide()) list.push({ id: 'review', label: 'To review', n: s.to_review });
     list.push({ id: 'returned', label: canDecide() ? 'Sent back' : 'Sent back to me', n: (s.returned_to_me || 0) + (canDecide() ? (s.returned_open || 0) : 0) });
-    if (canDecide()) list.push({ id: 'decided', label: 'Decided' });
-    list.push({ id: 'mine', label: 'My submissions' });
+    if (canDecide()) list.push({ id: 'decided', label: 'Approved' });
+    if (!me.roles.includes('ADMIN')) list.push({ id: 'mine', label: 'My submissions' });
     return list;
   }
   async function viewReview() {
@@ -57,13 +57,16 @@
     $('#rv-tabs').innerHTML = scopes().map(s => `<button class="rv-tab ${RV.scope === s.id ? 'on' : ''}" data-s="${s.id}">${s.label}${s.n ? ` <span class="tab-badge">${s.n}</span>` : ''}</button>`).join('');
     $('#rv-tabs').onclick = go(async e => { const b = e.target.closest('[data-s]'); if (!b) return; RV.scope = b.dataset.s; RV.sel = null; RV.detail = null; RV.checked = new Set(); RV.edit = false; drawTabs(); await loadList(true); });
     const sub = { review: me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Responses pulled from the Google Sheets wait here. Nothing is used in the application until you approve it.' : 'Your students\' placement details wait here for your approval.',
-                  returned: 'Responses sent back with a reason so the faculty member can correct them.', decided: 'Everything already approved or rejected.', mine: 'Everything you submitted, and where it stands.' }[RV.scope];
+                  returned: 'Responses sent back with a reason so the faculty member can correct them.', decided: 'Everything that has been approved. Use the menu to see the rejected ones.', mine: 'Everything you submitted, and where it stands.' }[RV.scope];
     $('#rv-sub').textContent = sub;
   }
   async function loadList(selectFirst) {
     const qs = new URLSearchParams({ scope: RV.scope, limit: 200 });
+    if (RV.scope === 'decided') qs.set('status', RV.status);
     if (RV.form) qs.set('form_id', RV.form); if (RV.q) qs.set('q', RV.q); if (RV.flagged) qs.set('flagged', 'true');
-    const r = await api('/api/review/items?' + qs); RV.items = r.items; RV.total = r.total;
+    const ticket = RV.ticket = (RV.ticket || 0) + 1;                                  // a slow earlier search must not overwrite a newer one
+    const r = await api('/api/review/items?' + qs); if (ticket !== RV.ticket) return;
+    RV.items = r.items; RV.total = r.total;
     drawFilters(); drawList();
     if (selectFirst || (RV.sel && !RV.items.some(i => i.item_id === RV.sel))) { if (RV.items.length) await openItem(RV.items[0].item_id); else { RV.sel = null; RV.detail = null; drawDetail(); } }
   }
@@ -71,11 +74,16 @@
     const forms = [['form_student', 'Student'], ['form_research', 'Research'], ['form_faculty', 'Faculty'], ['form_departmental', 'Department'], ['form_industry', 'Outreach'], ['placement', 'Placement']];
     const bulk = RV.scope === 'review' && RV.items.some(i => i.can_decide);
     const clean = RV.items.filter(i => i.can_decide && !i.warnings.length && !i.blockers.length).length;
+    const box = document.activeElement && document.activeElement.id === 'rv-q' ? document.activeElement : null;      // keep typing where you were
+    const caret = box ? [box.selectionStart, box.selectionEnd] : null;
     $('#rv-filters').innerHTML = `<input class="input compact" id="rv-q" placeholder="Search title, category or roll number" value="${esc(RV.q)}" style="min-width:240px">
-      <select class="compact" id="rv-form"><option value="">All kinds</option>${forms.map(([v, l]) => `<option value="${v}" ${RV.form === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <select class="compact" id="rv-form"><option value="">All</option>${forms.map(([v, l]) => `<option value="${v}" ${RV.form === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      ${RV.scope === 'decided' ? `<select class="compact" id="rv-status"><option value="APPROVED" ${RV.status === 'APPROVED' ? 'selected' : ''}>Approved</option><option value="REJECTED" ${RV.status === 'REJECTED' ? 'selected' : ''}>Rejected</option></select>` : ''}
       ${RV.scope === 'review' ? `<label class="rv-check"><input type="checkbox" id="rv-flag" ${RV.flagged ? 'checked' : ''}> Only those needing a look</label>` : ''}
       <span class="spacer"></span>${bulk ? `<button class="btn sm" id="rv-clean" ${clean ? '' : 'disabled'} title="Approves every response below that has no problems flagged">Approve all clean (${clean})</button>
       <button class="btn sm primary" id="rv-sel" ${RV.checked.size ? '' : 'disabled'}>Approve selected (${RV.checked.size})</button>` : ''}`;
+    if (caret) { const q = $('#rv-q'); q.focus(); q.setSelectionRange(caret[0], caret[1]); }
+    const st = $('#rv-status'); if (st) st.onchange = go(e => { RV.status = e.target.value; return loadList(true); });
     let t; $('#rv-q').oninput = e => { RV.q = e.target.value; clearTimeout(t); t = setTimeout(go(() => loadList(true)), 300); };
     $('#rv-form').onchange = go(e => { RV.form = e.target.value; return loadList(true); });
     const fl = $('#rv-flag'); if (fl) fl.onchange = go(e => { RV.flagged = e.target.checked; return loadList(true); });
@@ -295,13 +303,13 @@
     e.preventDefault(); if (j !== i) go(openItem)(RV.items[j].item_id);
   });
 
-  // ================================================================== Sheet sync
+  // ================================================================== Data sync
   async function viewSync() {
     const o = await api('/api/sync/overview'), s = o.settings;
     const tzs = ['Asia/Kolkata', 'UTC', 'Asia/Dubai', 'Asia/Singapore', 'Europe/London', 'America/New_York'];
     const ro = o.can_configure ? '' : 'disabled';
     const result = r => !r ? '<span class="muted">Not pulled yet</span>' : r.error ? `<span class="rv-bad">⚠ ${esc(r.error)}</span>` : `<span class="rv-ok">${r.new || 0} new</span> · ${r.unchanged || 0} unchanged${r.already_in_system ? ` · ${r.already_in_system} already in the system` : ''}${r.updated ? ` · ${r.updated} changed` : ''}`;
-    $('#view').innerHTML = `<div class="card-head"><div><h2>Sheet sync</h2><p class="hint" style="margin:2px 0 0">Pull the form responses from Google Sheets into the Approvals queue. The sheets are only <b>read</b>: nothing is changed or deleted in Google.</p></div></div>
+    $('#view').innerHTML = `<div class="card-head"><div><h2>Data sync</h2><p class="hint" style="margin:2px 0 0">Pull the form responses from Google Sheets into the Approvals queue. The sheets are only <b>read</b>: nothing is changed or deleted in Google.</p></div></div>
       <div class="grid-2">
       <div class="card"><h3>Pull now</h3><p class="hint">Fetch every new response straight away.${o.can_pull_forms ? '' : ' (You can pull the placement sheet.)'}</p>
         <button class="btn primary large" id="sy-run" ${o.can_pull_placements ? '' : 'disabled'}>⟳ Pull from Google Sheets now</button><div id="sy-out" style="margin-top:12px"></div></div>

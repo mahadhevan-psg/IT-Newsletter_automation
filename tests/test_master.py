@@ -191,6 +191,9 @@ def test_scope_and_analytics(world):
     both = lambda q: client.get("/api/master/students" + q, headers=auth(pc)).json()
     assert both("?grp=G1")["total"] == 3 and both("?grp=G2")["total"] == 1                 # the Both / G1 / G2 filter
     assert {r["roll_no"] for r in both("?grp=G2")["rows"]} == {"21IT101"}
+    everything = client.get("/api/master/submissions", headers=auth(world["admin"])).json()["total"]               # a coordinator sees every submission, like the Admin
+    assert everything > 0 and client.get("/api/master/submissions", headers=auth(pc)).json()["total"] == everything
+    assert client.get("/api/master/submissions", headers=auth(world["t1"])).json()["total"] < everything          # a tutor still sees only hers and her students'
     assert client.post("/api/master/students", json={"roll_no": "X1", "full_name": "N", "class_id": world["classes"]["UG-G1-3"]}, headers=auth(pc)).status_code == 403
     a = client.get("/api/master/analytics", headers=auth(world["t1"])).json()
     assert a["students"]["students_with_achievements"] == 2 and a["placements"]["placed"] == 2 and "department" not in a

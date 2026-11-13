@@ -12,11 +12,15 @@
 <body>
   <div id="app" class="hidden">
     <header class="topbar">
-      <a class="brand" href="/homepage/" title="Back to the forms" style="text-decoration:none;color:inherit"><span class="logo">IT</span><span>Portal</span></a>
+      <div class="top-row">
+        <a class="back-home" href="/homepage/" title="Back to the IT Matrix home page"><span aria-hidden="true">←</span> Back to home</a>
+        <div class="top-title">IT Matrix <span>·</span> Data Retrieval</div>
+        <div class="top-right">
+          <span id="help-host"></span>
+          <div class="who"><span id="who"></span><button class="btn sm" id="logout">Sign out</button></div>
+        </div>
+      </div>
       <nav class="tabs" id="tabs"></nav>
-      <span class="spacer"></span>
-      <span id="help-host"></span>
-      <div class="who"><span id="who"></span><button class="btn sm" id="logout">Sign out</button></div>
     </header>
     <main class="page"><div id="banner"></div><div id="view"></div></main>
   </div>

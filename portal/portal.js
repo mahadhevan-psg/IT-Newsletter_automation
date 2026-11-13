@@ -27,6 +27,59 @@ async function download(path, name) {
   if (!r.ok) return toast('Download failed', true);
   const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
 }
+// The one download pop-up used everywhere: optional dates at the top, then a tick-list of columns (Select all ticks / clears every box).
+// o = { title, columns: [{key, label, part}], parts, defaults, storeKey, dates: {mode: 'full' | 'ay', ay, from, to, hint}, count(vals) -> rows, run(cols, vals) }
+// The last choice of columns is remembered per download in this browser.
+function columnDownload(o) {
+  const valid = new Set(o.columns.map(c => c.key));
+  let saved = null; try { saved = JSON.parse(localStorage.getItem(o.storeKey) || 'null'); } catch (e) { }
+  const chosen = new Set((Array.isArray(saved) ? saved : o.defaults).filter(k => valid.has(k)));
+  const present = new Set(o.columns.map(c => c.part)), parts = (o.parts || [...present]).filter(x => present.has(x));
+  const d = o.dates;
+  const dateBox = d ? `<h4>${d.mode === 'full' ? 'Dates' : 'Academic year'}</h4>
+      <div class="filters" style="margin-bottom:4px"><select class="compact" id="dl-ay">${ayOpts(d.ay || '', 'All academic years')}</select>
+        ${d.mode === 'full' ? `<label class="muted">from <input class="input compact" type="date" id="dl-from" value="${esc(d.from || '')}"></label><label class="muted">to <input class="input compact" type="date" id="dl-to" value="${esc(d.to || '')}"></label>` : ''}
+        <span class="muted" id="dl-rows"></span></div>
+      <p class="hint" style="margin-top:0">${d.hint || 'The filters set on the page also apply.'}${d.mode === 'full' ? ' Leave the dates empty for everything.' : ''}</p>` : '';
+  const vals = dlg => { const v = {}; for (const [k, id] of [['ay_id', 'dl-ay'], ['date_from', 'dl-from'], ['date_to', 'dl-to']]) { const el = $('#' + id, dlg); if (el && el.value) v[k] = el.value; } return v; };
+  const dlg = modal(o.title, `${dateBox}
+      <h4 style="margin-top:14px">Columns</h4>
+      <label class="dl-all"><input type="checkbox" id="dl-all"> <b>Select all columns</b> <span class="muted" id="dl-n"></span></label>
+      <div class="dl-cols">${parts.map(part => `<div class="dl-part"><h5>${esc(part)}</h5><div class="dl-grid">${o.columns.filter(c => c.part === part).map(c =>
+        `<label><input type="checkbox" class="dl-c" value="${esc(c.key)}" ${chosen.has(c.key) ? 'checked' : ''}> ${esc(c.label)}</label>`).join('')}</div></div>`).join('')}</div>`,
+    async dlg => {
+      const cols = [...dlg.querySelectorAll('.dl-c:checked')].map(i => i.value);
+      if (!cols.length) { toast('Tick at least one column', true); return false; }
+      try { localStorage.setItem(o.storeKey, JSON.stringify(cols)); } catch (e) { }
+      await o.run(cols, vals(dlg));
+    }, 'Download CSV', true);
+  const boxes = () => [...dlg.querySelectorAll('.dl-c')], all = $('#dl-all', dlg), save = $('.save', dlg);
+  const sync = () => {
+    const n = boxes().filter(b => b.checked).length;
+    all.checked = n === boxes().length; all.indeterminate = n > 0 && n < boxes().length;
+    $('#dl-n', dlg).textContent = `${n} of ${boxes().length} selected`; save.disabled = n === 0;
+  };
+  all.onchange = () => { boxes().forEach(b => b.checked = all.checked); sync(); };
+  boxes().forEach(b => b.onchange = sync); sync();
+  if (d && o.count) {                                     // how many rows the choice gives, so nobody downloads an empty file by surprise
+    let timer;
+    const count = () => go(async () => { const n = await o.count(vals(dlg)); $('#dl-rows', dlg).textContent = `${n} row${n === 1 ? '' : 's'} will be downloaded`; })();
+    const later = () => { clearTimeout(timer); timer = setTimeout(count, 250); };
+    for (const id of ['dl-ay', 'dl-from', 'dl-to']) { const el = $('#' + id, dlg); if (el) el.onchange = later; }
+    count();
+  }
+  return dlg;
+}
+const today = () => new Date().toISOString().slice(0, 10);
+// a tab's download button: fetch the column list once, then open the pop-up; `filters()` gives the page's own filters as URLSearchParams
+async function openDownload(name, o) {
+  const cat = await api(`/api/master/downloads/${name}/columns`);
+  columnDownload({
+    title: o.title, columns: cat.columns, parts: cat.parts, defaults: cat.default_columns, storeKey: 'dl-columns-' + name, dates: o.dates,
+    count: async v => (await api(o.listUrl + '?' + o.filters(v, { limit: 1 }))).total,
+    run: (cols, v) => { const qs = o.filters(v); qs.set('columns', cols.join(',')); return download(`/api/master/downloads/${name}?${qs}`, `${o.file}_${today()}.csv`); },
+  });
+}
 function modal(title, html, onSave, saveLabel = 'Save', wide) {
   const o = document.createElement('div'); o.className = 'overlay';
   o.innerHTML = `<div class="dialog ${wide ? 'wide' : ''}"><div class="dialog-head"><h3>${esc(title)}</h3><button class="x">×</button></div>
@@ -285,12 +338,17 @@ async function viewUploads() {
 // ---------------------------------------------------------------- placements
 async function viewPlacements() {
   let mode = 'offers';
-  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button></div></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button><button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
     <div class="filters"><select class="compact" id="p-ay">${ayOpts('', 'All years')}</select>${classFilter('p-class', 'All Classes')}
       <span id="p-extra" class="filters" style="margin:0"></span></div><div class="card" id="p-out"></div>`;
-  const draw = async () => {
-    const qs = new URLSearchParams({ limit: 200 });
+  const placeQs = (v = null, extra = { limit: 200 }) => {
+    const qs = new URLSearchParams(extra);
     for (const [k, id] of [['ay_id', 'p-ay'], ['class_id', 'p-class'], ['org_id', 'p-org'], ['offer_type', 'p-type'], ['opt_status', 'p-opt'], ['min_package', 'p-min'], ['max_package', 'p-max'], ['q', 'p-q']]) { const el = $('#' + id); if (el && el.value) qs.set(k, el.value); }
+    if (v) { qs.delete('ay_id'); if (v.ay_id) qs.set('ay_id', v.ay_id); }
+    return qs;
+  };
+  const draw = async () => {
+    const qs = placeQs();
     if (mode === 'offers') {
       const r = await api('/api/master/placements/offers?' + qs);
       $('#p-out').innerHTML = `<p class="hint">${r.total} offers</p>` + table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'full_name' }, { h: 'Class', k: 'class_code' }, { h: 'Year', k: 'ay_id' }, { h: 'Company', k: 'company' }, { h: 'Type', k: 'offer_type' },
@@ -310,13 +368,16 @@ async function viewPlacements() {
   };
   $('#view').onclick = go(async e => { if (e.target.dataset.m) { mode = e.target.dataset.m; extras(); await draw(); } });
   for (const id of ['p-ay', 'p-class']) $('#' + id).onchange = go(draw);
+  $('#p-dl').onclick = go(() => openDownload(mode, {
+    title: mode === 'offers' ? 'Download placement offers' : 'Download opt-in / opt-out', file: 'placements_' + mode, listUrl: '/api/master/placements/' + mode, filters: placeQs,
+    dates: { mode: 'ay', ay: $('#p-ay').value, hint: 'The filters set on the page (class, company, package …) also apply.' } }));
   extras(); await draw();
 }
 
 // ---------------------------------------------------------------- submissions
 async function viewSubs() {
   const catOpts = [...new Set(Object.values(meta.categories).flat())];
-  $('#view').innerHTML = `<div class="card-head"><h2>${subsLabel()}</h2></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>${subsLabel()}</h2><button class="btn sm" id="s-dl" title="Choose columns and download as CSV">⬇ Download</button></div>
     <div class="filters"><select class="compact" id="s-type"><option value="">All forms</option><option value="STUDENT">Student</option><option value="RESEARCH">Research</option><option value="FACULTY">Faculty</option><option value="DEPARTMENT">Department</option><option value="OUTREACH">Outreach</option></select>
       <select class="compact" id="s-ay">${ayOpts('', 'All years')}</select><select class="compact" id="s-cat">${opts(catOpts, x => x, x => x, '', 'All categories')}</select>
       ${classFilter('s-class', 'All Classes')}
@@ -324,14 +385,23 @@ async function viewSubs() {
       <input class="input compact" id="s-roll" placeholder="Roll no" style="width:110px"><input class="input compact" type="date" id="s-from"><input class="input compact" type="date" id="s-to">
       <input class="input compact" id="s-q" placeholder="Title contains"></div><div class="card" id="s-out"></div>`;
   let rows = [];
-  const draw = async () => {
-    const qs = new URLSearchParams({ limit: 200 });
+  // the page's filters as a query; v (from the download pop-up) takes over the year and dates
+  const subsQs = (v = null, extra = { limit: 200 }) => {
+    const qs = new URLSearchParams(extra);
     for (const [k, id] of [['form_type', 's-type'], ['ay_id', 's-ay'], ['category', 's-cat'], ['class_id', 's-class'], ['level', 's-level'], ['roll_no', 's-roll'], ['date_from', 's-from'], ['date_to', 's-to'], ['q', 's-q']]) if ($('#' + id).value) qs.set(k, $('#' + id).value);
+    if (v) for (const k of ['ay_id', 'date_from', 'date_to']) { qs.delete(k); if (v[k]) qs.set(k, v[k]); }
+    return qs;
+  };
+  const draw = async () => {
+    const qs = subsQs();
     const r = await api('/api/master/submissions?' + qs); rows = r.rows;
     $('#s-out').innerHTML = `<p class="hint">${r.total} submissions</p>` + table([{ h: 'Date', k: 'event_date' }, { h: 'Form', k: 'form_type' }, { h: 'Category', k: 'category' }, { h: 'Title', k: 'title' }, { h: 'Submitted by', f: x => x.submitter || x.submitter_email || '' }], rows, { click: 1 });
     $('#s-out').onclick = go(async e => { const tr = e.target.closest('tr.click'); if (tr) submissionDetail(rows[tr.dataset.i].submission_id); });
   };
   document.querySelectorAll('#view .filters select, #view .filters input').forEach(el => el.onchange = el.oninput = go(draw));
+  $('#s-dl').onclick = go(() => openDownload('submissions', {
+    title: 'Download ' + subsLabel().toLowerCase(), file: 'submissions', listUrl: '/api/master/submissions', filters: subsQs,
+    dates: { mode: 'full', ay: $('#s-ay').value, from: $('#s-from').value, to: $('#s-to').value, hint: 'The filters set on the page (form, category, class, level …) also apply.' } }));
   await draw();
 }
 async function submissionDetail(id) {
@@ -473,50 +543,21 @@ async function viewWorks() {
   });
   let open = false;
   $('#w-open').onclick = () => { open = !open; document.querySelectorAll('#wk-results details.act').forEach(d => d.open = open); $('#w-open').textContent = open ? 'Collapse all' : 'Expand all'; };
-  // Download CSV: a pop-up where the user sets the dates first, then ticks the columns wanted (Select all ticks / clears every box).
+  // Download CSV: the shared pop-up with this kind of work's columns
   $('#w-csv').onclick = () => {
     const g = group(), kind = sel.category ? labels[sel.category] : g.title;
-    const valid = new Set(g.columns.map(c => c.key)), storeKey = 'wk-columns-' + g.id;
-    let saved = null; try { saved = JSON.parse(localStorage.getItem(storeKey) || 'null'); } catch (e) { }       // remember the last choice for this kind of work
-    const chosen = new Set((Array.isArray(saved) ? saved : g.default_columns).filter(k => valid.has(k)));
-    const present = new Set(g.columns.map(c => c.part)), parts = ['Basics', 'People', 'Details', 'Numbers', 'Submission', 'Links'].filter(x => present.has(x));
-    const o = modal('Download CSV · ' + kind, `
-      <h4>Dates</h4>
-      <div class="filters" style="margin-bottom:4px"><select class="compact" id="dl-ay">${ayOpts(fv.ay_id, 'All academic years')}</select>
-        <label class="muted">from <input class="input compact" type="date" id="dl-from" value="${esc(fv.date_from)}"></label><label class="muted">to <input class="input compact" type="date" id="dl-to" value="${esc(fv.date_to)}"></label>
-        <span class="muted" id="dl-rows"></span></div>
-      <p class="hint" style="margin-top:0">The filters set on the page (status, level, search …) also apply. Leave the dates empty for everything.</p>
-      <h4 style="margin-top:14px">Columns</h4>
-      <label class="dl-all"><input type="checkbox" id="dl-all"> <b>Select all columns</b> <span class="muted" id="dl-n"></span></label>
-      <div class="dl-cols">${parts.map(part => `<div class="dl-part"><h5>${esc(part)}</h5><div class="dl-grid">${g.columns.filter(c => c.part === part).map(c =>
-        `<label><input type="checkbox" class="dl-c" value="${esc(c.key)}" ${chosen.has(c.key) ? 'checked' : ''}> ${esc(c.label)}</label>`).join('')}</div></div>`).join('')}</div>`,
-      async dlg => {
-        const cols = [...dlg.querySelectorAll('.dl-c:checked')].map(i => i.value);
-        if (!cols.length) { toast('Tick at least one column', true); return false; }
-        try { localStorage.setItem(storeKey, JSON.stringify(cols)); } catch (e) { }
-        const qs = exportQuery(dlg, 2000, 0); qs.delete('limit'); qs.delete('offset'); qs.set('columns', cols.join(','));
-        await download('/api/master/works/export?' + qs, `work_${sel.group.toLowerCase()}${sel.category ? '_' + sel.category.replace(/\W+/g, '_').toLowerCase() : ''}_${new Date().toISOString().slice(0, 10)}.csv`);
-      }, 'Download CSV', true);
-    const boxes = () => [...o.querySelectorAll('.dl-c')], all = $('#dl-all', o), save = $('.save', o);
-    const sync = () => {
-      const n = boxes().filter(b => b.checked).length;
-      all.checked = n === boxes().length; all.indeterminate = n > 0 && n < boxes().length;
-      $('#dl-n', o).textContent = `${n} of ${boxes().length} selected`; save.disabled = n === 0;
-    };
-    all.onchange = () => { boxes().forEach(b => b.checked = all.checked); sync(); };
-    boxes().forEach(b => b.onchange = sync); sync();
-    // how many rows the chosen dates give, so nobody downloads an empty file by surprise
-    let timer;
-    const count = () => go(async () => { const r = await api('/api/master/works?' + exportQuery(o, 1, 0)); $('#dl-rows', o).textContent = `${r.total} row${r.total === 1 ? '' : 's'} will be downloaded`; })();
-    const later = () => { clearTimeout(timer); timer = setTimeout(count, 250); };
-    for (const id of ['dl-ay', 'dl-from', 'dl-to']) $('#' + id, o).onchange = later;
-    count();
+    columnDownload({
+      title: 'Download CSV · ' + kind, columns: g.columns, parts: ['Basics', 'People', 'Details', 'Numbers', 'Submission', 'Links'], defaults: g.default_columns, storeKey: 'wk-columns-' + g.id,
+      dates: { mode: 'full', ay: fv.ay_id, from: fv.date_from, to: fv.date_to, hint: 'The filters set on the page (status, level, search …) also apply.' },
+      count: async v => (await api('/api/master/works?' + exportQuery(v, 1, 0))).total,
+      run: (cols, v) => { const qs = exportQuery(v, 2000, 0); qs.delete('limit'); qs.delete('offset'); qs.set('columns', cols.join(','));
+        return download('/api/master/works/export?' + qs, `work_${sel.group.toLowerCase()}${sel.category ? '_' + sel.category.replace(/\W+/g, '_').toLowerCase() : ''}_${today()}.csv`); },
+    });
   };
   // the page's filters, with the pop-up's three date fields taking over from the page's own
-  const exportQuery = (dlg, limit, offset) => {
+  const exportQuery = (v, limit, offset) => {
     const qs = query(limit, offset);
-    for (const k of ['ay_id', 'date_from', 'date_to']) qs.delete(k);
-    for (const [k, id] of [['ay_id', 'dl-ay'], ['date_from', 'dl-from'], ['date_to', 'dl-to']]) { const v = $('#' + id, dlg).value; if (v) qs.set(k, v); }
+    for (const k of ['ay_id', 'date_from', 'date_to']) { qs.delete(k); if (v[k]) qs.set(k, v[k]); }
     return qs;
   };
 }
@@ -577,14 +618,26 @@ async function openProfile(kind, id, opt = {}) {
   let open = false;
   $('#p-open').onclick = () => { open = !open; document.querySelectorAll('details.act').forEach(d => d.open = open); $('#p-open').textContent = open ? 'Collapse all' : 'Expand all'; };
   $('#p-print').onclick = () => { document.querySelectorAll('details.act').forEach(d => d.open = true); window.print(); };
-  $('#p-dl').onclick = () => {                                   // everything on the page (for the chosen academic year) as CSV
-    const cell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const rows = [['Person', 'ID', 'Section', 'Group', 'Title', 'Date', 'Role', 'Tags', 'Details', 'Notes', 'Links']];
-    p.sections.forEach(sec => sec.groups.forEach(g => g.items.forEach(i => rows.push([h.name, h.id, sec.title, g.title, i.title, i.date || i.ay_id || '', i.role || '',
-      i.badges.map(b => b.text).join('; '), i.facts.map(([k, v]) => k + ': ' + v).join(' | '), i.notes.map(([k, v]) => k + ': ' + v).join(' | '), i.links.map(l => l.url).join(' ')]))));
-    if (rows.length === 1) return toast('There is nothing to download yet', true);
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv' }));
-    a.download = `${h.id}_${h.name.replace(/[^A-Za-z0-9]+/g, '_')}${p.ay_id ? '_' + p.ay_id : ''}.csv`; a.click();
+  $('#p-dl').onclick = () => {                                   // the page's activities (for the chosen academic year): pick the columns, get a CSV
+    const cols = [['person', 'Person', 'Person'], ['id', 'ID', 'Person'], ['section', 'Section', 'Activity'], ['group', 'Group', 'Activity'], ['title', 'Title', 'Activity'], ['date', 'Date', 'Activity'],
+      ['role', 'Role', 'Activity'], ['tags', 'Tags', 'Activity'], ['details', 'Details', 'More'], ['notes', 'Notes', 'More'], ['links', 'Links', 'More']];
+    columnDownload({
+      title: `Download · ${h.name}${p.ay_id ? ' · ' + p.ay_id : ''}`, columns: cols.map(([key, label, part]) => ({ key, label, part })), parts: ['Person', 'Activity', 'More'],
+      defaults: cols.map(c => c[0]), storeKey: 'dl-columns-profile-' + kind,
+      run: async chosen => {
+        const val = { person: () => h.name, id: () => h.id }, rows = [];
+        p.sections.forEach(sec => sec.groups.forEach(g => g.items.forEach(i => {
+          const v = { ...val, section: () => sec.title, group: () => g.title, title: () => i.title, date: () => i.date || i.ay_id || '', role: () => i.role || '', tags: () => i.badges.map(b => b.text).join('; '),
+            details: () => i.facts.map(([k, x]) => k + ': ' + x).join(' | '), notes: () => i.notes.map(([k, x]) => k + ': ' + x).join(' | '), links: () => i.links.map(l => l.url).join(' ') };
+          rows.push(chosen.map(k => v[k]()));
+        })));
+        if (!rows.length) { toast('There is nothing to download yet', true); return false; }
+        const cell = x => '"' + String(x ?? '').replace(/"/g, '""') + '"';
+        const csv = [chosen.map(k => cols.find(c => c[0] === k)[1]), ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }));
+        a.download = `${h.id}_${h.name.replace(/[^A-Za-z0-9]+/g, '_')}${p.ay_id ? '_' + p.ay_id : ''}.csv`; a.click();
+      },
+    });
   };
   const nav = $('.snav'); if (nav) nav.onclick = e => { const a = e.target.closest('[data-jump]'); if (a) document.getElementById(a.dataset.jump).scrollIntoView({ behavior: 'smooth' }); };
   window.scrollTo(0, 0);

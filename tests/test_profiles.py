@@ -304,3 +304,37 @@ def test_export_refuses_bad_requests_and_defuses_formulas(world):
         assert res["status"] == "inserted"
         _, rows = read_csv(works.export_csv(c, ADMIN, "RESEARCH", "Journal Publications", {}, ["title"]))
         assert any(r[0].startswith("'=HYPERLINK") for r in rows) and not any(r[0].startswith("=") for r in rows)
+
+
+# ---------------------------------------------------------------- column-picker downloads (Submissions, Placements)
+def test_submissions_download_gives_the_picked_columns_within_the_users_scope(world):
+    from backend.master import exports, submissions
+    tutor = User("EMP001", "Dr. Asha Rao", "STAFF", {"FACULTY", "TUTOR"}, class_ids={1}, tutor_class_ids={1})
+    with db() as c:
+        cat = exports.catalog("submissions")
+        assert {"title", "date", "students", "faculty"} <= {x["key"] for x in cat["columns"]} and set(cat["default_columns"]) <= {x["key"] for x in cat["columns"]}
+        head, rows = read_csv(exports.export_csv(c, ADMIN, "submissions", {}, ["title", "date", "submitted_by"]))
+        assert head == ["Title", "Date", "Submitted by (faculty)"] and len(rows) == submissions.list_submissions(c, ADMIN, {})["total"] > 0
+        _, mine = read_csv(exports.export_csv(c, tutor, "submissions", {}, ["title"]))
+        assert len(mine) == submissions.list_submissions(c, tutor, {})["total"] <= len(rows)            # a tutor downloads only what she can see
+        _, one = read_csv(exports.export_csv(c, ADMIN, "submissions", {"form_type": "RESEARCH"}, ["form"]))
+        assert one and {r[0] for r in one} == {"Research & innovation"}                                  # the page's filters apply
+        for cols in ([], ["title", "fs.title) FROM x; --"]):
+            with pytest.raises(HTTPException) as e:
+                exports.export_csv(c, ADMIN, "submissions", {}, cols)
+            assert e.value.status_code == 400
+        with pytest.raises(HTTPException) as e:
+            exports.catalog("nope")
+        assert e.value.status_code == 404
+
+
+def test_placement_downloads_follow_the_view_and_the_scope(world):
+    from backend.master import exports, placements
+    tutor = User("EMP001", "Dr. Asha Rao", "STAFF", {"FACULTY", "TUTOR"}, class_ids={1}, tutor_class_ids={1})
+    with db() as c:
+        for name, lister in (("offers", placements.list_offers), ("profiles", placements.list_profiles)):
+            keys = [x["key"] for x in exports.catalog(name)["columns"]]
+            head, rows = read_csv(exports.export_csv(c, ADMIN, name, {}, keys))
+            assert len(head) == len(keys) and len(rows) == lister(c, ADMIN, {})["total"]
+            _, mine = read_csv(exports.export_csv(c, tutor, name, {}, keys[:2]))
+            assert len(mine) == lister(c, tutor, {})["total"] <= len(rows)

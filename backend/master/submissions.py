@@ -19,7 +19,8 @@ def _visible(user: User, where, args):
     args += [user.id, user.id, *ids, *ids]
 
 
-def list_submissions(conn, user: User, f: Dict[str, Any], limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+def _base(user: User, f: Dict[str, Any]):
+    """FROM ... WHERE ... (and its bound values) for the filters in f, limited to what this person may see. Shared by the list and the download."""
     where, args = ["1=1"], []
     _visible(user, where, args)
     for col, key in (("fs.form_type", "form_type"), ("fs.ay_id", "ay_id"), ("fs.category", "category"), ("fs.submitter_emp_id", "submitter")):
@@ -53,6 +54,11 @@ def list_submissions(conn, user: User, f: Dict[str, Any], limit: int = 100, offs
         where.append("fs.submission_id IN (SELECT submission_id FROM student_achievements WHERE level = ?)")
         args.append(f["level"])
     base = f"FROM form_submissions fs LEFT JOIN faculty u ON u.emp_id = fs.submitter_emp_id WHERE {' AND '.join(where)}"
+    return base, args
+
+
+def list_submissions(conn, user: User, f: Dict[str, Any], limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+    base, args = _base(user, f)
     total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
     rows = conn.execute(
         f"SELECT fs.submission_id, fs.form_type, fs.ay_id, fs.event_date, fs.category, fs.title, fs.badge_tag, fs.is_landmark, "

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, Response, UploadFile
 
-from backend.master import analytics, diary, excel_templates, ingest, people, placements, profiles, submissions, works
+from backend.master import analytics, diary, excel_templates, exports, ingest, people, placements, profiles, submissions, works
 from backend.master.auth import User, admin_user, change_password, current_user, editor_user, login, mark_tour_seen, staff_user
 from backend.master.common import make_xlsx
 from database.master_db import db
@@ -240,6 +240,29 @@ def api_works_export(request: Request, user: User = Depends(staff_user)):
     with db() as conn:
         data = works.export_csv(conn, user, group, category, q, columns)
     return Response(data, media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="work.csv"'})
+
+
+# ================================================================ column-picker downloads (Submissions, Placements)
+@router.get("/api/master/downloads/{name}/columns")
+def api_download_columns(name: str, user: User = Depends(staff_user)):
+    return exports.catalog(name)
+
+
+@router.get("/api/master/downloads/{name}")
+def api_download(name: str, request: Request, user: User = Depends(staff_user)):
+    q = dict(request.query_params)
+    columns = [c for c in q.pop("columns", "").split(",") if c]
+    for k in ("limit", "offset"):
+        q.pop(k, None)
+    for k in ("class_id", "org_id", "year_no"):                       # the page's filters arrive as text; ids must be numbers
+        if k in q:
+            try:
+                q[k] = int(q[k])
+            except ValueError:
+                raise HTTPException(400, f"{k} must be a number")
+    with db() as conn:
+        data = exports.export_csv(conn, user, name, {k: v for k, v in q.items() if v not in ("", None)}, columns)
+    return Response(data, media_type="text/csv; charset=utf-8", headers={"Content-Disposition": f'attachment; filename="{name}.csv"'})
 
 
 # ================================================================ form submissions

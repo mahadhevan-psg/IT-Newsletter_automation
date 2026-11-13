@@ -145,7 +145,8 @@ def _scope(user: User, where: List[str], args: List[Any], alias: str = "s"):
         args += ids
 
 
-def list_offers(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> Dict[str, Any]:
+def _offers_base(user: User, f: Dict[str, Any]):
+    """FROM ... WHERE ... (and values) for the offer filters, limited to the person's classes. Shared by the list and the download."""
     where, args = ["1=1"], []
     _scope(user, where, args)
     for col, key in (("o.ay_id", "ay_id"), ("o.org_id", "org_id"), ("o.offer_type", "offer_type"), ("o.offer_status", "offer_status"),
@@ -164,6 +165,11 @@ def list_offers(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> Dic
         args += [f"%{f['q']}%"] * 3
     base = ("FROM placement_offers o JOIN students s ON s.roll_no = o.roll_no JOIN organizations g ON g.org_id = o.org_id "
             f"LEFT JOIN classes c ON c.class_id = {EFF_CLASS} WHERE {' AND '.join(where)}")
+    return base, args
+
+
+def list_offers(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> Dict[str, Any]:
+    base, args = _offers_base(user, f)
     total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
     rows = conn.execute(
         f"SELECT s.roll_no, s.full_name, c.class_code, o.ay_id, g.org_id, g.name AS company, o.offer_type, o.package_lpa, o.stipend_per_month, "
@@ -172,7 +178,8 @@ def list_offers(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> Dic
     return {"total": total, "rows": [dict(r) for r in rows]}
 
 
-def list_profiles(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> Dict[str, Any]:
+def _profiles_base(user: User, f: Dict[str, Any]):
+    """FROM ... WHERE ... (and values) for the opt-in / opt-out filters. Shared by the list and the download."""
     where, args = ["1=1"], []
     _scope(user, where, args)
     for col, key in (("p.ay_id", "ay_id"), ("p.opt_status", "opt_status"), (EFF_CLASS, "class_id"), ("c.programme", "programme"), ("c.grp", "grp")):
@@ -180,6 +187,11 @@ def list_profiles(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> D
             where.append(f"{col} = ?")
             args.append(f[key])
     base = f"FROM placement_profiles p JOIN students s ON s.roll_no = p.roll_no LEFT JOIN classes c ON c.class_id = {EFF_CLASS} WHERE {' AND '.join(where)}"
+    return base, args
+
+
+def list_profiles(conn, user: User, f: Dict[str, Any], limit=200, offset=0) -> Dict[str, Any]:
+    base, args = _profiles_base(user, f)
     total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
     rows = conn.execute(
         f"SELECT s.roll_no, s.full_name, c.class_code, p.ay_id, p.opt_status, p.opt_out_reason, "

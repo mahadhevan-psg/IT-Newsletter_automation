@@ -292,7 +292,8 @@ def api_submission(sid: int, user: User = Depends(staff_user)):
 def api_form_template(form_id: str, user: User = Depends(admin_user)):
     if form_id not in ingest.specs()["forms"]:
         raise HTTPException(404, "Unknown form")
-    return _xlsx(f"{form_id}_template.xlsx", ["Timestamp", "Email Address"] + ingest.template_headers(form_id))
+    heads = ingest.template_headers(form_id)
+    return _xlsx(f"{form_id}_template.xlsx", heads if heads[:1] == ["Timestamp"] else ["Timestamp", "Email Address"] + heads)
 
 
 @router.post("/api/master/forms/{form_id}/upload")

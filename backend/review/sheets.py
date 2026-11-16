@@ -16,8 +16,8 @@ from urllib.parse import quote
 
 import requests
 
-from backend.master import ingest
-from backend.master.common import norm_header
+from backend.master import blocks, ingest
+from backend.master.common import base_title, norm_header, uniquify_headers
 
 TIMEOUT = 30
 SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
@@ -61,7 +61,7 @@ def _table(values: List[List[Any]]) -> List[Dict[str, str]]:
     """First row = column titles; the rest = one response each. Empty rows and untitled columns are dropped."""
     if not values:
         return Rows()
-    heads = [str(h).strip() for h in values[0]]
+    heads = uniquify_headers([str(h).strip() for h in values[0]])          # a title that repeats keeps its place: 'Title', 'Title#2' ...
     out = Rows()
     out.headers = [h for h in heads if h]
     for row in values[1:]:
@@ -141,14 +141,53 @@ def fetch_rows(url: str) -> List[Dict[str, str]]:
     return _fetch_api(sid, gid) if using_service_account() else _fetch_csv(sid, gid)
 
 
+def _check_block_form(form_id: str, heads: List[str]) -> Dict[str, Any]:
+    """The category-based forms: the sheet's columns compared with the layout the application expects, position by position."""
+    spec = ingest.specs()["forms"][form_id]
+    expected = blocks.sheet_headers(form_id)
+    have = {norm_header(base_title(h)) for h in heads}
+    sheet_of = {flat: sheet for sheet, flat in spec["layout"].get("closing_rename", {}).items()}       # a renamed closing question is a column of the sheet under its sheet title
+    required = set()
+    for q in spec["questions"]:
+        if q.get("req") and not q.get("legacy") and q["type"] != "section" and not q.get("derived"):
+            required.update(norm_header(t) for t in (sheet_of.get(q["q"], q["q"]), *q.get("aliases", [])))
+    gates = [norm_header(b["gate"]) for b in spec["layout"]["blocks"]]
+    missing, seen = [], set()
+    for title in expected:
+        n = norm_header(title)
+        if n in seen:
+            continue
+        seen.add(n)
+        if (n in required or n in gates) and n not in have:
+            missing.append(title)
+    known = {norm_header(t) for t in expected} | {"timestamp", "email address"}
+    for q in spec["questions"]:
+        known.update(norm_header(t) for t in (q["q"], *q.get("aliases", [])))
+    unknown = [h for h in dict.fromkeys(base_title(h) for h in heads) if norm_header(h) not in known]
+    differences = []
+    if len(heads) != len(expected):
+        differences.append(f"The sheet has {len(heads)} columns; the form should give {len(expected)}")
+    for i, (h, e) in enumerate(zip(heads, expected)):
+        if norm_header(base_title(h)) != norm_header(e):
+            differences.append(f"Column {i + 1} is '{base_title(h)}' but '{e}' was expected")
+            if len(differences) >= 4:
+                break
+    return {"missing_required": missing, "unknown_columns": unknown, "layout_differences": differences}
+
+
 def check_source(form_id: str, url: str) -> Dict[str, Any]:
     """'Test this link': can it be read, and do its columns look like this form's questions?"""
     rows = fetch_rows(url)
     heads = list(getattr(rows, "headers", None) or dict.fromkeys(k for r in rows for k in r))
+    if form_id != "placement" and blocks.has_blocks(ingest.specs()["forms"][form_id]):
+        out = _check_block_form(form_id, heads)
+        return {"rows": len(rows), "columns": len(heads), **out}
     found = {norm_header(h) for h in heads}
     qs = ingest.specs()["placement" if form_id == "placement" else "forms"]
     questions = (qs["questions"] if form_id == "placement" else qs[form_id]["questions"])
     expected = [q for q in questions if q["type"] != "section" and q.get("key")]
-    missing = [q["q"] for q in expected if q.get("req") and not any(norm_header(t) in found for t in (q["q"], *q.get("aliases", [])))]
+    missing = [q["q"] for q in expected if q.get("req") and not q.get("legacy") and not any(norm_header(t) in found for t in (q["q"], *q.get("aliases", [])))]
     known = {norm_header(t) for q in expected for t in (q["q"], *q.get("aliases", []))} | {"timestamp", "email address"}
-    return {"rows": len(rows), "columns": len(heads), "missing_required": missing, "unknown_columns": [h for h in heads if norm_header(h) not in known]}
+    asks = ("do you have", "would you like")                                  # the placement form's yes / no gates are not data
+    return {"rows": len(rows), "columns": len(heads), "missing_required": missing, "layout_differences": [],
+            "unknown_columns": [h for h in heads if norm_header(h) not in known and not norm_header(h).startswith(asks)]}

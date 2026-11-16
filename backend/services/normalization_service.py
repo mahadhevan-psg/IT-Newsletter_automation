@@ -43,6 +43,10 @@ class NormalizationService:
         transforms = {**form_spec.get("legacy_transforms", {}), **form_spec.get("transforms", {})}
         category_field = form_spec.get("category_field")
         category_map = form_spec.get("category_map", {})
+        # a title that fills different newsletter fields in different categories is mapped by the response's own category
+        if category_field and form_spec.get("category_field_mappings"):
+            cat_value = next((str(v).strip() for k, v in raw_data.items() if str(k).strip().lower() == category_field.strip().lower()), "")
+            field_mappings = {**field_mappings, **form_spec["category_field_mappings"].get(cat_value, {})}
 
         canonical_entry = {
             "entry_id": f"ENTRY_{uuid.uuid4().hex[:8].upper()}",

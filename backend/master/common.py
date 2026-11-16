@@ -10,13 +10,33 @@ def norm_header(s: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(s or "").lower()).strip()
 
 
+def uniquify_headers(headers: List[str]) -> List[str]:
+    """Column titles made unique by position: a title that repeats (Google Forms sheets repeat a title in every category block)
+    becomes 'Title', 'Title#2', 'Title#3' ... so no column is lost when a row is read into a dict; the dict keeps the column order."""
+    seen: Dict[str, int] = {}
+    out = []
+    for h in headers:
+        if not h:
+            out.append("")
+            continue
+        seen[h] = seen.get(h, 0) + 1
+        out.append(h if seen[h] == 1 else f"{h}#{seen[h]}")
+    return out
+
+
+def base_title(title: str) -> str:
+    """'Objectives and Rationale#3' -> 'Objectives and Rationale' (see uniquify_headers)."""
+    return re.sub(r"#\d+$", "", str(title or "")).strip()
+
+
 def read_xlsx(content: bytes) -> List[Dict[str, str]]:
-    """Rows of the first sheet as {header: text}. Every cell becomes text, like the newsletter importer does."""
+    """Rows of the first sheet as {header: text}. Every cell becomes text, like the newsletter importer does.
+    A header that repeats becomes 'Header#2' ... so columns are never lost (the dict keeps the column order)."""
     import openpyxl
     wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True, read_only=True)
     rows = wb.active.iter_rows(values_only=True)
     try:
-        headers = [str(h).strip() if h is not None else "" for h in next(rows)]
+        headers = uniquify_headers([str(h).strip() if h is not None else "" for h in next(rows)])
     except StopIteration:
         return []
     out = []
@@ -40,7 +60,7 @@ def parse_datetime(s: Any) -> Optional[datetime]:
     t = clean_cell(s) if not isinstance(s, datetime) else s.isoformat(sep=" ")
     if not t:
         return None
-    t = re.sub(r"\.\d+$", "", t)
+    t = re.sub(r"(\d{2}:\d{2}:\d{2})\.\d+$", lambda g: g.group(1), t)       # fractional seconds only; "12.03.2026" must stay a date
     for fmt in _DATE_FORMATS + _MONTH_FORMATS:
         try:
             return datetime.strptime(t, fmt)
@@ -53,6 +73,26 @@ def parse_datetime(s: Any) -> Optional[datetime]:
 def parse_date(s: Any) -> Optional[str]:
     d = parse_datetime(s)
     return d.strftime("%Y-%m-%d") if d else None
+
+
+_DATE_IN_TEXT = [r"\d{4}-\d{1,2}-\d{1,2}", r"\d{1,2}[/.-]\d{1,2}[/.-]\d{4}", r"\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\.?,?\s+\d{4}", r"[A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}"]
+
+
+def find_date(text: Any) -> Optional[str]:
+    """A date written somewhere inside free text ('Seminar Hall, 12 March 2026' or '15/03/2026 - Auditorium') as YYYY-MM-DD, else None."""
+    t = clean_cell(text)
+    if not t:
+        return None
+    whole = parse_date(t)
+    if whole:
+        return whole
+    for pat in _DATE_IN_TEXT:
+        for m in re.finditer(pat, t):
+            snippet = re.sub(r"(\d)(?:st|nd|rd|th)", lambda g: g.group(1), m.group()).replace(".,", ",").rstrip(".")
+            d = parse_date(snippet)
+            if d:
+                return d
+    return None
 
 
 def parse_num(s: Any) -> Optional[float]:

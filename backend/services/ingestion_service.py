@@ -5,6 +5,8 @@ from typing import Dict, Any, List, Optional
 from database.db_manager import save_raw_response, create_canonical_entry, get_entries
 from backend.services.normalization_service import NormalizationService
 from backend.services.validation_service import ValidationService
+from backend.master.blocks import expand_rows
+from backend.master.common import uniquify_headers
 from backend.master.ingest import ingest_form_row
 
 def entry_key(e: Dict[str, Any]):
@@ -65,9 +67,13 @@ class IngestionService:
         """
         Ingests batch responses from Google Sheets / CSV file upload.
         """
-        reader = csv.DictReader(io.StringIO(csv_content))
+        table = list(csv.reader(io.StringIO(csv_content)))
         results = []
-        for row in reader:
+        if not table:
+            return results
+        headers = uniquify_headers([h.strip() for h in table[0]])            # a title that repeats (every category block has its own) keeps its place
+        sheet_rows = [{headers[i]: v.strip() for i, v in enumerate(r) if i < len(headers) and headers[i]} for r in table[1:] if any(c.strip() for c in r)]
+        for row in expand_rows(form_id, sheet_rows):                          # one entry per category answered
             res = self.process_single_submission(form_id, row, issue_id=issue_id)
             results.append(res)
         return results
@@ -80,7 +86,7 @@ class IngestionService:
             import openpyxl
             wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
             sheet = wb.active
-            headers = [str(cell.value).strip() if cell.value is not None else "" for cell in sheet[1]]
+            headers = uniquify_headers([str(cell.value).strip() if cell.value is not None else "" for cell in sheet[1]])
             results = []
             for row in sheet.iter_rows(min_row=2, values_only=True):
                 raw_data = {}
@@ -88,8 +94,8 @@ class IngestionService:
                     if idx < len(headers) and headers[idx]:
                         raw_data[headers[idx]] = str(cell_val).strip() if cell_val is not None else ""
                 if any(raw_data.values()):
-                    res = self.process_single_submission(form_id, raw_data, issue_id=issue_id)
-                    results.append(res)
+                    for flat in expand_rows(form_id, [raw_data]):             # one entry per category answered
+                        results.append(self.process_single_submission(form_id, flat, issue_id=issue_id))
             return results
         except Exception as e:
             # Fallback to CSV if reading fails

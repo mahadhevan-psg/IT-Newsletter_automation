@@ -264,19 +264,24 @@ def _seed_submissions(conn, cohorts: List[Cohort]) -> None:
                      is_team="Individual", is_landmark=lm(), publish_permission=perm)
             _submit(conn, "form_faculty", _row("form_faculty", when, _fac_email(emp), **k))
 
-    # ---- departmental highlights
+    # ---- departmental highlights (the ten categories of the faculty highlights form)
     cats = _categories("form_departmental")
-    for ci, count in enumerate([9, 4, 4, 6, 4]):
+    plain = "A department-wide activity shared with all stakeholders."
+    for ci, count in enumerate([4, 3, 5, 3, 3, 3, 3, 3, 3, 3]):
         for n in range(count):
             conv = _R.choice(fac)
             when = _rdate(lo, hi)
-            title, over = {0: (_R.choice(D.WORKSHOPS), "A hands-on programme for students and faculty with practical sessions."), 1: (_R.choice(D.CONFERENCES_ORG), "Paper presentations, keynotes and a poster session."),
-                           2: (D.INFRA[n % len(D.INFRA)][0] + " inaugurated", D.INFRA[n % len(D.INFRA)][1]), 3: (_R.choice(D.CLUBS), "Student-run activity supported by faculty coordinators."),
-                           4: (_R.choice(D.MILESTONES), "A department-wide milestone shared with all stakeholders.")}[ci]
+            title, over = {0: (_R.choice(D.MILESTONES), plain), 1: (_R.choice(D.AWARDS), "Recognised for the department's contribution to teaching and research."),
+                           2: (_R.choice(D.WORKSHOPS + D.CONFERENCES_ORG), "A hands-on programme for students and faculty with practical sessions."),
+                           3: (f"{_R.choice(D.APPROACHES)} {_R.choice(D.TOPICS).title()} Initiative", "Applied research carried out with students and published outcomes."),
+                           4: (D.INFRA[n % len(D.INFRA)][0] + " inaugurated", D.INFRA[n % len(D.INFRA)][1]), 5: (f"Collaboration with {_R.choice(D.PARTNERS)[0]}", "A partnership for joint projects, internships and guest lectures."),
+                           6: (f"FDP: {_R.choice(D.FDP_TOPICS)}", "Faculty upskilled through a structured training programme."), 7: (_R.choice(D.CLUBS), "Student-run activity supported by faculty coordinators."),
+                           8: (_R.choice(D.MILESTONES), "A quality assurance step towards accreditation."), 9: (_R.choice(D.MILESTONES), plain)}[ci]
             k = dict(_submitter=conv, convener_emp_id=conv, _faculty_involved="\n".join(_R.sample([f for f in fac if f != conv], 2)), category=cats[ci], title=title,
-                     highlight_type=["Event", "Event", "Infrastructure upgrade", "Student activity", "Milestone"][ci], start_date=when.isoformat(), end_date=(when + timedelta(days=_R.choice([0, 1, 2, 4]))).isoformat(),
+                     highlight_type=["Milestone", "Milestone", "Event", "Event", "Infrastructure upgrade", "Milestone", "Event", "Student activity", "Milestone", "Milestone"][ci],
+                     start_date=when.isoformat(), end_date=(when + timedelta(days=_R.choice([0, 1, 2, 4]))).isoformat(),
                      impl_status="Completed", venue="IT Department Seminar Hall", target_audience="Students and faculty", participant_count=_R.choice([40, 65, 90, 120, 180, 250]),
-                     overview=over, budget_amount=_R.choice([15000, 40000, 75000, 150000, 600000]) if ci in (0, 1, 2) else None, funding_source=_R.choice(["Department fund", "AICTE grant", "Alumni contribution"]),
+                     overview=over, budget_amount=_R.choice([15000, 40000, 75000, 150000, 600000]) if ci in (2, 4, 6) else None, funding_source=_R.choice(["Department fund", "AICTE grant", "Alumni contribution"]),
                      is_landmark=lm(.12), publish_permission=perm)
             _submit(conn, "form_departmental", _row("form_departmental", when, _fac_email(conv), **k))
 

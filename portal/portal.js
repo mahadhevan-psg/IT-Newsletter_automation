@@ -407,7 +407,8 @@ async function viewSubs() {
 async function submissionDetail(id) {
   const d = await api('/api/master/submissions/' + id);
   const kv = o => '<dl class="kv">' + Object.entries(o).filter(([, v]) => v !== null && v !== '').map(([k, v]) => `<dt>${esc(k.replace(/_/g, ' '))}</dt><dd>${esc(v)}</dd>`).join('') + '</dl>';
-  modal(d.header.title, kv(d.header) + '<h4 style="margin-top:14px">Details</h4>' + kv(d.detail) +
+  const all = (d.answers || []).length ? `<details style="margin-top:14px"><summary><b>Everything that was entered (${d.answers.length} answers)</b></summary><dl class="kv" style="margin-top:8px">${d.answers.map(a => `<dt>${esc(a.q.replace(/#\d+$/, ''))}</dt><dd>${esc(a.value)}</dd>`).join('')}</dl></details>` : '';
+  modal(d.header.title, kv(d.header) + '<h4 style="margin-top:14px">Details</h4>' + kv(d.detail) + all +
     (d.participants.length ? '<h4 style="margin-top:14px">Students</h4>' + table([{ h: 'Roll no', f: p => p.roll_no || '⚠ ' + p.raw_text }, { h: 'Name', k: 'name' }, { h: 'Role', k: 'role' }, { h: 'Class then', k: 'class_code' }, { h: 'Lead', f: p => p.is_lead ? 'Yes' : '' }], d.participants) : '') +
     (d.contributors.length ? '<h4 style="margin-top:14px">Authors</h4>' + table([{ h: '#', k: 'author_order' }, { h: 'Type', k: 'person_type' }, { h: 'Name', k: 'name' }, { h: 'ID', f: c => c.emp_id || c.roll_no || '' }, { h: 'Affiliation', k: 'affiliation' }], d.contributors) : '') +
     (d.faculty.length ? '<h4 style="margin-top:14px">Faculty involved</h4>' + table([{ h: 'ID', k: 'emp_id' }, { h: 'Name', k: 'full_name' }, { h: 'Role', k: 'role' }], d.faculty) : '') +

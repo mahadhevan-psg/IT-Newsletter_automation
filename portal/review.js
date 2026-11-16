@@ -354,7 +354,7 @@
       if (e.target.classList.contains('sy-test')) {
         out.innerHTML = '<span class="muted">Checking…</span>';
         try { const r = await api('/api/sync/test', { method: 'POST', body: { form_id: tr.dataset.f, sheet_url: url } });
-          out.innerHTML = `<span class="rv-ok">✓ ${r.rows} response${r.rows === 1 ? '' : 's'} found</span>${r.missing_required.length ? `<div class="rv-bad">Missing columns: ${r.missing_required.map(esc).join(', ')}</div>` : ''}${r.rows === 0 ? '<div class="muted">No responses yet, but the column titles were read.</div>' : ''}${r.unknown_columns.length ? `<details><summary class="muted">Columns not recognised (${r.unknown_columns.length})</summary><div class="muted">${r.unknown_columns.map(esc).join('<br>')}</div></details>` : ''}`;
+          out.innerHTML = `<span class="rv-ok">✓ ${r.rows} response${r.rows === 1 ? '' : 's'} found</span>${r.missing_required.length ? `<div class="rv-bad">Missing columns: ${r.missing_required.map(esc).join(', ')}</div>` : ''}${r.rows === 0 ? '<div class="muted">No responses yet, but the column titles were read.</div>' : ''}${(r.layout_differences || []).length ? `<div class="rv-bad">The sheet does not match the form: ${r.layout_differences.map(esc).join('; ')}</div>` : ''}${r.unknown_columns.length ? `<details><summary class="muted">Columns not recognised (${r.unknown_columns.length})</summary><div class="muted">${r.unknown_columns.map(esc).join('<br>')}</div></details>` : ''}`;
         } catch (err) { out.innerHTML = `<span class="rv-bad">⚠ ${esc(err.message)}</span>`; }
       }
     });

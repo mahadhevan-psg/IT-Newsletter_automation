@@ -17,14 +17,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
 
-from backend.master import ingest, placements
+from backend.master import blocks, ingest, placements
 from backend.master.auth import User
 from backend.master.common import norm_header
 from database.master_db import audit, ay_for, ensure_ay
 
 PLACEMENT = "placement"
 LABELS = {"form_student": "Student achievement", "form_research": "Research & innovation", "form_faculty": "Faculty achievement",
-          "form_departmental": "Department highlight", "form_industry": "Industry & outreach", PLACEMENT: "Placement"}
+          "form_departmental": "Faculty highlights", "form_industry": "Industry & outreach", PLACEMENT: "Placement"}
 
 
 # ---------------------------------------------------------------- small helpers
@@ -48,8 +48,20 @@ def event(conn, item_id: int, action: str, actor: Optional[str], note: Optional[
                  (item_id, action, actor, note or None, _j(detail) if detail is not None else None))
 
 
-def _spec_questions(form_id: str) -> List[Dict[str, Any]]:
-    return (ingest.specs()["placement"] if form_id == PLACEMENT else ingest.specs()["forms"][form_id])["questions"]
+def _spec_questions(form_id: str, row: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+    """The questions shown for one response. A category-based form shows only the questions of the response's own category."""
+    if form_id == PLACEMENT:
+        return ingest.specs()["placement"]["questions"]
+    spec = ingest.specs()["forms"][form_id]
+    by_norm = {norm_header(k): str(v).strip() for k, v in (row or {}).items() if v}
+    cat = blocks.category_of(spec, by_norm) if row is not None else None
+    qs = blocks.questions_for(spec, cat, legacy=False)
+    if row is not None:                          # a response typed in the earlier form's wording is still shown (and editable) under its own questions
+        keys_present = {q["key"] for q in qs if q.get("key") and any(norm_header(t) in by_norm for t in (q["q"], *q.get("aliases", [])))}
+        for q in blocks.questions_for(spec, cat, legacy=True):
+            if q.get("legacy") and q.get("key") and q["key"] not in keys_present and any(norm_header(t) in by_norm for t in (q["q"], *q.get("aliases", []))):
+                qs.append(q)
+    return qs
 
 
 def _titles(q: Dict[str, Any]) -> List[str]:
@@ -75,7 +87,9 @@ def stage_rows(conn, form_id: str, rows: List[Dict[str, Any]]) -> Dict[str, int]
     """Put the sheet's rows into the review queue. A response seen before is not added again; one that is already live
     (uploaded earlier from Excel) is recorded as approved without bothering anyone."""
     rows = [r for r in _clean_rows(rows) if any(r.values())]
-    return _stage_placements(conn, rows) if form_id == PLACEMENT else _stage_forms(conn, form_id, rows)
+    if form_id == PLACEMENT:
+        return _stage_placements(conn, rows)
+    return _stage_forms(conn, form_id, blocks.expand_rows(form_id, rows))      # a response with several categories becomes one entry per category
 
 
 def _stage_forms(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str, int]:
@@ -83,7 +97,7 @@ def _stage_forms(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str, in
     for row in rows:
         n = {norm_header(k): v for k, v in row.items()}
         ts, email = n.get("timestamp", ""), n.get("email address", "").lower()
-        key = f"{ts}|{email}" if (ts or email) else "hash:" + ingest.row_hash(form_id, row)
+        key = blocks.response_key(form_id, row) if (ts or email) else "hash:" + ingest.row_hash(form_id, row)
         digest = _hash_rows([row])
         have = conn.execute("SELECT item_id, status, content_hash FROM staged_items WHERE form_id = ? AND source_key = ?", (form_id, key)).fetchone()
         pv = ingest.preview_row(conn, form_id, row)
@@ -287,7 +301,7 @@ def _layout(form_id: str, rows: List[Dict[str, str]], originals: List[Dict[str, 
     for n, row in enumerate(rows):
         orig = originals[n] if n < len(originals) else {}
         fields, seen = [], set()
-        for q in _spec_questions(form_id):
+        for q in _spec_questions(form_id, row):
             if q["type"] == "section":
                 fields.append({"type": "section", "q": q["q"]})
                 continue
@@ -295,6 +309,8 @@ def _layout(form_id: str, rows: List[Dict[str, str]], originals: List[Dict[str, 
                 continue
             value, col = _field_value(row, q)
             ov, _ = _field_value(orig, q)
+            if q.get("derived") and not value:                       # a title made from the overview: show it (and keep it unmarked as 'changed')
+                value = ov = ingest.answer_values(form_id, row).get(q["key"], "")
             if col:
                 seen.add(col)
             if q.get("key") == "is_landmark":                  # every entry is treated alike: no separate 'landmark' flag is shown to approvers
@@ -348,10 +364,10 @@ def preview_answers(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str,
 def _apply_edits(form_id: str, rows: List[Dict[str, str]], edits: List[Dict[str, Any]]) -> Tuple[List[Dict[str, str]], List[Dict[str, Any]]]:
     """Merge the edited answers into the stored ones. edits[i] = {question title: new value}; only those titles are touched.
     Returns (new rows, list of {row, field, from, to})."""
-    qs = [q for q in _spec_questions(form_id) if q["type"] != "section" and q.get("key")]
     out, changes = [], []
     for n, row in enumerate(rows):
         row = dict(row)
+        qs = [q for q in _spec_questions(form_id, row) if q["type"] != "section" and q.get("key")]
         for title, new in (edits[n] if n < len(edits) else {}).items():
             q = next((q for q in qs if norm_header(title) in {norm_header(t) for t in _titles(q)}), None)
             if not q:

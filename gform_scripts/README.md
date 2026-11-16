@@ -1,5 +1,35 @@
 # IT Chronicles - Google Forms
 
+> **Current forms (category-based).** The five submission forms and the placement form now work like this: a person says YES or NO to each
+> category, fills the YES ones, and answers a few common questions at the end, all in **one response**. The Google Form scripts are the
+> source of the questions; the application's description of them lives here:
+>
+> | File | What it is |
+> |---|---|
+> | [new_forms.py](new_forms.py) | Every form's common questions, categories, fields and closing questions, with the master-database column and newsletter field each one fills |
+> | [build_new_forms.py](build_new_forms.py) | `python gform_scripts/build_new_forms.py` writes `config/master_forms.json`, `config/form_mappings.json` and the newsletter's section categories |
+> | `legacy_*.json` | The earlier single-category forms, kept so sheets exported from them still import |
+> | `../tests/fixtures/sheet_headers.json` | The header rows of the six real response sheets; `tests/test_blocks.py` checks the layouts against them |
+>
+> **A response sheet repeats titles** ("Objectives and Rationale" appears in every category), so the application reads each row **by column
+> position** (`backend/master/blocks.py`) and cuts it into one entry per category answered. Each entry is reviewed, approved, stored and
+> published on its own.
+>
+> **When a form changes:** edit `new_forms.py` (a question, a category, the order of columns), run the builder, then run
+> `pytest tests/test_blocks.py`. Replace the sheet header fixture with the new sheet's header row. If the layout in the application and the
+> sheet differ, **Data sync -> Test** names the first columns that do not match.
+>
+> **The faculty drop-downs:** in the Apps Scripts, paste the list from *Faculty & roles -> Copy list for the Apps Script* (`C6608 - Dr. M. L.
+> Valarmathi`) over `FACULTY_NAMES` and `EMPLOYEE_LIST`. People are then matched by employee ID.
+>
+> Forms that have no date question (Faculty Achievements, and several categories of the faculty highlights form) use the day the response was
+> submitted. A date written inside the "Event Date and Venue" answer is read from the text.
+>
+> Everything below describes the **first, single-category forms** (`build_forms.py`, `AllFormsCreator.gs` ...). Those files are no longer used by the application.
+
+---
+
+
 Everything here is generated from **one file**, [build_forms.py](build_forms.py). Edit a question there, run
 
 ```bash

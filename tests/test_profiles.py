@@ -7,7 +7,7 @@ from fastapi import HTTPException
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from backend.master import ingest, profiles  # noqa: E402
+from backend.master import blocks, ingest, profiles  # noqa: E402
 from backend.master.auth import User  # noqa: E402
 from database.master_db import db, ensure_ay, init_master_db  # noqa: E402
 
@@ -16,7 +16,9 @@ ADMIN = User("ADMIN", "Admin", "STAFF", {"ADMIN", "FACULTY"}, all_access=True)
 
 def form_row(form_id, **by_key):
     """A response row for a form, written with master-DB field names and turned into the form's real column headers."""
-    heads = {q["key"]: q["q"] for q in ingest.specs()["forms"][form_id]["questions"] if q.get("key")}
+    spec = ingest.specs()["forms"][form_id]
+    heads = {q["key"]: q["q"] for q in spec["questions"] if q.get("key") and q.get("legacy")}          # the earlier wording ...
+    heads.update({q["key"]: q["q"] for q in blocks.questions_for(spec, by_key.get("category"), legacy=False) if q.get("key")})        # ... overridden by the current form's questions of this category
     row = {"Timestamp": "2025-10-01 10:00:00", "Email Address": "x@x.edu"}
     row.update({heads[k]: v for k, v in by_key.items()})
     return row
@@ -178,7 +180,7 @@ def test_catalog_lists_every_kind_of_work_with_counts(world):
     assert cat["total"] == 10 and old["total"] == 1                         # the year filter changes the counts too
     research = next(g for g in cat["groups"] if g["id"] == "RESEARCH")
     quartile = next(f for f in research["filters"] if f["param"] == "quartile")
-    assert [o["value"] for o in quartile["options"]] == ["Q1", "Q2", "Q3", "Q4", "Not applicable"]      # options come from the form itself
+    assert [o["value"] for o in quartile["options"]] == ["Q1", "Q2", "Q3", "Q4", "Not Applicable"]      # options come from the form itself
     assert {f["param"] for f in research["filters"]} >= {"indexing", "min_funding", "current_status"}
 
 

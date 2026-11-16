@@ -50,8 +50,10 @@ def _scope(user: User, where: list, args: list) -> None:
 def _options(form_id: str, group: str, param: str) -> List[Dict[str, str]]:
     if (group, param) in EXTRA_OPTIONS:
         return [{"value": v, "label": l} for v, l in EXTRA_OPTIONS[(group, param)]]
-    q = next((q for q in specs()["forms"][form_id]["questions"] if q.get("key") == param), None)
-    return [{"value": c, "label": c} for c in (q or {}).get("choices", [])]
+    qs = [q for q in specs()["forms"][form_id]["questions"] if q.get("key") == param]
+    current = [q for q in qs if not q.get("legacy")] or qs                      # the filter lists what the current form offers (a question can recur in several categories)
+    choices = list(dict.fromkeys(c for q in current for c in q.get("choices", [])))
+    return [{"value": c, "label": c} for c in choices]
 
 
 def _filter_defs(group: str) -> List[Dict[str, Any]]:

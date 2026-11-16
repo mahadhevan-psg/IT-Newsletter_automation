@@ -121,7 +121,8 @@ class ConfigService:
                     "canonical_tag": canonical_tag or "custom",
                     "type": col_type,
                     "required": req,
-                    "description": meta.get("description", "")
+                    "description": meta.get("description", ""),
+                    "categories": meta.get("categories") or []          # the categories a question belongs to (empty: asked in every category)
                 })
 
             # Sort columns logically: category field & title first, timestamp/email first or last
@@ -303,6 +304,8 @@ class ConfigService:
                     "required": bool(col.get("required", False)),
                     "description": col.get("description", "")
                 }
+                if col.get("categories"):
+                    column_metadata[col_name]["categories"] = col["categories"]
             fspec["field_mappings"] = field_mappings
             fspec["column_metadata"] = column_metadata
 

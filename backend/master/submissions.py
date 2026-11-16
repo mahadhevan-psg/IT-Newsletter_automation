@@ -73,11 +73,16 @@ def get_submission(conn, user: User, sid: int) -> Dict[str, Any]:
     if not conn.execute(f"SELECT 1 FROM form_submissions fs WHERE {' AND '.join(where)}", args).fetchone():
         raise HTTPException(404, "Submission not found")
     head = dict(conn.execute("SELECT * FROM form_submissions WHERE submission_id = ?", (sid,)).fetchone())
-    head.pop("raw_json", None)
+    import json as _json
+    try:
+        raw = _json.loads(head.pop("raw_json", None) or "{}")
+    except ValueError:
+        raw = {}
+    answers = [{"q": k, "value": v} for k, v in raw.items() if str(v or "").strip() and not str(k).lower().startswith("do you want to submit")]
     detail = conn.execute(f"SELECT * FROM {DETAIL_TABLE[head['form_type']]} WHERE submission_id = ?", (sid,)).fetchone()
     q = lambda sql: [dict(r) for r in conn.execute(sql, (sid,))]
     return {
-        "header": head, "detail": dict(detail) if detail else {},
+        "header": head, "detail": dict(detail) if detail else {}, "answers": answers,
         "participants": q("SELECT p.line_no, p.roll_no, p.name, p.role, p.is_lead, p.raw_text, c.class_code, p.year_snapshot FROM student_achievement_participants p LEFT JOIN classes c ON c.class_id = p.class_id_snapshot WHERE p.submission_id = ? ORDER BY p.line_no"),
         "contributors": q("SELECT author_order, person_type, emp_id, roll_no, name, affiliation FROM research_contributors WHERE submission_id = ? ORDER BY author_order"),
         "faculty": q("SELECT s.emp_id, f.full_name, s.role FROM submission_faculty s JOIN faculty f ON f.emp_id = s.emp_id WHERE s.submission_id = ?"),

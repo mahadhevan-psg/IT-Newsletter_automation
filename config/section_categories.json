@@ -163,6 +163,46 @@
         {
           "category_id": "cat_dept_milestones",
           "name": "Department Statistics & Major Milestones"
+        },
+        {
+          "category_id": "cat_dept_highlights",
+          "name": "Highlights"
+        },
+        {
+          "category_id": "cat_dept_awards",
+          "name": "Achievements / Awards / Recognitions"
+        },
+        {
+          "category_id": "cat_dept_events",
+          "name": "Events / Programs"
+        },
+        {
+          "category_id": "cat_dept_research",
+          "name": "Research / Publications / Innovation"
+        },
+        {
+          "category_id": "cat_dept_infra_dev",
+          "name": "Infrastructure / Laboratory Development"
+        },
+        {
+          "category_id": "cat_dept_mou",
+          "name": "MoU / Industry Collaboration / Partnerships"
+        },
+        {
+          "category_id": "cat_dept_fdp",
+          "name": "Faculty Development / Professional Achievements"
+        },
+        {
+          "category_id": "cat_dept_student_dev",
+          "name": "Student Development / Outreach / Social Initiatives"
+        },
+        {
+          "category_id": "cat_dept_accreditation",
+          "name": "Accreditation / Quality Assurance / Institutional Initiatives"
+        },
+        {
+          "category_id": "cat_dept_other",
+          "name": "Other Significant Initiatives"
         }
       ]
     }

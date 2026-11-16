@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from backend.app import app  # noqa: E402
-from backend.master import ingest, placements  # noqa: E402
+from backend.master import blocks, ingest, placements  # noqa: E402
 from backend.master.auth import set_staff_password  # noqa: E402
 from backend.review import schedule, service, sheets  # noqa: E402
 from database import db_manager  # noqa: E402
@@ -23,7 +23,9 @@ client = TestClient(app)
 
 
 def form_row(form_id, **by_key):
-    heads = {q["key"]: q["q"] for q in ingest.specs()["forms"][form_id]["questions"] if q.get("key")}
+    spec = ingest.specs()["forms"][form_id]
+    heads = {q["key"]: q["q"] for q in spec["questions"] if q.get("key") and q.get("legacy")}          # the earlier wording ...
+    heads.update({q["key"]: q["q"] for q in blocks.questions_for(spec, by_key.get("category"), legacy=False) if q.get("key")})        # ... overridden by the current form's questions of this category
     row = {"Timestamp": by_key.pop("_ts", "2025-10-01 10:00:00"), "Email Address": by_key.pop("_email", "x@x.edu")}
     row.update({heads[k]: v for k, v in by_key.items()})
     return row
@@ -464,11 +466,16 @@ def test_reading_a_link_shared_sheet_and_explaining_a_private_one(monkeypatch):
 
 
 def test_testing_a_link_compares_its_columns_with_the_form(monkeypatch):
-    titles = [q["q"] for q in ingest.specs()["forms"]["form_research"]["questions"] if q["type"] != "section" and q.get("key")]
-    rows = [{"Timestamp": "t", "Email Address": "e", **{t: "x" for t in titles if "Abstract" not in t}, "Some Extra Column": "?"}]
+    from backend.master.common import uniquify_headers
+    heads = uniquify_headers(blocks.sheet_headers("form_research"))                       # the sheet repeats titles; each column is still checked by position
+    rows = [{**{t: "x" for t in heads if t != "Funding Agency"}, "Some Extra Column": "?"}]
     monkeypatch.setattr(sheets, "fetch_rows", lambda url: rows)
     r = sheets.check_source("form_research", "https://docs.google.com/spreadsheets/d/AAA/edit")
-    assert r["rows"] == 1 and r["unknown_columns"] == ["Some Extra Column"] and any("Abstract" in m for m in r["missing_required"])
+    assert r["rows"] == 1 and r["unknown_columns"] == ["Some Extra Column"] and r["missing_required"] == ["Funding Agency"]
+    assert r["layout_differences"] and "Funding Agency" in " ".join(r["layout_differences"])
+    monkeypatch.setattr(sheets, "fetch_rows", lambda url: [{t: "x" for t in heads}])
+    ok = sheets.check_source("form_research", "https://docs.google.com/spreadsheets/d/AAA/edit")
+    assert ok["missing_required"] == [] and ok["unknown_columns"] == [] and ok["layout_differences"] == []
     monkeypatch.setattr(sheets, "fetch_rows", lambda url: (_ for _ in ()).throw(sheets.SheetError("The sheet cannot be opened.")))
     assert client_post_test("form_research", "https://docs.google.com/spreadsheets/d/AAA/edit") == (400, "The sheet cannot be opened.")
 

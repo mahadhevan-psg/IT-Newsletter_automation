@@ -264,10 +264,16 @@ def test_newsletter_importer_feeds_master_db(world, tmp_path):
     assert again.get("duplicate")
 
 
-def test_every_form_header_is_unique_and_mapped():
+def test_every_form_header_is_unique_within_its_category_and_mapped():
+    from backend.master import blocks
     for fid in ingest.form_ids():
-        heads = ingest.template_headers(fid)
-        assert len(heads) == len(set(heads)), f"duplicate question in {fid}"
+        spec = ingest.specs()["forms"][fid]
+        for cat in spec["categories"]:                      # a title may recur in several categories (the sheet repeats it), never within one
+            titles = [q["q"] for q in blocks.questions_for(spec, cat, legacy=False)]
+            assert len(titles) == len(set(titles)), f"duplicate question in {fid} / {cat}"
+            assert all(q.get("key") for q in blocks.questions_for(spec, cat, legacy=False)), f"a question without a field in {fid} / {cat}"
+        heads = ingest.template_headers(fid)                # the template is the sheet's own header row: common, then each category's gate and fields, then closing
+        assert len(heads) == len(blocks.sheet_headers(fid)) and heads[0] == "Timestamp"
 
 
 def test_downloaded_templates_round_trip_and_match_the_importers(world):

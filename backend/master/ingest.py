@@ -10,7 +10,8 @@ import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
-from backend.master.common import (person_name, clean_cell, norm_header, org_key, parse_date, parse_datetime, parse_int,
+from backend.master import blocks
+from backend.master.common import (person_name, clean_cell, find_date, norm_header, org_key, parse_date, parse_datetime, parse_int,
                                    parse_lines, parse_num, read_xlsx, truthy)
 from database.master_db import db, ay_for, ensure_ay
 
@@ -37,7 +38,48 @@ def form_ids() -> List[str]:
 
 
 def template_headers(form_id: str) -> List[str]:
-    return [q["q"] for q in specs()["forms"][form_id]["questions"] if q["type"] != "section"]
+    """The response sheet's header row. For the category-based forms it repeats titles, exactly as the Google Form's sheet does."""
+    spec = specs()["forms"][form_id]
+    if blocks.has_blocks(spec):
+        return blocks.sheet_headers(form_id)
+    return [q["q"] for q in spec["questions"] if q["type"] != "section" and not q.get("legacy")]
+
+
+def answers_for(spec: Dict[str, Any], raw: Dict[str, Any]):
+    """(by_norm, category, vals, cfg) for one flat response: the answers by field name, using only the questions of its category."""
+    by_norm = {norm_header(k): str(v).strip() for k, v in raw.items() if v is not None and str(v).strip() != ""}
+    cat = blocks.category_of(spec, by_norm)
+    cfg = spec.get("category_config", {}).get(cat, {})
+    vals: Dict[str, str] = {}
+    for q in sorted(blocks.questions_for(spec, cat, legacy=True), key=lambda q: not q.get("legacy")):      # the earlier wording first: the current one wins
+        if not q.get("key"):
+            continue
+        for title in (q["q"], *q.get("aliases", [])):             # earlier titles of a renamed question still import
+            if norm_header(title) in by_norm:
+                if not (q.get("fill") and q["key"] in vals):       # 'fill' questions only supply what the category's own question left empty
+                    vals[q["key"]] = by_norm[norm_header(title)].strip()
+                break
+    for key, default in cfg.get("defaults", {}).items():
+        vals.setdefault(key, default)
+    for key, src in cfg.get("copy", {}).items():
+        if not vals.get(key) and vals.get(src):
+            vals[key] = vals[src]
+    if not vals.get("title"):
+        derived = blocks.derive_title(vals, cfg)
+        if derived:
+            vals["title"] = derived
+    return by_norm, cat, vals, cfg
+
+
+def event_date_of(spec: Dict[str, Any], cfg: Dict[str, Any], vals: Dict[str, str], timestamp: Optional[str]) -> Optional[str]:
+    """The entry's date: the category's date question, else a date written in its date-and-venue text, else (for forms with no date question) the day it was submitted."""
+    d = parse_date(vals.get(cfg.get("date_key") or spec["date_key"]))
+    if not d and cfg.get("date_text_key"):
+        d = find_date(vals.get(cfg["date_text_key"]))
+    if not d and spec.get("date_fallback") == "timestamp":
+        t = parse_datetime(timestamp)
+        d = t.strftime("%Y-%m-%d") if t else None
+    return d
 
 
 # ---------------------------------------------------------------- lookups
@@ -109,8 +151,15 @@ def _hash(form_id: str, by_norm: Dict[str, str]) -> str:
     return hashlib.sha256((form_id + canon).encode()).hexdigest()
 
 
+def _placeholder(text: str) -> bool:
+    """The Apps Script's unedited drop-down entries ('Replace with Faculty Name 1') mean nobody was chosen."""
+    return bool(re.match(r"(replace with|emp\d+\s*-\s*faculty name \d+)", str(text or "").strip().lower()))
+
+
 def _convert(conn, key: str, col_type: str, text: str, warnings: List[str]):
     if key.endswith("emp_id"):
+        if _placeholder(text):
+            return None
         emp = resolve_faculty(conn, text)
         if text.strip().upper() not in ("NA", "N/A") and not emp:
             warnings.append(f"Faculty not found: '{text}'")
@@ -132,14 +181,8 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
     if not spec:
         return {"status": "skipped", "warnings": [f"No master-database mapping for '{form_id}'"]}
     ftype = spec["form_type"]
+    by_norm, category, vals, cfg = answers_for(spec, raw)
     by_norm = {norm_header(k): str(v) for k, v in raw.items() if v is not None and str(v).strip() != ""}
-    vals, submitter_ids = {}, []
-    for q in spec["questions"]:
-        if q["type"] != "section" and q.get("key"):
-            for title in (q["q"], *q.get("aliases", [])):         # earlier titles of a renamed question still import
-                if norm_header(title) in by_norm:
-                    vals[q["key"]] = by_norm[norm_header(title)].strip()
-                    break
     warnings: List[str] = []
     if not vals.get("title"):
         return {"status": "error", "errors": ["Title is missing (check the column headers match the form)"]}
@@ -151,13 +194,13 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
             conn.execute("UPDATE form_submissions SET newsletter_entry_id = ? WHERE submission_id = ?", (newsletter_entry_id, dup[0]))
         return {"status": "duplicate", "submission_id": dup[0]}
 
-    event_date = parse_date(vals.get(spec["date_key"]))
     submitted = parse_datetime(by_norm.get("timestamp"))
+    event_date = event_date_of(spec, cfg, vals, by_norm.get("timestamp"))
     ay_id = ensure_ay(conn, ay_for((parse_datetime(event_date) or submitted or datetime.now()).date()))
     if not event_date:
         warnings.append("Date missing or not understood")
 
-    email = by_norm.get("email address", "").strip()
+    email = (by_norm.get("email address") or vals.get("x_faculty_email") or "").strip()
     submitter = None
     for q in spec["questions"]:
         if q.get("submitter") and q.get("key") in vals:
@@ -165,7 +208,7 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
     if not submitter and email:
         submitter = resolve_faculty(conn, email)
     if not submitter and ftype != "STUDENT":
-        warnings.append("Submitting faculty could not be matched (select from the list / check email)")
+        warnings.append("Submitting faculty could not be matched: the e-mail must be the one saved for them in the portal")
 
     sid = conn.execute(
         """INSERT INTO form_submissions (form_type, ay_id, submitted_at, submitter_email, submitter_emp_id, event_date, category, title,
@@ -184,6 +227,12 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
     for key, text in vals.items():
         if key in cols and key != "submission_id" and key not in COMMON:
             detail[key] = _convert(conn, key, cols[key], text, warnings)
+    if submitter:                                  # the person is known from their e-mail: they stand in for a name that was not chosen from a list
+        for col, who in (("emp_id", None), ("lead_emp_id", "lead coordinator"), ("convener_emp_id", "convener")):
+            if col in cols and not detail.get(col) and (col not in vals or _placeholder(vals[col])):
+                detail[col] = submitter
+                if who:
+                    warnings.append(f"No {who} was chosen from the list: the submitting faculty is used (change it here if someone else led it)")
     if "entry_kind" in detail:
         detail["entry_kind"] = "PARTICIPATION" if str(detail["entry_kind"]).lower().startswith("participation") else "ACHIEVEMENT"
     conn.execute(f"INSERT INTO {table} ({', '.join(detail)}) VALUES ({', '.join('?' * len(detail))})", list(detail.values()))
@@ -242,8 +291,15 @@ def _student_people(conn, sid, vals, on, warnings):
 
 
 def _contributors(conn, sid, text, warnings):
-    for order, ln in enumerate(parse_lines(text), 1):
+    lines = parse_lines(re.sub(r";\s*", "\n", str(text or "")))                  # one person per line (or separated by semicolons)
+    for order, ln in enumerate(lines, 1):
         ident, ptype, emp, roll, aff = ln["id"], "EXTERNAL", None, None, ln["extra"] or None
+        if not ident:                                                              # a plain name: a faculty member of the department if it is one
+            by_name = resolve_faculty(conn, ln["raw"])
+            if by_name:
+                conn.execute("INSERT INTO research_contributors (submission_id, author_order, person_type, emp_id, roll_no, name, affiliation) VALUES (?,?,?,?,?,?,?)",
+                             (sid, order, "FACULTY", by_name, None, _name_of(conn, by_name) or ln["raw"], None))
+                continue
         if ident and ident != "EXT":
             emp = resolve_faculty(conn, ident) if conn.execute("SELECT 1 FROM faculty WHERE upper(emp_id)=?", (ident,)).fetchone() else None
             roll = None if emp else resolve_student(conn, ident)
@@ -259,21 +315,26 @@ def ingest_rows(form_id: str, rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     inserted = duplicates = 0
     problems: List[Dict[str, Any]] = []
     with db() as conn:
-        for n, raw in enumerate(rows, 2):          # row 1 is the header
-            conn.execute("SAVEPOINT r")
-            try:
-                res = ingest_row(conn, form_id, raw)
-                conn.execute("RELEASE r")
-            except Exception as e:                  # one bad row never blocks the file
-                conn.execute("ROLLBACK TO r")
-                conn.execute("RELEASE r")
-                res = {"status": "error", "errors": [str(e)]}
-            if res["status"] == "inserted":
-                inserted += 1
-            elif res["status"] == "duplicate":
-                duplicates += 1
-            if res.get("errors") or res.get("warnings"):
-                problems.append({"row": n, "status": res["status"], "messages": res.get("errors") or res.get("warnings")})
+        for n, sheet_row in enumerate(rows, 2):    # row 1 is the header
+            entries = blocks.expand_rows(form_id, [sheet_row])        # one entry per category answered in the response
+            if not entries:
+                problems.append({"row": n, "status": "skipped", "messages": ["No category was answered YES in this response"]})
+            for raw in entries:
+                conn.execute("SAVEPOINT r")
+                try:
+                    res = ingest_row(conn, form_id, raw)
+                    conn.execute("RELEASE r")
+                except Exception as e:              # one bad row never blocks the file
+                    conn.execute("ROLLBACK TO r")
+                    conn.execute("RELEASE r")
+                    res = {"status": "error", "errors": [str(e)]}
+                if res["status"] == "inserted":
+                    inserted += 1
+                elif res["status"] == "duplicate":
+                    duplicates += 1
+                if res.get("errors") or res.get("warnings"):
+                    cat = blocks.category_of(specs()["forms"][form_id], {norm_header(k): str(v) for k, v in raw.items() if v}) if form_id in specs()["forms"] else None
+                    problems.append({"row": n, "status": res["status"], "messages": [(f"{cat}: " if cat else "") + m for m in (res.get("errors") or res.get("warnings"))]})
     return {"rows": len(rows), "inserted": inserted, "duplicates_skipped": duplicates, "needs_attention": problems}
 
 
@@ -298,23 +359,15 @@ def row_hash(form_id: str, raw: Dict[str, Any]) -> str:
 
 def answer_values(form_id: str, raw: Dict[str, Any]) -> Dict[str, str]:
     """{field name: answer} for one response (what ingest_row works from)."""
-    spec = specs()["forms"][form_id]
-    by_norm = {norm_header(k): str(v).strip() for k, v in raw.items() if v is not None and str(v).strip() != ""}
-    vals = {}
-    for q in spec["questions"]:
-        if q["type"] != "section" and q.get("key"):
-            for title in (q["q"], *q.get("aliases", [])):
-                if norm_header(title) in by_norm:
-                    vals[q["key"]] = by_norm[norm_header(title)]
-                    break
-    return vals
+    return answers_for(specs()["forms"][form_id], raw)[2]
 
 
 def summarize(form_id: str, raw: Dict[str, Any]) -> Dict[str, Optional[str]]:
     """Title, category and date as they will appear in the review list."""
     spec = specs()["forms"][form_id]
-    vals = answer_values(form_id, raw)
-    return {"title": vals.get("title"), "category": vals.get("category"), "event_date": parse_date(vals.get(spec["date_key"]))}
+    _, cat, vals, cfg = answers_for(spec, raw)
+    ts = next((str(v) for k, v in raw.items() if norm_header(k) == "timestamp"), None)
+    return {"title": vals.get("title"), "category": vals.get("category") or cat, "event_date": event_date_of(spec, cfg, vals, ts)}
 
 
 def guess_submitter(conn, form_id: str, raw: Dict[str, Any]) -> Optional[str]:
@@ -326,7 +379,7 @@ def guess_submitter(conn, form_id: str, raw: Dict[str, Any]) -> Optional[str]:
         if q.get("submitter") and q.get("key") in vals:
             emp = resolve_faculty(conn, vals[q["key"]])
     if not emp:
-        email = {norm_header(k): str(v) for k, v in raw.items()}.get("email address", "").strip()
+        email = ({norm_header(k): str(v) for k, v in raw.items()}.get("email address") or vals.get("x_faculty_email") or "").strip()
         emp = resolve_faculty(conn, email) if email else None
     return emp
 

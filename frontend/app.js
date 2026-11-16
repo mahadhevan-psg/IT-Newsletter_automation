@@ -1213,10 +1213,13 @@ async function onCsvPicked() {
 
 function renderSingleFields() {
   const form = forms.find(f => f.form_id === $("single-form").value);
-  $("single-fields").innerHTML = (form?.columns || []).filter(c => c.canonical_tag !== "submission_timestamp").map(c => {
+  const keep = form && $("single-fields").querySelector(`[data-q="${CSS.escape(form.category_field || "")}"]`)?.value;      // the chosen category survives the redraw
+  const category = keep || Object.keys(form?.category_map || {})[0];
+  // a form with several categories asks only the questions of the chosen one
+  $("single-fields").innerHTML = (form?.columns || []).filter(c => c.canonical_tag !== "submission_timestamp" && (!c.categories?.length || c.categories.includes(category))).map(c => {
     const label = `<label>${esc(c.name)}${c.required ? " *" : ""}</label>`;
     if (c.name === form.category_field && Object.keys(form.category_map || {}).length)
-      return `<div class="field">${label}<select class="input" data-q="${esc(c.name)}">${Object.keys(form.category_map).map(o => `<option>${esc(o)}</option>`).join("")}</select></div>`;
+      return `<div class="field">${label}<select class="input" data-q="${esc(c.name)}" onchange="renderSingleFields()">${Object.keys(form.category_map).map(o => `<option ${o === category ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
     if (c.type === "textarea") return `<div class="field">${label}<textarea class="input" rows="3" data-q="${esc(c.name)}"></textarea></div>`;
     return `<div class="field">${label}<input class="input" type="${c.type === "date" ? "date" : "text"}" data-q="${esc(c.name)}"></div>`;
   }).join("");

@@ -1,0 +1,27 @@
+# Runs the IT Matrix portal with its data kept in a NAMED VOLUME, so the databases survive rebuilding or recreating the container.
+#
+#   docker compose up -d --build     build the image and start it (also how you update after changing the code)
+#   docker compose logs -f           watch the log
+#   docker compose down              stop and remove the container; the data volume is KEPT
+#
+# NEVER run "docker compose down -v" or "docker volume rm it-data": that deletes the databases.
+# Settings come from the ".env" file next to this one (copy .env.example to .env first).
+services:
+  it-portal:
+    build: .
+    image: it-portal
+    container_name: it-portal
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${HOST_PORT:-80}:10000"        # open http://localhost/ (set HOST_PORT=8080 in .env if port 80 is taken)
+    volumes:
+      - it-data:/data                   # both databases, the newsletter files and the studio settings live here
+      # The Google Sheets key is not part of the image: keep it next to this file and uncomment the line below,
+      # then set GOOGLE_SERVICE_ACCOUNT_JSON=/data/google-key.json in .env
+      # - ./google-key.json:/data/google-key.json:ro
+
+
+volumes:
+  it-data:
+    name: it-data                       # a fixed name, so the same volume is found every time

@@ -24,3 +24,5 @@ __pycache__/
 database/master_system.db*
 database/INITIAL_ADMIN_PASSWORD.txt
 database/.master_secret
+
+google-key.json

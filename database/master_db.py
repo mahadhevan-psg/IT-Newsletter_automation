@@ -1,4 +1,5 @@
 """Connection + initialisation for the master database (students, faculty, submissions, placements)."""
+import envfile  # noqa: F401  (settings from the project's .env)
 import os
 import secrets
 import sqlite3

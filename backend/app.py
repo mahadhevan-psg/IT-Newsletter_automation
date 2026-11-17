@@ -1,3 +1,4 @@
+import envfile  # noqa: F401  (reads the project's .env first: the settings must be there before the databases are opened)
 import os
 import json
 from typing import Optional, List, Dict, Any

@@ -1,3 +1,4 @@
+import envfile  # noqa: F401  (settings from the project's .env, before DB_PATH is read below)
 import sqlite3
 import json
 import os

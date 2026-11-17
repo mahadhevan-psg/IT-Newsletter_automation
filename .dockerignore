@@ -11,6 +11,11 @@ venv/
 .pytest_cache/
 node_modules/
 
+# SETTINGS with secrets are given to the container at run time (--env-file), never baked into the image
+.env
+.env.*
+*service-account*.json
+
 # DATA: databases and secrets must never be shipped; the server creates fresh ones on the disk
 **/*.db
 **/*.db-wal

@@ -823,6 +823,11 @@ class DOCXGenerator:
         """Local path, or download (Google Drive links supported) into a cache. None if unusable."""
         if not photo_url:
             return None
+        if str(photo_url).startswith("media://"):                   # a photo uploaded in the portal: on disk, or fetched back from Google Drive
+            from backend.master import media
+            photo_url = media.resolve(photo_url)
+            if not photo_url:
+                return None
         if os.path.exists(photo_url):
             try:
                 with Image.open(photo_url) as img:

@@ -18,7 +18,7 @@
         },
         {
           "category_id": "cat_books",
-          "name": "Book & Book Chapters"
+          "name": "Book / Book Chapters"
         },
         {
           "category_id": "cat_funded_projects",
@@ -34,7 +34,7 @@
         },
         {
           "category_id": "cat_innovations",
-          "name": "Key Research Innovations & Accomplishments"
+          "name": "Key Research Innovations & Technical Accomplishments"
         }
       ]
     },

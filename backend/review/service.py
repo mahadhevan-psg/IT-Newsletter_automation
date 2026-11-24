@@ -12,6 +12,7 @@ that has not been approved cannot show up in any list, chart, profile, diary or 
 """
 import hashlib
 import json
+import uuid
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -24,7 +25,7 @@ from database.master_db import audit, ay_for, ensure_ay
 
 PLACEMENT = "placement"
 LABELS = {"form_student": "Student achievement", "form_research": "Research & innovation", "form_faculty": "Faculty achievement",
-          "form_departmental": "Faculty highlights", "form_industry": "Industry & outreach", PLACEMENT: "Placement"}
+          "form_departmental": "Department highlights", "form_industry": "Industry & outreach", PLACEMENT: "Placement"}
 
 
 # ---------------------------------------------------------------- small helpers
@@ -127,6 +128,20 @@ def _stage_forms(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str, in
             event(conn, item_id, "pulled", "sheet", "Pulled from the Google Sheet")
             counts["new"] += 1
     return counts
+
+
+def stage_app_entry(conn, form_id: str, row: Dict[str, str], user: User) -> int:
+    """An entry typed in the portal joins the approval queue like a response pulled from a sheet (it is already a flat, single-category row)."""
+    n = {norm_header(k): v for k, v in row.items()}
+    pv = ingest.preview_row(conn, form_id, row)
+    info = ingest.summarize(form_id, row)
+    item_id = conn.execute(
+        "INSERT INTO staged_items (kind, form_id, source_key, content_hash, answers_json, original_json, status, title, category, event_date, submitter_email, submitter_emp_id, warnings_json, blockers_json) "
+        "VALUES ('FORM',?,?,?,?,?,'PENDING',?,?,?,?,?,?,?)",
+        (form_id, "app|" + uuid.uuid4().hex, _hash_rows([row]), _j([row]), _j([row]), info["title"], info["category"], info["event_date"], n.get("email address") or None, user.id,
+         _j(pv["warnings"]), _j(pv["errors"]))).lastrowid
+    event(conn, item_id, "submitted", user.id, "Entered in the portal")
+    return item_id
 
 
 def _stage_placements(conn, rows: List[Dict[str, str]]) -> Dict[str, int]:

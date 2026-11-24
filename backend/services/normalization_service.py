@@ -27,11 +27,22 @@ class NormalizationService:
     def reload_mappings(self):
         self.load_mappings()
 
+    def _reload_if_changed(self):
+        """The Admin publishing a form change rewrites the mappings file: pick it up without restarting."""
+        try:
+            stamp = os.path.getmtime(self.mappings_file)
+        except OSError:
+            return
+        if stamp != getattr(self, "_stamp", None):
+            self._stamp = stamp
+            self.load_mappings()
+
     def normalize_response(self, form_key: str, raw_data: Dict[str, Any], issue_id: str = "ISSUE_2026_V1I1") -> Dict[str, Any]:
         """
         Maps raw Google Form question-value pairs to canonical entity fields.
         Preserves custom / extra questions in extra_fields and extra_data_json.
         """
+        self._reload_if_changed()
         form_spec = self.mappings.get(form_key)
         if not form_spec:
             # Fallback for unknown form key
@@ -43,10 +54,10 @@ class NormalizationService:
         transforms = {**form_spec.get("legacy_transforms", {}), **form_spec.get("transforms", {})}
         category_field = form_spec.get("category_field")
         category_map = form_spec.get("category_map", {})
+        cat_value = next((str(v).strip() for k, v in raw_data.items() if category_field and str(k).strip().lower() == category_field.strip().lower()), "")
         # a title that fills different newsletter fields in different categories is mapped by the response's own category
-        if category_field and form_spec.get("category_field_mappings"):
-            cat_value = next((str(v).strip() for k, v in raw_data.items() if str(k).strip().lower() == category_field.strip().lower()), "")
-            field_mappings = {**field_mappings, **form_spec["category_field_mappings"].get(cat_value, {})}
+        field_mappings = {**field_mappings, **form_spec.get("category_field_mappings", {}).get(cat_value, {})}
+        section_id = form_spec.get("category_section_map", {}).get(cat_value, section_id)       # a category the Admin put in another section
 
         canonical_entry = {
             "entry_id": f"ENTRY_{uuid.uuid4().hex[:8].upper()}",

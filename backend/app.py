@@ -24,6 +24,8 @@ from backend.master.api import router as master_router
 from backend.demo import mode as demo_mode
 from backend.demo.api import router as demo_router
 from backend.review.api import router as review_router
+from backend.master.entry_api import router as entry_router
+from backend.master import media as media_service
 from backend.review import schedule as sheet_schedule
 from database.master_db import init_master_db
 
@@ -58,11 +60,13 @@ def startup_event():
         demo_seed.start()
     else:
         init_master_db()
-    sheet_schedule.start()                       # the timer that pulls the Google Sheets (when the Admin has switched it on)
+    sheet_schedule.start()                             # the timer that pulls the Google Sheets (when the Admin has switched it on)
+    media_service.start_worker()                       # copies uploaded photos to Google Drive (when it is set up)
 
 app.include_router(master_router)
 app.include_router(demo_router)
 app.include_router(review_router)
+app.include_router(entry_router)
 
 
 @app.get("/healthz", include_in_schema=False)
@@ -82,7 +86,7 @@ def healthz():
 # --- The newsletter API is for the Admin and the HoD ---
 # Everything under /api/ that is not the portal, the diary or the sign-in has its own rules elsewhere; the rest (entries,
 # forms, layouts, front pages, generated documents) needs a signed-in Admin or HoD. Uploaded photos stay readable so <img> tags work.
-_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/", "/api/review/", "/api/sync/")
+_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/", "/api/review/", "/api/sync/", "/api/entry/", "/api/media", "/api/defs/")
 
 
 def _newsletter_denied(authorization):
@@ -316,6 +320,10 @@ def list_entries(
     rows = get_entries(issue_id=issue_id, section_id=section_id, approval_status=approval_status, date_from=date_from, date_to=date_to)
     for r in rows:
         r["date_iso"] = entry_date(r)          # the date in one format, so the pages can filter by range whatever way the form wrote it
+        mid = media_service.parse_ref(r.get("photo_url"))
+        row = media_service.get(mid) if mid else None
+        if row:
+            r["photo_src"] = media_service.url(mid, row["token"])        # an address the <img> tag can use (the stored value is media://<id>)
     return rows
 
 class StatusUpdateRequest(BaseModel):

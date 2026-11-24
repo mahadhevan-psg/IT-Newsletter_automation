@@ -39,10 +39,31 @@ def service_account_info() -> Optional[Dict[str, Any]]:
     raw = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
     if not raw:
         return None
+    if raw.startswith("{"):
+        try:
+            return json.loads(raw)
+        except ValueError:
+            raise SheetError("GOOGLE_SERVICE_ACCOUNT_JSON holds JSON text that is not valid (it must be the whole key on one line).")
+    path = _find_key_file(raw)
+    if not path:
+        raise SheetError(f"The key file '{raw}' was not found. Put the file in the project folder and set GOOGLE_SERVICE_ACCOUNT_JSON=google-key.json "
+                         "(a path like /data/... only exists inside Docker).")
     try:
-        return json.loads(raw) if raw.startswith("{") else json.load(open(raw, encoding="utf-8"))
+        with open(path, encoding="utf-8-sig") as f:
+            return json.load(f)
     except (ValueError, OSError):
-        raise SheetError("GOOGLE_SERVICE_ACCOUNT_JSON is set but is not valid JSON (or the file cannot be read).")
+        raise SheetError(f"The key file '{path}' could not be read as JSON. Download the service account's JSON key again from Google Cloud.")
+
+
+def _find_key_file(raw: str) -> Optional[str]:
+    """The key file named in GOOGLE_SERVICE_ACCOUNT_JSON. A path written for Docker (/data/google-key.json) is also looked for by its file name in the
+    project folder and the database folder, so the same .env works on a computer without Docker."""
+    here = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    name = os.path.basename(raw.replace("\\", "/"))
+    for cand in (raw, os.path.join(here, raw), os.path.join(here, name), os.path.join(here, "database", name), os.path.join(os.environ.get("DATA_DIR", ""), name) if os.environ.get("DATA_DIR") else ""):
+        if cand and os.path.isfile(cand):
+            return cand
+    return None
 
 
 def using_service_account() -> bool:

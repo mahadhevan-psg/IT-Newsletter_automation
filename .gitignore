@@ -19,6 +19,7 @@ __pycache__/
 .env.*
 !.env.example
 *service-account*.json
+google-key*.json
 
 # Master database (credentials, local secrets)
 database/master_system.db*

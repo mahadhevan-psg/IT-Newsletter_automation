@@ -1330,7 +1330,7 @@ async function buildMaster() {
 }
 
 // ================================================================ FRONT PAGES
-const photoUrl = p => !p ? "" : /^https?:/.test(p) ? p : `${API}/api/uploads/${encodeURIComponent(p.split("/").pop())}`;
+const photoUrl = p => !p ? "" : p.startsWith("media://") ? ((entries || []).find(e => e.photo_url === p)?.photo_src || "") : /^https?:/.test(p) ? p : `${API}/api/uploads/${encodeURIComponent(p.split("/").pop())}`;
 
 function frontGet(path) { return path.split(".").reduce((o, k) => o?.[k], front) ?? ""; }
 function setFront(path, val) {

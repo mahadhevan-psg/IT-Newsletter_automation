@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/portal/ui.css">
   <link rel="stylesheet" href="/portal/tour.css">
+  <link rel="stylesheet" href="/portal/entry.css">
   <style>
     .hero { background: var(--accent); color: #fff; padding: 28px 24px; }
     .hero h1 { font-size: 24px; } .hero p { opacity: .85; margin-top: 4px; }
@@ -19,16 +20,19 @@
     .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
     .back { margin-bottom: 14px; }
     .hero .tour-help-btn { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
+    .hero .btn.cta { background: #fff; color: var(--accent); border-color: #fff; font-weight: 600; }
+    .pe-steps { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; } .pe-steps span { font-size: 12.5px; padding: 4px 12px; border-radius: 99px; background: var(--bg); color: var(--muted); } .pe-steps .on { background: var(--accent); color: #fff; } .pe-steps .done { background: var(--ok-soft); color: var(--ok); }
   </style>
 </head>
 <body>
   <div id="app" class="hidden">
     <div class="hero"><div class="hero-in"><div><h1>IT Department Placements Diary</h1><p>Where our seniors got placed, what they earned, and how they prepared.</p></div>
-      <div><span id="help-host"></span> <button class="btn sm" id="chpw">Change password</button> <button class="btn sm" id="logout">Sign out</button></div></div></div>
+      <div><a class="btn cta" href="#/enter" id="enter-exp">Enter placement experience</a> <span id="help-host"></span> <button class="btn sm" id="chpw">Change password</button> <button class="btn sm" id="logout">Sign out</button></div></div></div>
     <main class="page"><div id="banner"></div><div id="view"></div></main>
   </div>
   <script src="/portal/tour.js"></script>
   <script src="/portal/tours.js"></script>
+  <script src="entry.js"></script>
   <script src="diary.js"></script>
   <script src="/portal/demo.js" defer></script>
 </body>

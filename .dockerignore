@@ -15,6 +15,7 @@ node_modules/
 .env
 .env.*
 *service-account*.json
+google-key*.json
 
 # DATA: databases and secrets must never be shipped; the server creates fresh ones on the disk
 **/*.db

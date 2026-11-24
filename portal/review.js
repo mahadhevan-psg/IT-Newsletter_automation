@@ -360,6 +360,7 @@
     });
   }
 
+  window.reviewOpen = scope => { RV.scope = scope; show('review'); };                // used by other screens: open Approvals on a given list
   window.Review = { viewReview, viewSync };
   VIEWS.review = viewReview; VIEWS.sync = viewSync;
 })();

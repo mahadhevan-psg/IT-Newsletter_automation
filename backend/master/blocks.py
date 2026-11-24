@@ -57,13 +57,15 @@ def category_title(spec: Dict[str, Any]) -> str:
 
 
 def category_of(spec: Dict[str, Any], by_norm: Dict[str, str]) -> Optional[str]:
-    """The category named in a flat row (under the category question's title or an earlier title of it)."""
+    """The category named in a flat row (under the category question's title or an earlier title of it). A category the Admin renamed is
+    recognised by its old name too."""
     for q in spec["questions"]:
         if q.get("key") == "category":
             for t in (q["q"], *q.get("aliases", [])):
                 v = by_norm.get(norm_header(t))
                 if v:
-                    return v.strip()
+                    v = v.strip()
+                    return spec.get("category_aliases", {}).get(v, v)
     return None
 
 

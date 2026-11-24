@@ -41,6 +41,7 @@ function changePassword() {
 }
 
 async function route() {
+  if (location.hash === '#/enter') return window.PlacementEntry.open();
   const m = location.hash.match(/^#\/company\/(\d+)/);
   return m ? company(+m[1]) : home();
 }

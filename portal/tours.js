@@ -90,6 +90,17 @@
       { target: () => find('#dash-out h2', /Placements/)()?.nextElementSibling, title: 'Placements', body: '<p>Opted in and out, who is still unplaced, package distribution, top recruiters, offer types and the reasons students opt out.</p>' },
       ...(me.all_access ? [{ target: () => find('#dash-out h2', /Department/)()?.nextElementSibling, title: 'The whole department', body: '<p>Research funding, event participants, outreach attendance, submissions by form and year, research by indexing and quartile, faculty achievements, <b>MoU status</b> and the most active faculty.</p>' }] : []),
     ] });
+    if (!has('ADMIN')) S.push({ id: 'entry', label: 'Add entry', hint: 'Record what happened', steps: () => [
+      { before: goTab('entry'), target: '#en-q', title: 'Say what happened', body: '<p>Type a word (hackathon, paper, MoU, award) or pick a tile below. There are no forms to hunt for: each tile opens the right entry.</p>', place: 'bottom' },
+      { target: '#en-tiles', title: 'Tiles by kind of work', body: '<p>Student achievements, research, your own achievements, department highlights and industry or outreach. Choose the one that fits.</p>', place: 'top' },
+      { target: '#en-composer', optional: true, title: 'Fill a few details', body: '<p>Only the essentials show first; <b>More details</b> opens the rest. Add students by roll number, pick faculty by name, and add photos straight from your phone. A draft saves itself.</p>', place: 'top' },
+    ] });
+    if (has('ADMIN')) S.push({ id: 'builder', label: 'Form builder', hint: 'Change what people are asked', steps: () => [
+      { before: goTab('builder'), target: '.bd-forms', title: 'Choose a form', body: '<p>Each form has categories (kinds of entry) and fields (what is asked). Pick the form to change.</p>', place: 'bottom' },
+      { target: '.bd-cats', title: 'Categories and sections', body: '<p>Add, rename, reorder or delete categories, and add newsletter sections. A new category starts with a title, a date and a description.</p>', place: 'right' },
+      { target: '.bd-fields', title: 'Fields', body: '<p>Click a field to change its name, kind, choices or newsletter role. Retire a field to hide it from new entries while keeping old answers.</p>', place: 'top' },
+      { target: '#bd-edit', title: 'Draft, then publish', body: '<p>Your changes stay in a draft. <b>Publish changes</b> makes them live for everyone and updates the newsletter. History lets you go back to an earlier version.</p>', place: 'left' },
+    ] });
     S.push({ id: 'review', label: 'Approvals', hint: 'Check, edit and approve responses', steps: () => [
       { before: goTab('review'), target: '#rv-tabs', title: 'Where responses wait', body: `<p>${me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Responses pulled from the Google Sheets wait here until you decide. <b>Nothing is used in the application before it is approved.</b>' : me.tutor_class_ids.length ? 'The placement details of your students wait here for your approval.' : 'Responses sent back to you for correction appear here, and you can follow what you submitted.'}</p><p>The red number on the tab is how many need you.</p>`, place: 'bottom' },
       { target: '#rv-list', title: 'The queue', body: '<p>Click a response to read it. An orange mark means something needs a look (a roll number that matches nobody, a missing link). Tick several and use <b>Approve selected</b>, or <b>Approve all clean</b> for those with no marks.</p>', place: 'right' },

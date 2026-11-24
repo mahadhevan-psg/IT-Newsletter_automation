@@ -10,7 +10,7 @@ import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
-from backend.master import blocks
+from backend.master import blocks, definitions
 from backend.master.common import (person_name, clean_cell, find_date, norm_header, org_key, parse_date, parse_datetime, parse_int,
                                    parse_lines, parse_num, read_xlsx, truthy)
 from database.master_db import db, ay_for, ensure_ay
@@ -22,15 +22,9 @@ COMMON = {"category", "title", "evidence_url", "media_url", "photo_caption", "ba
           "authorization_confirmed"}
 BOOL_KEYS = {"is_team", "previously_reported"}
 
-_spec_cache = {"mtime": None, "data": {}}
-
-
 def specs() -> Dict[str, Any]:
-    mtime = os.path.getmtime(SPEC_PATH)
-    if _spec_cache["mtime"] != mtime:
-        with open(SPEC_PATH, encoding="utf-8") as f:
-            _spec_cache.update(mtime=mtime, data=json.load(f))
-    return _spec_cache["data"]
+    """The published form definitions (the database's, which the Admin edits; the shipped file only seeds a new database)."""
+    return definitions.current_specs()
 
 
 def form_ids() -> List[str]:
@@ -59,6 +53,8 @@ def answers_for(spec: Dict[str, Any], raw: Dict[str, Any]):
                 if not (q.get("fill") and q["key"] in vals):       # 'fill' questions only supply what the category's own question left empty
                     vals[q["key"]] = by_norm[norm_header(title)].strip()
                 break
+    if cat and "category" in vals:
+        vals["category"] = cat                                    # the category's current name (the response may carry the name it had before it was renamed)
     for key, default in cfg.get("defaults", {}).items():
         vals.setdefault(key, default)
     for key, src in cfg.get("copy", {}).items():

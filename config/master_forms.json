@@ -168,7 +168,8 @@
       "Achievement (won, ranked or awarded)",
       "Participation only"
      ],
-     "help": "Choose 'Participation only' when the students took part without winning or ranking."
+     "help": "Choose 'Participation only' when the students took part without winning or ranking.",
+     "zone": "common"
     },
     {
      "q": "Participants (One roll number per line)",
@@ -180,13 +181,15 @@
      "tf": "names_only",
      "aliases": [
       "Participants (one per line: ROLLNO - Student Name)"
-     ]
+     ],
+     "zone": "common"
     },
     {
      "q": "Lead Student Roll Number",
      "type": "roll",
      "req": true,
-     "key": "_lead_roll"
+     "key": "_lead_roll",
+     "zone": "common"
     },
     {
      "q": "Individual or Team Achievement",
@@ -196,13 +199,15 @@
      "choices": [
       "Individual",
       "Team"
-     ]
+     ],
+     "zone": "common"
     },
     {
      "q": "Student Achievement Category",
      "type": "choice",
      "key": "category",
      "nl": "category_id",
+     "zone": "category",
      "choices": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -218,6 +223,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -231,6 +237,7 @@
      "req": true,
      "key": "organizer",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -252,6 +259,7 @@
       "National",
       "International"
      ],
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -267,6 +275,7 @@
      "key": "position",
      "nl": "grant_or_prize_amount",
      "help": "e.g. 1st Prize, Runner-up, Scholarship. For participation only, type Participated.",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -279,6 +288,7 @@
      "type": "number",
      "req": false,
      "key": "prize_amount",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -292,6 +302,7 @@
      "req": true,
      "key": "result_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -313,6 +324,7 @@
       "Competitive Examination",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks"
      ]
@@ -322,6 +334,7 @@
      "type": "faculty",
      "req": false,
      "key": "mentor_emp_id",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Higher Education & Top Placements",
@@ -333,6 +346,7 @@
      "type": "text",
      "req": false,
      "key": "x_academic_year___semester",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks"
      ]
@@ -342,6 +356,7 @@
      "type": "text",
      "req": false,
      "key": "measurable_impact",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks"
      ]
@@ -351,6 +366,7 @@
      "type": "text",
      "req": false,
      "key": "related_awards",
+     "zone": "block",
      "cats": [
       "Academic Excellence & Ranks",
       "Hackathons & Coding Competitions",
@@ -364,6 +380,7 @@
      "type": "date",
      "req": false,
      "key": "event_start",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions",
       "Technical Projects & Innovations",
@@ -375,6 +392,7 @@
      "type": "date",
      "req": false,
      "key": "event_end",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions",
       "Technical Projects & Innovations",
@@ -395,6 +413,7 @@
       "Web / App Development",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions"
      ]
@@ -404,6 +423,7 @@
      "type": "faculty",
      "req": true,
      "key": "mentor_emp_id",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions",
       "Technical Projects & Innovations"
@@ -414,6 +434,7 @@
      "type": "para",
      "req": false,
      "key": "project_statement",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions"
      ]
@@ -424,6 +445,7 @@
      "req": true,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions"
      ]
@@ -433,6 +455,7 @@
      "type": "text",
      "req": false,
      "key": "tools_used",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions"
      ]
@@ -442,6 +465,7 @@
      "type": "text",
      "req": false,
      "key": "measurable_impact",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions",
       "Higher Education & Top Placements",
@@ -454,6 +478,7 @@
      "type": "url",
      "req": false,
      "key": "demo_url",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions",
       "Technical Projects & Innovations"
@@ -464,6 +489,7 @@
      "type": "para",
      "req": false,
      "key": "learning_outcomes",
+     "zone": "block",
      "cats": [
       "Hackathons & Coding Competitions",
       "Technical Projects & Innovations",
@@ -476,6 +502,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Higher Education & Top Placements"
      ]
@@ -486,6 +513,7 @@
      "req": true,
      "key": "position",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Higher Education & Top Placements"
      ]
@@ -495,6 +523,7 @@
      "type": "number",
      "req": false,
      "key": "prize_amount",
+     "zone": "block",
      "cats": [
       "Higher Education & Top Placements"
      ]
@@ -512,6 +541,7 @@
       "International Admission",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Higher Education & Top Placements"
      ]
@@ -522,6 +552,7 @@
      "req": false,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Higher Education & Top Placements"
      ]
@@ -531,6 +562,7 @@
      "type": "text",
      "req": false,
      "key": "x_institution___company___university_name",
+     "zone": "block",
      "cats": [
       "Higher Education & Top Placements"
      ]
@@ -550,6 +582,7 @@
       "Startup / Entrepreneurship",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Technical Projects & Innovations"
      ]
@@ -559,6 +592,7 @@
      "type": "para",
      "req": true,
      "key": "project_statement",
+     "zone": "block",
      "cats": [
       "Technical Projects & Innovations"
      ]
@@ -569,6 +603,7 @@
      "req": true,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Technical Projects & Innovations"
      ]
@@ -578,6 +613,7 @@
      "type": "text",
      "req": false,
      "key": "tools_used",
+     "zone": "block",
      "cats": [
       "Technical Projects & Innovations"
      ]
@@ -591,6 +627,7 @@
       "Yes",
       "No"
      ],
+     "zone": "block",
      "cats": [
       "Technical Projects & Innovations"
      ]
@@ -611,6 +648,7 @@
       "Volunteering",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Sports, Cultural & Co-Curricular Accomplishments"
      ]
@@ -621,6 +659,7 @@
      "req": true,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Sports, Cultural & Co-Curricular Accomplishments"
      ]
@@ -630,28 +669,32 @@
      "type": "text",
      "req": false,
      "key": "badge_tag",
-     "nl": "badge_tag"
+     "nl": "badge_tag",
+     "zone": "closing"
     },
     {
      "q": "Photo Link (Google Drive / Cloud URL)",
      "type": "url",
      "req": false,
      "key": "media_url",
-     "nl": "photo_url"
+     "nl": "photo_url",
+     "zone": "closing"
     },
     {
      "q": "Photo Caption & Persons in Image (Names from left to right)",
      "type": "text",
      "req": false,
      "key": "photo_caption",
-     "nl": "photo_caption"
+     "nl": "photo_caption",
+     "zone": "closing"
     },
     {
      "q": "Certificate / Proof Link",
      "type": "url",
      "req": false,
      "key": "evidence_url",
-     "nl": "evidence_url"
+     "nl": "evidence_url",
+     "zone": "closing"
     },
     {
      "q": "Is this a Landmark / Milestone Achievement?",
@@ -661,7 +704,8 @@
      "choices": [
       "No (Standard Entry)",
       "Yes (Nominate for Spotlight Feature)"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Permission to Publish this Submission",
@@ -671,7 +715,8 @@
      "choices": [
       "Yes - may be published in the IT Chronicles newsletter",
       "No - keep for internal records only"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Accuracy and Authorization Confirmation",
@@ -680,7 +725,8 @@
      "key": "authorization_confirmed",
      "choices": [
       "I confirm the information is accurate and I am authorised to submit it."
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Participants (one roll number per line)",
@@ -1096,13 +1142,15 @@
      "type": "faculty",
      "req": true,
      "key": "_submitter",
-     "submitter": true
+     "submitter": true,
+     "zone": "common"
     },
     {
      "q": "Research Subcategory",
      "type": "choice",
      "key": "category",
      "nl": "category_id",
+     "zone": "category",
      "choices": [
       "Journal Publications",
       "Conference Publications",
@@ -1120,6 +1168,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1130,6 +1179,7 @@
      "req": true,
      "key": "venue_publisher",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1139,6 +1189,7 @@
      "type": "text",
      "req": false,
      "key": "x_publisher",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1151,6 +1202,7 @@
      "nl": "author_or_person",
      "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
      "tf": "names_only",
+     "zone": "block",
      "cats": [
       "Journal Publications",
       "Conference Publications"
@@ -1161,6 +1213,7 @@
      "type": "text",
      "req": false,
      "key": "x_corresponding_author",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1170,6 +1223,7 @@
      "type": "text",
      "req": false,
      "key": "x_volume_issue_pages",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1179,6 +1233,7 @@
      "type": "date",
      "req": false,
      "key": "project_start",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1189,6 +1244,7 @@
      "req": false,
      "key": "output_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Journal Publications",
       "Book / Book Chapters"
@@ -1200,6 +1256,7 @@
      "req": false,
      "key": "identifier",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1219,6 +1276,7 @@
       "Other",
       "Not Indexed"
      ],
+     "zone": "block",
      "cats": [
       "Journal Publications",
       "Conference Publications"
@@ -1236,6 +1294,7 @@
       "Q4",
       "Not Applicable"
      ],
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1245,6 +1304,7 @@
      "type": "text",
      "req": false,
      "key": "x_citations",
+     "zone": "block",
      "cats": [
       "Journal Publications"
      ]
@@ -1254,6 +1314,7 @@
      "type": "text",
      "req": false,
      "key": "x_funding_ack",
+     "zone": "block",
      "cats": [
       "Journal Publications",
       "Conference Publications",
@@ -1265,6 +1326,7 @@
      "type": "para",
      "req": false,
      "key": "related_refs",
+     "zone": "block",
      "cats": [
       "Journal Publications",
       "Conference Publications",
@@ -1279,6 +1341,7 @@
      "type": "url",
      "req": false,
      "key": "dataset_url",
+     "zone": "block",
      "cats": [
       "Journal Publications",
       "Conference Publications",
@@ -1291,6 +1354,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1301,6 +1365,7 @@
      "req": true,
      "key": "venue_publisher",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1310,6 +1375,7 @@
      "type": "text",
      "req": false,
      "key": "x_organizing_institution",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1319,6 +1385,7 @@
      "type": "text",
      "req": false,
      "key": "x_conference_location",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1329,6 +1396,7 @@
      "req": false,
      "key": "output_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1338,6 +1406,7 @@
      "type": "date",
      "req": false,
      "key": "x_publication_date",
+     "zone": "block",
      "cats": [
       "Conference Publications",
       "Patents & Intellectual Property"
@@ -1348,6 +1417,7 @@
      "type": "text",
      "req": false,
      "key": "x_publisher",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1358,6 +1428,7 @@
      "req": false,
      "key": "identifier",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1373,6 +1444,7 @@
       "State",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1388,6 +1460,7 @@
       "Invited Presentation",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Conference Publications"
      ]
@@ -1398,6 +1471,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1407,6 +1481,7 @@
      "type": "text",
      "req": false,
      "key": "x_book_title",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1416,6 +1491,7 @@
      "type": "text",
      "req": false,
      "key": "x_chapter",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1428,6 +1504,7 @@
      "nl": "author_or_person",
      "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
      "tf": "names_only",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1438,6 +1515,7 @@
      "req": true,
      "key": "venue_publisher",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1448,6 +1526,7 @@
      "req": false,
      "key": "identifier",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1457,6 +1536,7 @@
      "type": "text",
      "req": false,
      "key": "x_edition",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1466,6 +1546,7 @@
      "type": "url",
      "req": false,
      "key": "venue_url",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1476,6 +1557,7 @@
      "req": false,
      "key": "indexing",
      "nl": "impact_or_indexing",
+     "zone": "block",
      "cats": [
       "Book / Book Chapters"
      ]
@@ -1486,6 +1568,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1498,6 +1581,7 @@
      "nl": "author_or_person",
      "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
      "tf": "names_only",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1507,6 +1591,7 @@
      "type": "text",
      "req": false,
      "key": "collaborators",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1517,6 +1602,7 @@
      "req": true,
      "key": "venue_publisher",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1527,6 +1613,7 @@
      "req": true,
      "key": "funding_amount",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1537,6 +1624,7 @@
      "req": false,
      "key": "output_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Funded Research Projects",
       "Consultancy Projects"
@@ -1547,6 +1635,7 @@
      "type": "date",
      "req": false,
      "key": "x_project_end_date",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1556,6 +1645,7 @@
      "type": "text",
      "req": false,
      "key": "x_project_duration",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1565,6 +1655,7 @@
      "type": "text",
      "req": false,
      "key": "identifier",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1575,6 +1666,7 @@
      "req": true,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1584,6 +1676,7 @@
      "type": "para",
      "req": false,
      "key": "key_findings",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1593,6 +1686,7 @@
      "type": "para",
      "req": false,
      "key": "impact",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1609,6 +1703,7 @@
       "Completed",
       "On Hold"
      ],
+     "zone": "block",
      "cats": [
       "Funded Research Projects",
       "Consultancy Projects"
@@ -1619,6 +1714,7 @@
      "type": "url",
      "req": false,
      "key": "venue_url",
+     "zone": "block",
      "cats": [
       "Funded Research Projects"
      ]
@@ -1629,6 +1725,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1639,6 +1736,7 @@
      "req": true,
      "key": "venue_publisher",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1651,6 +1749,7 @@
      "nl": "author_or_person",
      "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
      "tf": "names_only",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1660,6 +1759,7 @@
      "type": "text",
      "req": false,
      "key": "x_nature_of_consultancy",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1669,6 +1769,7 @@
      "type": "date",
      "req": false,
      "key": "x_project_end_date",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1679,6 +1780,7 @@
      "req": true,
      "key": "funding_amount",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1688,6 +1790,7 @@
      "type": "text",
      "req": false,
      "key": "identifier",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1698,6 +1801,7 @@
      "req": true,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1707,6 +1811,7 @@
      "type": "para",
      "req": false,
      "key": "key_findings",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1716,6 +1821,7 @@
      "type": "para",
      "req": false,
      "key": "impact",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1725,6 +1831,7 @@
      "type": "url",
      "req": false,
      "key": "venue_url",
+     "zone": "block",
      "cats": [
       "Consultancy Projects"
      ]
@@ -1735,6 +1842,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1747,6 +1855,7 @@
      "nl": "author_or_person",
      "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
      "tf": "names_only",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1763,6 +1872,7 @@
       "Trademark",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1773,6 +1883,7 @@
      "req": true,
      "key": "identifier",
      "nl": "grant_or_prize_amount",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1783,6 +1894,7 @@
      "req": false,
      "key": "output_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1792,6 +1904,7 @@
      "type": "date",
      "req": false,
      "key": "x_grant_date",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1802,6 +1915,7 @@
      "req": false,
      "key": "venue_publisher",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1811,6 +1925,7 @@
      "type": "text",
      "req": false,
      "key": "x_country",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1830,6 +1945,7 @@
       "Rejected",
       "Abandoned"
      ],
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1839,6 +1955,7 @@
      "type": "text",
      "req": false,
      "key": "x_technology_area",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1849,6 +1966,7 @@
      "req": false,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1858,6 +1976,7 @@
      "type": "url",
      "req": false,
      "key": "venue_url",
+     "zone": "block",
      "cats": [
       "Patents & Intellectual Property"
      ]
@@ -1868,6 +1987,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1878,6 +1998,7 @@
      "req": true,
      "key": "abstract",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1887,6 +2008,7 @@
      "type": "para",
      "req": false,
      "key": "problem",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1896,6 +2018,7 @@
      "type": "para",
      "req": true,
      "key": "key_findings",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1908,6 +2031,7 @@
      "nl": "author_or_person",
      "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
      "tf": "names_only",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1917,6 +2041,7 @@
      "type": "para",
      "req": false,
      "key": "methodology",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1926,6 +2051,7 @@
      "type": "text",
      "req": false,
      "key": "x_prototype",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1936,6 +2062,7 @@
      "req": false,
      "key": "output_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1945,6 +2072,7 @@
      "type": "para",
      "req": false,
      "key": "x_validation_results",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1954,6 +2082,7 @@
      "type": "para",
      "req": false,
      "key": "impact",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1963,6 +2092,7 @@
      "type": "text",
      "req": false,
      "key": "ip_status",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1972,6 +2102,7 @@
      "type": "text",
      "req": false,
      "key": "identifier",
+     "zone": "block",
      "cats": [
       "Key Research Innovations & Technical Accomplishments"
      ]
@@ -1981,28 +2112,32 @@
      "type": "text",
      "req": false,
      "key": "badge_tag",
-     "nl": "badge_tag"
+     "nl": "badge_tag",
+     "zone": "closing"
     },
     {
      "q": "Photo Link (Google Drive / Cloud URL)",
      "type": "url",
      "req": false,
      "key": "media_url",
-     "nl": "photo_url"
+     "nl": "photo_url",
+     "zone": "closing"
     },
     {
      "q": "Photo Caption & Persons in Image – Names from left to right",
      "type": "text",
      "req": false,
      "key": "photo_caption",
-     "nl": "photo_caption"
+     "nl": "photo_caption",
+     "zone": "closing"
     },
     {
      "q": "Official Evidence / Certificate / Supporting Document Link",
      "type": "url",
      "req": false,
      "key": "evidence_url",
-     "nl": "evidence_url"
+     "nl": "evidence_url",
+     "zone": "closing"
     },
     {
      "q": "Is this a Landmark / Milestone Achievement?",
@@ -2012,7 +2147,8 @@
      "choices": [
       "No (Standard Entry)",
       "Yes (Nominate for Spotlight Feature)"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Permission to Publish this Submission",
@@ -2022,7 +2158,8 @@
      "choices": [
       "Yes - may be published in the IT Chronicles newsletter",
       "No - keep for internal records only"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Accuracy and Authorization Confirmation",
@@ -2031,7 +2168,8 @@
      "key": "authorization_confirmed",
      "choices": [
       "I confirm the information is accurate and I am authorised to submit it."
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Submitting Faculty (select your name)",
@@ -2432,19 +2570,22 @@
      "key": "emp_id",
      "nl": "author_or_person",
      "tf": "names_only",
-     "submitter": true
+     "submitter": true,
+     "zone": "common"
     },
     {
      "q": "Designation at the Time of Achievement",
      "type": "text",
      "req": true,
-     "key": "designation_at_time"
+     "key": "designation_at_time",
+     "zone": "common"
     },
     {
      "q": "Achievement Category",
      "type": "choice",
      "key": "category",
      "nl": "category_id",
+     "zone": "category",
      "choices": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2461,6 +2602,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2493,6 +2635,7 @@
       "Office Bearer / Leadership Role",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2508,6 +2651,7 @@
      "req": true,
      "key": "host_org",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2531,6 +2675,7 @@
       "National",
       "International"
      ],
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2545,6 +2690,7 @@
      "type": "para",
      "req": false,
      "key": "other_contributors",
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2559,6 +2705,7 @@
      "type": "url",
      "req": false,
      "key": "organizer_url",
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2577,6 +2724,7 @@
       "Yes",
       "No"
      ],
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2592,6 +2740,7 @@
      "req": false,
      "key": "description",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Awards & Honors Received",
       "Certifications & Upskilling Completed",
@@ -2606,28 +2755,32 @@
      "type": "text",
      "req": false,
      "key": "badge_tag",
-     "nl": "badge_tag"
+     "nl": "badge_tag",
+     "zone": "closing"
     },
     {
      "q": "Photo Link (Google Drive / Cloud URL)",
      "type": "url",
      "req": false,
      "key": "media_url",
-     "nl": "photo_url"
+     "nl": "photo_url",
+     "zone": "closing"
     },
     {
      "q": "Photo Caption & Persons in Image",
      "type": "text",
      "req": false,
      "key": "photo_caption",
-     "nl": "photo_caption"
+     "nl": "photo_caption",
+     "zone": "closing"
     },
     {
      "q": "Official Evidence / Certificate / Supporting Document Link",
      "type": "url",
      "req": false,
      "key": "evidence_url",
-     "nl": "evidence_url"
+     "nl": "evidence_url",
+     "zone": "closing"
     },
     {
      "q": "Is this a Landmark / Milestone Achievement?",
@@ -2637,7 +2790,8 @@
      "choices": [
       "No (Standard Entry)",
       "Yes (Nominate for Spotlight Feature)"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Permission to Publish this Submission",
@@ -2647,7 +2801,8 @@
      "choices": [
       "Yes - may be published in the IT Chronicles newsletter",
       "No - keep for internal records only"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Accuracy and Authorization Confirmation",
@@ -2656,7 +2811,8 @@
      "key": "authorization_confirmed",
      "choices": [
       "I confirm the information is accurate and I am authorised to submit it."
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Faculty Full Name (select your name)",
@@ -3020,7 +3176,8 @@
      "type": "faculty",
      "req": true,
      "key": "_submitter",
-     "submitter": true
+     "submitter": true,
+     "zone": "common"
     },
     {
      "q": "Lead Coordinator",
@@ -3028,19 +3185,22 @@
      "req": true,
      "key": "lead_emp_id",
      "nl": "author_or_person",
-     "tf": "names_only"
+     "tf": "names_only",
+     "zone": "common"
     },
     {
      "q": "Other Faculty Involved (Optional, one per line: EmployeeID - Name)",
      "type": "roster_any",
      "req": false,
-     "key": "_faculty_involved"
+     "key": "_faculty_involved",
+     "zone": "common"
     },
     {
      "q": "Outreach Category",
      "type": "choice",
      "key": "category",
      "nl": "category_id",
+     "zone": "category",
      "choices": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3056,6 +3216,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours"
      ]
@@ -3072,6 +3233,7 @@
       "Plant Visit",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours"
      ]
@@ -3081,6 +3243,7 @@
      "type": "text",
      "req": false,
      "key": "units_involved",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3095,6 +3258,7 @@
      "req": true,
      "key": "_partner",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3117,6 +3281,7 @@
       "Professional Body",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3129,6 +3294,7 @@
      "type": "text",
      "req": false,
      "key": "x_industry_sector",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks"
@@ -3140,6 +3306,7 @@
      "req": false,
      "key": "start_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours"
      ]
@@ -3149,6 +3316,7 @@
      "type": "number",
      "req": false,
      "key": "actual_count",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3160,6 +3328,7 @@
      "type": "number",
      "req": false,
      "key": "x_faculty_participants",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3171,6 +3340,7 @@
      "type": "para",
      "req": false,
      "key": "speakers",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours"
      ]
@@ -3180,6 +3350,7 @@
      "type": "para",
      "req": false,
      "key": "objective",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3192,6 +3363,7 @@
      "req": false,
      "key": "summary_outcomes",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours"
      ]
@@ -3201,6 +3373,7 @@
      "type": "para",
      "req": false,
      "key": "follow_up",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3214,6 +3387,7 @@
      "type": "para",
      "req": false,
      "key": "measurable_outcomes",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3226,6 +3400,7 @@
      "type": "para",
      "req": false,
      "key": "feedback_summary",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3238,6 +3413,7 @@
      "type": "number",
      "req": false,
      "key": "budget_amount",
+     "zone": "block",
      "cats": [
       "Industrial Visits & Field Tours",
       "Industry Expert Lectures & Technical Talks",
@@ -3252,6 +3428,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks"
      ]
@@ -3270,6 +3447,7 @@
       "Webinar",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks"
      ]
@@ -3279,6 +3457,7 @@
      "type": "para",
      "req": true,
      "key": "speakers",
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks"
      ]
@@ -3288,6 +3467,7 @@
      "type": "text",
      "req": false,
      "key": "x_speaker_designation",
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks"
      ]
@@ -3298,6 +3478,7 @@
      "req": false,
      "key": "start_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks",
       "Alumni Interactions & Mentorship Sessions"
@@ -3308,6 +3489,7 @@
      "type": "text",
      "req": false,
      "key": "x_topic",
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks"
      ]
@@ -3318,6 +3500,7 @@
      "req": false,
      "key": "summary_outcomes",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Industry Expert Lectures & Technical Talks"
      ]
@@ -3328,6 +3511,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3337,6 +3521,7 @@
      "type": "text",
      "req": false,
      "key": "x_nature_of_collaboration",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3347,6 +3532,7 @@
      "req": true,
      "key": "mou_scope",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3357,6 +3543,7 @@
      "req": false,
      "key": "agreement_effective",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3366,6 +3553,7 @@
      "type": "date",
      "req": false,
      "key": "agreement_expiry",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3375,6 +3563,7 @@
      "type": "para",
      "req": false,
      "key": "speakers",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3384,6 +3573,7 @@
      "type": "text",
      "req": false,
      "key": "x_lead_faculty_coordinator",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3393,6 +3583,7 @@
      "type": "para",
      "req": false,
      "key": "agenda",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3402,6 +3593,7 @@
      "type": "para",
      "req": false,
      "key": "feedback_summary",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3411,6 +3603,7 @@
      "type": "text",
      "req": false,
      "key": "x_agreement_reference",
+     "zone": "block",
      "cats": [
       "MoUs Signed & Industrial Collaborations"
      ]
@@ -3421,6 +3614,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3439,6 +3633,7 @@
       "Alumni Reunion",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3449,6 +3644,7 @@
      "req": true,
      "key": "_partner",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3458,6 +3654,7 @@
      "type": "para",
      "req": true,
      "key": "speakers",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3467,6 +3664,7 @@
      "type": "text",
      "req": false,
      "key": "x_alumni_company",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3476,6 +3674,7 @@
      "type": "text",
      "req": false,
      "key": "x_alumni_batch",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3485,6 +3684,7 @@
      "type": "text",
      "req": false,
      "key": "x_topic",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3494,6 +3694,7 @@
      "type": "number",
      "req": false,
      "key": "x_alumni_participants",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3504,6 +3705,7 @@
      "req": false,
      "key": "summary_outcomes",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Alumni Interactions & Mentorship Sessions"
      ]
@@ -3514,6 +3716,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3534,6 +3737,7 @@
       "Volunteering",
       "Other"
      ],
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3544,6 +3748,7 @@
      "req": true,
      "key": "_partner",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3553,6 +3758,7 @@
      "type": "text",
      "req": false,
      "key": "target_audience",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3562,6 +3768,7 @@
      "type": "text",
      "req": false,
      "key": "venue",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3572,6 +3779,7 @@
      "req": false,
      "key": "start_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3581,6 +3789,7 @@
      "type": "date",
      "req": false,
      "key": "end_date",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3590,6 +3799,7 @@
      "type": "number",
      "req": false,
      "key": "x_student_participants",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3599,6 +3809,7 @@
      "type": "number",
      "req": false,
      "key": "actual_count",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3608,6 +3819,7 @@
      "type": "para",
      "req": false,
      "key": "objective",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3618,6 +3830,7 @@
      "req": false,
      "key": "summary_outcomes",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3627,6 +3840,7 @@
      "type": "para",
      "req": false,
      "key": "measurable_outcomes",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3636,6 +3850,7 @@
      "type": "para",
      "req": false,
      "key": "x_sustainability",
+     "zone": "block",
      "cats": [
       "Community & Social Outreach Initiatives"
      ]
@@ -3645,34 +3860,39 @@
      "type": "text",
      "req": false,
      "key": "badge_tag",
-     "nl": "badge_tag"
+     "nl": "badge_tag",
+     "zone": "closing"
     },
     {
      "q": "Photo Link (Google Drive / Cloud URL)",
      "type": "url",
      "req": false,
      "key": "media_url",
-     "nl": "photo_url"
+     "nl": "photo_url",
+     "zone": "closing"
     },
     {
      "q": "Photo Caption & Persons in Image (Names from left to right)",
      "type": "text",
      "req": false,
      "key": "photo_caption",
-     "nl": "photo_caption"
+     "nl": "photo_caption",
+     "zone": "closing"
     },
     {
      "q": "Official Evidence / Certificate / Supporting Document Link",
      "type": "url",
      "req": false,
      "key": "evidence_url",
-     "nl": "evidence_url"
+     "nl": "evidence_url",
+     "zone": "closing"
     },
     {
      "q": "Event Report / Brochure / Partner Announcement Link",
      "type": "url",
      "req": false,
-     "key": "report_url"
+     "key": "report_url",
+     "zone": "closing"
     },
     {
      "q": "Is this a Landmark / Milestone Achievement?",
@@ -3682,7 +3902,8 @@
      "choices": [
       "No (Standard Entry)",
       "Yes (Nominate for Spotlight Feature)"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Permission to Publish this Submission",
@@ -3692,7 +3913,8 @@
      "choices": [
       "Yes - may be published in the IT Chronicles newsletter",
       "No - keep for internal records only"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Accuracy and Authorization Confirmation",
@@ -3701,7 +3923,8 @@
      "key": "authorization_confirmed",
      "choices": [
       "I confirm the information is accurate and I am authorised to submit it."
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Submitting Faculty (select your name)",
@@ -4208,25 +4431,29 @@
      "req": true,
      "key": "_submitter",
      "nl": "author_or_person",
-     "submitter": true
+     "submitter": true,
+     "zone": "common"
     },
     {
      "q": "Faculty Email",
      "type": "text",
      "req": true,
-     "key": "x_faculty_email"
+     "key": "x_faculty_email",
+     "zone": "common"
     },
     {
      "q": "Department / Designation",
      "type": "para",
      "req": false,
-     "key": "x_department_designation"
+     "key": "x_department_designation",
+     "zone": "common"
     },
     {
      "q": "Department Highlight Category",
      "type": "choice",
      "key": "category",
      "nl": "category_id",
+     "zone": "category",
      "choices": [
       "Highlights",
       "Achievements / Awards / Recognitions",
@@ -4247,6 +4474,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Highlights"
      ]
@@ -4256,6 +4484,7 @@
      "type": "para",
      "req": false,
      "key": "objectives",
+     "zone": "block",
      "cats": [
       "Highlights",
       "Achievements / Awards / Recognitions",
@@ -4273,6 +4502,7 @@
      "type": "para",
      "req": false,
      "key": "outputs",
+     "zone": "block",
      "cats": [
       "Highlights",
       "Achievements / Awards / Recognitions",
@@ -4290,6 +4520,7 @@
      "type": "para",
      "req": false,
      "key": "success_indicators",
+     "zone": "block",
      "cats": [
       "Highlights",
       "Events / Programs",
@@ -4302,6 +4533,7 @@
      "type": "para",
      "req": false,
      "key": "recognition",
+     "zone": "block",
      "cats": [
       "Highlights",
       "Accreditation / Quality Assurance / Institutional Initiatives"
@@ -4312,6 +4544,7 @@
      "type": "para",
      "req": false,
      "key": "related_initiatives",
+     "zone": "block",
      "cats": [
       "Highlights",
       "Events / Programs",
@@ -4327,6 +4560,7 @@
      "nl": "title",
      "help": "Made from the overview; change it if you like.",
      "derived": true,
+     "zone": "block",
      "cats": [
       "Highlights",
       "Events / Programs",
@@ -4342,6 +4576,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions"
      ]
@@ -4352,6 +4587,7 @@
      "req": true,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions"
      ]
@@ -4361,6 +4597,7 @@
      "type": "text",
      "req": false,
      "key": "x_award_category_position",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions"
      ]
@@ -4371,6 +4608,7 @@
      "req": false,
      "key": "partner_bodies",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions"
      ]
@@ -4381,6 +4619,7 @@
      "req": false,
      "key": "start_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions"
      ]
@@ -4390,6 +4629,7 @@
      "type": "para",
      "req": false,
      "key": "success_indicators",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions",
       "Infrastructure / Laboratory Development",
@@ -4403,6 +4643,7 @@
      "type": "para",
      "req": false,
      "key": "recognition",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions",
       "Research / Publications / Innovation",
@@ -4415,6 +4656,7 @@
      "type": "para",
      "req": false,
      "key": "related_initiatives",
+     "zone": "block",
      "cats": [
       "Achievements / Awards / Recognitions"
      ]
@@ -4425,6 +4667,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Events / Programs"
      ]
@@ -4435,6 +4678,7 @@
      "req": false,
      "key": "venue",
      "help": "Write the date and the venue, e.g. 12 March 2026, Seminar Hall.",
+     "zone": "block",
      "cats": [
       "Events / Programs"
      ]
@@ -4444,6 +4688,7 @@
      "type": "para",
      "req": false,
      "key": "units_involved",
+     "zone": "block",
      "cats": [
       "Events / Programs"
      ]
@@ -4453,6 +4698,7 @@
      "type": "number",
      "req": false,
      "key": "participant_count",
+     "zone": "block",
      "cats": [
       "Events / Programs"
      ]
@@ -4462,6 +4708,7 @@
      "type": "para",
      "req": false,
      "key": "challenges",
+     "zone": "block",
      "cats": [
       "Events / Programs",
       "Infrastructure / Laboratory Development",
@@ -4474,6 +4721,7 @@
      "type": "para",
      "req": false,
      "key": "sustainability",
+     "zone": "block",
      "cats": [
       "Events / Programs",
       "MoU / Industry Collaboration / Partnerships",
@@ -4488,6 +4736,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4498,6 +4747,7 @@
      "req": false,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4508,6 +4758,7 @@
      "req": false,
      "key": "partner_bodies",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4518,6 +4769,7 @@
      "req": false,
      "key": "x_publication_indexing",
      "nl": "impact_or_indexing",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4527,6 +4779,7 @@
      "type": "text",
      "req": false,
      "key": "x_doi_number",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4536,6 +4789,7 @@
      "type": "para",
      "req": false,
      "key": "x_authors",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4545,6 +4799,7 @@
      "type": "para",
      "req": false,
      "key": "objectives",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4554,6 +4809,7 @@
      "type": "para",
      "req": false,
      "key": "outputs",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4563,6 +4819,7 @@
      "type": "para",
      "req": false,
      "key": "success_indicators",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4572,6 +4829,7 @@
      "type": "para",
      "req": false,
      "key": "related_initiatives",
+     "zone": "block",
      "cats": [
       "Research / Publications / Innovation"
      ]
@@ -4582,6 +4840,7 @@
      "req": true,
      "key": "infra_upgrade",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Infrastructure / Laboratory Development"
      ]
@@ -4591,6 +4850,7 @@
      "type": "para",
      "req": false,
      "key": "x_equipment_procured",
+     "zone": "block",
      "cats": [
       "Infrastructure / Laboratory Development"
      ]
@@ -4601,6 +4861,7 @@
      "req": false,
      "key": "start_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "Infrastructure / Laboratory Development"
      ]
@@ -4610,6 +4871,7 @@
      "type": "para",
      "req": false,
      "key": "sustainability",
+     "zone": "block",
      "cats": [
       "Infrastructure / Laboratory Development"
      ]
@@ -4619,6 +4881,7 @@
      "type": "para",
      "req": false,
      "key": "related_initiatives",
+     "zone": "block",
      "cats": [
       "Infrastructure / Laboratory Development"
      ]
@@ -4629,6 +4892,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4639,6 +4903,7 @@
      "req": true,
      "key": "partner_bodies",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4648,6 +4913,7 @@
      "type": "text",
      "req": false,
      "key": "highlight_type",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4658,6 +4924,7 @@
      "req": false,
      "key": "start_date",
      "nl": "event_date",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4667,6 +4934,7 @@
      "type": "text",
      "req": false,
      "key": "x_agreement_duration",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4676,6 +4944,7 @@
      "type": "para",
      "req": false,
      "key": "x_activities_conducted",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4685,6 +4954,7 @@
      "type": "para",
      "req": false,
      "key": "related_initiatives",
+     "zone": "block",
      "cats": [
       "MoU / Industry Collaboration / Partnerships"
      ]
@@ -4695,6 +4965,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4704,6 +4975,7 @@
      "type": "text",
      "req": false,
      "key": "x_faculty_names",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4714,6 +4986,7 @@
      "req": false,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4724,6 +4997,7 @@
      "req": false,
      "key": "partner_bodies",
      "nl": "organization_or_venue",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4733,6 +5007,7 @@
      "type": "text",
      "req": false,
      "key": "venue",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4742,6 +5017,7 @@
      "type": "number",
      "req": false,
      "key": "participant_count",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4751,6 +5027,7 @@
      "type": "para",
      "req": false,
      "key": "x_skills_acquired",
+     "zone": "block",
      "cats": [
       "Faculty Development / Professional Achievements"
      ]
@@ -4761,6 +5038,7 @@
      "req": true,
      "key": "overview",
      "nl": "description",
+     "zone": "block",
      "cats": [
       "Student Development / Outreach / Social Initiatives",
       "Accreditation / Quality Assurance / Institutional Initiatives",
@@ -4773,6 +5051,7 @@
      "req": false,
      "key": "title",
      "nl": "title",
+     "zone": "block",
      "cats": [
       "Student Development / Outreach / Social Initiatives"
      ]
@@ -4782,6 +5061,7 @@
      "type": "para",
      "req": false,
      "key": "venue",
+     "zone": "block",
      "cats": [
       "Student Development / Outreach / Social Initiatives"
      ]
@@ -4791,6 +5071,7 @@
      "type": "para",
      "req": false,
      "key": "units_involved",
+     "zone": "block",
      "cats": [
       "Student Development / Outreach / Social Initiatives"
      ]
@@ -4800,6 +5081,7 @@
      "type": "number",
      "req": false,
      "key": "participant_count",
+     "zone": "block",
      "cats": [
       "Student Development / Outreach / Social Initiatives"
      ]
@@ -4809,6 +5091,7 @@
      "type": "number",
      "req": false,
      "key": "x_external_beneficiaries",
+     "zone": "block",
      "cats": [
       "Student Development / Outreach / Social Initiatives"
      ]
@@ -4818,6 +5101,7 @@
      "type": "text",
      "req": false,
      "key": "accreditation_link",
+     "zone": "block",
      "cats": [
       "Accreditation / Quality Assurance / Institutional Initiatives"
      ]
@@ -4827,6 +5111,7 @@
      "type": "para",
      "req": false,
      "key": "x_compliance_details",
+     "zone": "block",
      "cats": [
       "Accreditation / Quality Assurance / Institutional Initiatives"
      ]
@@ -4836,6 +5121,7 @@
      "type": "para",
      "req": false,
      "key": "x_approvals_linkage",
+     "zone": "block",
      "cats": [
       "Accreditation / Quality Assurance / Institutional Initiatives"
      ]
@@ -4845,89 +5131,102 @@
      "type": "url",
      "req": false,
      "key": "report_url",
-     "nl": "evidence_url"
+     "nl": "evidence_url",
+     "zone": "closing"
     },
     {
      "q": "Budget / Investment in Rupees (numbers only)",
      "type": "number",
      "req": false,
-     "key": "budget_amount"
+     "key": "budget_amount",
+     "zone": "closing"
     },
     {
      "q": "Funding Source",
      "type": "text",
      "req": false,
-     "key": "funding_source"
+     "key": "funding_source",
+     "zone": "closing"
     },
     {
      "q": "Common section: Infrastructure / Laboratory Upgrade Details",
      "type": "para",
      "req": false,
      "key": "infra_upgrade",
-     "fill": true
+     "fill": true,
+     "zone": "closing"
     },
     {
      "q": "Approvals / Compliance / Accreditation Linkage (NBA, NAAC, NIRF)",
      "type": "para",
      "req": false,
      "key": "accreditation_link",
-     "fill": true
+     "fill": true,
+     "zone": "closing"
     },
     {
      "q": "Common section: Challenges and Mitigation",
      "type": "para",
      "req": false,
      "key": "challenges",
-     "fill": true
+     "fill": true,
+     "zone": "closing"
     },
     {
      "q": "Sustainability / Maintenance / Continuation Plan",
      "type": "para",
      "req": false,
      "key": "sustainability",
-     "fill": true
+     "fill": true,
+     "zone": "closing"
     },
     {
      "q": "Common section: Recognition / Ranking / External Validation",
      "type": "para",
      "req": false,
      "key": "recognition",
-     "fill": true
+     "fill": true,
+     "zone": "closing"
     },
     {
      "q": "Common section: Related Initiatives / Previous Milestones",
      "type": "para",
      "req": false,
      "key": "related_initiatives",
-     "fill": true
+     "fill": true,
+     "zone": "closing"
     },
     {
      "q": "Key Impact Badge / Metric (Example: 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
      "type": "text",
      "req": false,
      "key": "badge_tag",
-     "nl": "badge_tag"
+     "nl": "badge_tag",
+     "zone": "closing"
     },
     {
      "q": "Photo Link (Google Drive Cloud URL)",
      "type": "url",
      "req": false,
      "key": "media_url",
-     "nl": "photo_url"
+     "nl": "photo_url",
+     "zone": "closing"
     },
     {
      "q": "Photo Caption & Persons in Image – Names from left to right",
      "type": "text",
      "req": false,
      "key": "photo_caption",
-     "nl": "photo_caption"
+     "nl": "photo_caption",
+     "zone": "closing"
     },
     {
      "q": "Official Evidence / Certificate / Supporting Document Link",
      "type": "url",
      "req": false,
      "key": "evidence_url",
-     "nl": "evidence_url"
+     "nl": "evidence_url",
+     "zone": "closing"
     },
     {
      "q": "Is this a Landmark / Milestone Achievement?",
@@ -4937,7 +5236,8 @@
      "choices": [
       "No (Standard Entry)",
       "Yes (Nominate for Spotlight Feature)"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Permission to Publish this Submission",
@@ -4947,7 +5247,8 @@
      "choices": [
       "Yes - may be published in the IT Chronicles newsletter",
       "No - keep for internal records only"
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Accuracy and Authorization Confirmation",
@@ -4956,7 +5257,8 @@
      "key": "authorization_confirmed",
      "choices": [
       "I confirm the information is accurate and I am authorised to submit it."
-     ]
+     ],
+     "zone": "closing"
     },
     {
      "q": "Submitting Faculty (select your name)",

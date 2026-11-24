@@ -3,6 +3,7 @@ import envfile  # noqa: F401  (settings from the project's .env)
 import os
 import secrets
 import sqlite3
+import threading
 from contextlib import contextmanager
 from datetime import date
 
@@ -24,13 +25,34 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+_local = threading.local()
+
+
+def after_commit(fn) -> None:
+    """Run fn once the surrounding db() block has committed (at once when there is none). Used to drop caches only when the new data is really visible."""
+    stack = getattr(_local, "stack", None)
+    if stack:
+        stack[-1].append(fn)
+    else:
+        fn()
+
+
 @contextmanager
 def db():
     conn = connect()
+    hooks = []
+    if not hasattr(_local, "stack"):
+        _local.stack = []
+    _local.stack.append(hooks)
     try:
         yield conn
         conn.commit()
+        _local.stack.pop()
+        for fn in hooks:
+            fn()
     except Exception:
+        if _local.stack and _local.stack[-1] is hooks:
+            _local.stack.pop()
         conn.rollback()
         raise
     finally:
@@ -114,6 +136,10 @@ def init_master_db():
     with db() as conn:
         with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
             conn.executescript(f.read())
+        with open(os.path.join(HERE, "entry_schema.sql"), "r", encoding="utf-8") as f:       # editable form definitions, drafts, photo metadata
+            conn.executescript(f.read())
+        from backend.master import definitions
+        definitions.ensure_seeded(conn)                                                      # a new database starts from the shipped definitions
         drop_student_columns(conn)
         migrate_classes(conn)
         repair_class_years(conn)

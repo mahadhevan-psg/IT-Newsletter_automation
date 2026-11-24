@@ -1558,7 +1558,8 @@
         "Participants (one per line: ROLLNO - Student Name)": "author_or_person",
         "Participants (one roll number per line)": "author_or_person",
         "Key Impact Badge / Metric": "badge_tag",
-        "Photo Caption & Persons in Image": "photo_caption"
+        "Photo Caption & Persons in Image": "photo_caption",
+        "Team size": "grant_or_prize_amount"
       },
       "legacy_transforms": {
         "Participants (one per line: ROLLNO - Student Name)": "names_only",

@@ -62,8 +62,9 @@ def build_form(fid, spec, legacy_spec):
             layout["common"].append(item)
         else:
             layout["common"].append(item["q"])
-            add(item)
+            add({**item, "zone": "common"})
     cat_q = copy.deepcopy(spec["category_q"])
+    cat_q["zone"] = "category"
     cat_q["choices"] = [b["name"] for b in spec["blocks"]]
     cat_q.pop("req", None)
     cat_q["req"] = True
@@ -73,15 +74,15 @@ def build_form(fid, spec, legacy_spec):
         has_title = any(f["key"] == "title" for f in b["fields"])
         layout["blocks"].append({"category": b["name"], "gate": b["gate"], "fields": [f["q"] for f in b["fields"]]})
         for f in b["fields"]:
-            add(f, b["name"])
+            add({**f, "zone": "block"}, b["name"])
         if b["title_from"] and not has_title:
-            add(N.F("Title", "title", req=True, nl="title", derived=True, help="Made from the overview; change it if you like."), b["name"])
+            add({**N.F("Title", "title", req=True, nl="title", derived=True, help="Made from the overview; change it if you like."), "zone": "block"}, b["name"])
         cfg[b["name"]] = {k: v for k, v in (("gate", b["gate"]), ("date_key", b["date_key"]), ("defaults", b["defaults"]), ("copy", b["copy"]),
                                             ("title_from", b["title_from"]), ("title_prefix", b["title_prefix"]), ("date_text_key", b["date_text_key"])) if v}
     inverse = {flat: sheet for sheet, flat in spec.get("closing_rename", {}).items()}
     for f in spec["closing"]:
         layout["closing"].append(inverse.get(f["q"], f["q"]))
-        add(f)
+        add({**f, "zone": "closing"})
     layout["closing_rename"] = spec.get("closing_rename", {})
     # the earlier version's questions stay understood (hidden): kept unless this version defines the very same question
     have = {(q["q"], q["key"]) for q in questions if not q.get("cats")}          # a category-specific question does not replace the global old one

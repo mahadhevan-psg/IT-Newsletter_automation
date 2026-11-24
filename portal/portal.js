@@ -171,7 +171,7 @@ async function boot() {
   $('#who').textContent = `${me.name} · ${me.roles.filter(r => r !== 'FACULTY').join(', ') || 'Faculty'}`;
   if (me.roles.includes('ADMIN') || me.roles.includes('HOD')) $('#who').insertAdjacentHTML('beforeend', ' <a class="btn sm" href="/newsletter/">Newsletter studio</a>');
   const tabs = [
-    ['dash', 'Dashboard', () => true], ['review', 'Approvals', () => true], ['sync', 'Data sync', () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0],
+    ['dash', 'Dashboard', () => true], ['entry', 'Add entry', () => !me.roles.includes('ADMIN')], ['review', 'Approvals', () => true], ['builder', 'Form builder', () => me.roles.includes('ADMIN')], ['sync', 'Data sync', () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0],
     ['students', 'Students', hasClasses], ['classes', 'Classes', hasClasses], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
     ['placements', 'Placements', hasClasses], ['subs', subsLabel(), () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['works', 'Reports', seesAll], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
     .filter(t => t[2]());
@@ -179,7 +179,7 @@ async function boot() {
   $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); };
   if (window.refreshReviewBadge) refreshReviewBadge();
   const deep = location.hash.match(/^#\/(faculty|student)\/([^/]+)$/);       // a copied link to someone's page opens it directly
-  show(me.must_change ? 'account' : tabs[0][0]);
+  show(me.must_change ? 'account' : (location.hash === '#add' && tabs.some(t => t[0] === 'entry')) ? 'entry' : tabs[0][0]);
   if (deep && !me.must_change) go(openProfile)(deep[1], decodeURIComponent(deep[2]));
   Tours.portal(me, token);                    // Help button; the welcome tour the first time this person opens the portal
 }
@@ -338,7 +338,7 @@ async function viewUploads() {
 // ---------------------------------------------------------------- placements
 async function viewPlacements() {
   let mode = 'offers';
-  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button><button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button>${isEditor() ? '<button class="btn sm primary" id="p-prefs" title="Record who opted in or out for the placement year">Record opt-in / opt-out</button>' : ''}<button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
     <div class="filters"><select class="compact" id="p-ay">${ayOpts('', 'All years')}</select>${classFilter('p-class', 'All Classes')}
       <span id="p-extra" class="filters" style="margin:0"></span></div><div class="card" id="p-out"></div>`;
   const placeQs = (v = null, extra = { limit: 200 }) => {
@@ -371,7 +371,30 @@ async function viewPlacements() {
   $('#p-dl').onclick = go(() => openDownload(mode, {
     title: mode === 'offers' ? 'Download placement offers' : 'Download opt-in / opt-out', file: 'placements_' + mode, listUrl: '/api/master/placements/' + mode, filters: placeQs,
     dates: { mode: 'ay', ay: $('#p-ay').value, hint: 'The filters set on the page (class, company, package …) also apply.' } }));
+  const prefsBtn = $('#p-prefs'); if (prefsBtn) prefsBtn.onclick = go(() => openPreferences(classFilterValue()));
   extras(); await draw();
+}
+const classFilterValue = () => { const el = $('#p-class'); return el && el.value ? +el.value : (meta.classes.find(c => c.can_edit) || {}).class_id; };
+// The class tutor records, for the placement year, who opted in or out (and why): the student never answers this.
+async function openPreferences(classId) {
+  const n = new Date(), y = n.getMonth() >= 5 ? n.getFullYear() : n.getFullYear() - 1, cur = `${y}-${String((y + 1) % 100).padStart(2, '0')}`;
+  let data = await api(`/api/entry/placement-preferences?ay_id=${cur}${classId ? '&class_id=' + classId : ''}`);
+  const rows = d => d.students.map(s => `<tr data-r="${esc(s.roll_no)}"><td>${esc(s.roll_no)}</td><td>${esc(s.full_name)}${s.offers ? ` <span class="pill ok">${s.offers} offer${s.offers === 1 ? '' : 's'}</span>` : ''}</td>
+    <td><select class="compact pf-s"><option value="">Not recorded</option><option ${s.opt_status === 'OPTED_IN' ? 'selected' : ''}>Opted In</option><option ${s.opt_status === 'OPTED_OUT' ? 'selected' : ''}>Opted Out</option></select></td>
+    <td><select class="compact pf-r" ${s.opt_status === 'OPTED_OUT' ? '' : 'disabled'}><option value=""></option>${d.reasons.map(r => `<option ${r === s.opt_out_reason ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></td></tr>`).join('');
+  const o = modal(`Placement preference · ${data.class_code}`, `<div class="filters"><label class="muted">Placement year <select class="compact" id="pf-ay">${opts([cur, `${y - 1}-${String(y % 100).padStart(2, '0')}`, `${y + 1}-${String((y + 2) % 100).padStart(2, '0')}`], a => a, a => a, cur)}</select></label>
+      <button class="btn sm" id="pf-allin">Mark everyone not yet recorded as Opted In</button></div>
+    <div class="scroll"><table class="table"><thead><tr><th>Roll no</th><th>Name</th><th>Preference</th><th>Reason, if opted out</th></tr></thead><tbody id="pf-body">${rows(data)}</tbody></table></div>
+    <p class="hint">Students with offers are opted in automatically. Whatever you record here is saved at once.</p>`,
+    async dlg => {
+      const out = [...dlg.querySelectorAll('#pf-body tr')].map(tr => ({ roll_no: tr.dataset.r, opt_status: $('.pf-s', tr).value, opt_out_reason: $('.pf-r', tr).value }));
+      const r = await api('/api/entry/placement-preferences', { method: 'PUT', body: { ay_id: $('#pf-ay', dlg).value, rows: out } }); toast(`Saved for ${r.saved} student${r.saved === 1 ? '' : 's'}`);
+      if (current === 'placements') show('placements');
+    }, 'Save', true);
+  const wire = () => o.querySelectorAll('.pf-s').forEach(s => s.onchange = () => { const r = $('.pf-r', s.closest('tr')); r.disabled = s.value !== 'Opted Out'; if (r.disabled) r.value = ''; });
+  wire();
+  $('#pf-ay', o).onchange = go(async e => { data = await api(`/api/entry/placement-preferences?ay_id=${e.target.value}&class_id=${data.class_id}`); $('#pf-body', o).innerHTML = rows(data); wire(); });
+  $('#pf-allin', o).onclick = () => { o.querySelectorAll('.pf-s').forEach(s => { if (!s.value) s.value = 'Opted In'; }); };
 }
 
 // ---------------------------------------------------------------- submissions

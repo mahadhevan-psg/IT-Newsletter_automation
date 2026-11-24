@@ -17,7 +17,7 @@ def test_root_is_the_sign_in_page_and_nothing_else():
     assert 'id="login-form"' in r.text and "Sign in" in r.text
     assert "Open form" not in r.text                                    # no form links before signing in
     # staff go to the forms page, students to the diary
-    assert "STAFF_HOME = '/homepage/'" in r.text and "STUDENT_HOME = '/diary/'" in r.text
+    assert "STAFF_HOME = '/portal/'" in r.text and "STUDENT_HOME = '/diary/'" in r.text
     assert "/homepage/home.css" in r.text and client.get("/homepage/home.css").status_code == 200
     assert client.get("/homepage/assets/logo-psg.jpg").status_code in (200, 404)    # logos are optional files; the path must be the homepage folder
 
@@ -35,7 +35,7 @@ def test_forms_homepage_is_login_gated_with_two_choices_and_signout_button():
     assert 'style="visibility:hidden"' in html and "sessionStorage.getItem('tok')" in html      # hidden until the check passes
     assert html.count("Open form") == 6                                                          # all the form links are there for faculty
     assert "<h1>IT Matrix</h1>" in html and "IT Chronicles" not in html
-    assert 'id="go-entry"' in html and 'id="go-retrieval" href="/portal/"' in html                # exactly two choices: Data Entry and Data Retrieval
+    assert 'id="go-entry"' not in html and 'id="choose"' not in html                              # the two-card choice page is gone: staff go straight to the portal
     assert "Go to portal" not in html and 'class="portal-btn"' not in html                        # the old button is gone
     assert ">Sign in<" not in html                                                               # the old Sign in button is gone
     signout = html[html.index('id="signout"') - 40: html.index("</button>", html.index('id="signout"')) + 9]

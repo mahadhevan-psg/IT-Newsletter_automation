@@ -60,8 +60,8 @@
     .demo-reset:hover { color: var(--blue-dark) !important; border-color: var(--blue) !important; }
   </style>
   <script>
-    // Faculty (and tutors, coordinators, HoD, Admin) -> /homepage/ ; students -> /diary/.
-    const STAFF_HOME = '/homepage/', STUDENT_HOME = '/diary/';
+    // Faculty (and tutors, coordinators, HoD, Admin) -> /portal/ ; students -> /diary/.
+    const STAFF_HOME = '/portal/', STUDENT_HOME = '/diary/';
     const ownPage = n => /^\/(newsletter|portal|homepage|diary)\//.test(n || '') ? n : null;    // only our own applications, never an outside address
     const next = ownPage(new URLSearchParams(location.search).get('next'));
 

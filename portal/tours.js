@@ -14,15 +14,8 @@
   function home(me, token) {
     const formCard = re => find('.cards .card', re);
     const sections = () => [{
-      id: 'start', label: 'The two options', hint: 'Data Entry and Data Retrieval', steps: () => [
-        { before: () => window.showHomeView && showHomeView('choose'), target: 'h1', title: 'IT Matrix', body: '<p>The starting point for the department: one place to enter your work and one to look at everything that has been entered.</p>', place: 'bottom' },
-        { target: '#go-entry', title: 'Data Entry', body: '<p>Opens the six Google Forms: departmental highlights, faculty achievements, research, student achievements, industry and outreach, and placements.</p>', place: 'bottom' },
-        { target: '#go-retrieval', title: 'Data Retrieval', body: '<p>Opens the department portal: your own activity page and, depending on your role, students, classes, placements, approvals and analytics.</p>', place: 'bottom' },
-        { target: '#signout', title: 'Sign out', body: '<p>Small icon button. Use it when you finish, especially on a shared computer.</p>', place: 'bottom' },
-      ],
-    }, {
       id: 'forms', label: 'The forms', hint: 'The six forms', steps: () => [
-        { before: () => window.showHomeView && showHomeView('entry'), target: '#entry .lead', title: 'Data Entry', body: '<p>Every Google Form the department uses is here, so nobody has to hunt for links. <b>Back</b> returns to the two options.</p>', place: 'bottom' },
+        { target: '#entry .lead', title: 'Data Entry', body: '<p>The Google Forms are kept here for anyone who still prefers them. Data is now entered in the portal. <b>Back</b> returns to the portal.</p>', place: 'bottom' },
         { target: '.cards', title: 'Six forms', body: '<p>Pick the one that matches what you want to report. Each opens in <b>Google Forms in a new tab</b>, and what you submit flows into the department database, the portal and the newsletter.</p>', place: 'top', pad: 10 },
         { target: formCard(/Departmental/), title: 'Departmental Highlights', body: '<p>Workshops, conferences, lab upgrades, club activities and milestones. Choose the convener and the other faculty involved from the list.</p>' },
         { target: formCard(/Faculty Achievements/), title: 'Faculty Achievements', body: '<p>Awards, certifications, invited lectures, FDPs and professional roles. <b>Select your own name</b> from the list: that is what puts it on your page.</p>' },
@@ -35,7 +28,7 @@
     }];
     const welcome = () => [{
       welcome: true, title: `Welcome, ${esc(firstName(me.name))}!`,
-      body: `<p>This is <b>IT Matrix</b>, the starting point for faculty. Choose <b>Data Entry</b> to open the forms, or <b>Data Retrieval</b> to go to the portal.</p>
+      body: `<p>This page keeps the older <b>Google Forms</b>. New entries are made in the portal, under <b>Add entry</b>.</p>
         ${role('Your job', 'Submit your work (papers, awards, events, students you mentored) through the right form. It appears on your page in the portal automatically.')}
         <p>A short tour takes about a minute. You can skip it now and replay it any time from <b>Help</b>.</p>`,
     }];
@@ -78,7 +71,7 @@
     const S = [];                                                   // sections, in tab order, only the ones this person can open
     S.push({ id: 'basics', label: 'The top bar', hint: 'Tabs, Help, sign out', steps: () => [
       { before: () => { document.querySelector('#view') && window.scrollTo(0, 0); }, target: '#tabs', title: 'Your tabs', body: '<p>Each tab is a part of the portal. <b>What you see depends on your role</b>, so you only get what you can use. We will visit them one by one.</p>', place: 'bottom' },
-      { target: '.topbar .back-home', title: 'Back to home', body: '<p>Takes you back to the <b>IT Matrix home page</b>, where you choose Data Entry (the forms) or Data Retrieval (this portal).</p>', place: 'bottom' },
+      { target: '.topbar .back-home', title: 'Google Forms', body: '<p>Opens the older <b>Google Forms</b>, for anyone who still prefers them. New entries are made here under <b>Add entry</b>.</p>', place: 'bottom' },
       { target: '.tour-help', title: 'Help', body: '<p>Replay this tour, or have just the page you are on explained.</p>', place: 'bottom' },
       { target: '#who', title: 'Who you are', body: '<p>Your name and role(s). If you can open the Newsletter studio, its button sits right here.</p>', place: 'bottom' },
       { target: '#logout', title: 'Sign out', body: '<p>Always sign out on a shared computer.</p>', place: 'bottom' },

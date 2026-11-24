@@ -132,14 +132,11 @@ Form responses are pulled from the Google Sheets into an **Approvals** queue; no
 * The new Python dependencies (`requests`, `google-auth`, `cryptography`, `tzdata`) are in `requirements.txt`, so the Docker image picks them up on the next build.
 
 
-## Entering data in the portal, photos and Google Drive
+## Entering data in the portal and photos
 
 Faculty add entries in the portal (**Add entry**); the Admin edits what is asked in **Form builder** (changes are a draft until published; every
 published version is kept, and old entries keep the answers they were saved with).
 
-**Photos are never stored in the database.** An upload is resized (longest side 1600 px) and compressed to a JPEG of roughly 150-400 KB; the file
-lives in `MEDIA_DIR` (default: the data folder's `media`), and the database holds only a few bytes of metadata about it. To keep a long-term copy in
-Google Drive, set `GOOGLE_DRIVE_FOLDER_ID`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` and `GOOGLE_OAUTH_REFRESH_TOKEN` (run
-`python drive_authorize.py` once, signed in as the account that owns the folder; see `.env.example`). Uploads then go to Drive in the background and are
-retried if Drive is unavailable. With `MEDIA_KEEP_LOCAL=false` the full-size server copy is removed after the Drive upload (a thumbnail stays) and the
-newsletter fetches the photo from Drive when it needs it. Without the Drive settings, photos simply stay on the server.
+**Photos are stored in the application's database.** An upload is resized (longest side 1600 px) and compressed to a JPEG of roughly 150-400 KB,
+with a small thumbnail; the pictures go in their own table (`media_blobs`), so lists and searches never read them. Because they live in the
+database, the data volume holds everything and a backup of the database is a backup of the photos. Plan for roughly 1 GB per 3,000 photos.

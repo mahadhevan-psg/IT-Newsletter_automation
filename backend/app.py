@@ -61,7 +61,6 @@ def startup_event():
     else:
         init_master_db()
     sheet_schedule.start()                             # the timer that pulls the Google Sheets (when the Admin has switched it on)
-    media_service.start_worker()                       # copies uploaded photos to Google Drive (when it is set up)
 
 app.include_router(master_router)
 app.include_router(demo_router)

@@ -2,7 +2,7 @@
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 
 from backend.master import definitions, entry, media
 from backend.master.auth import User, admin_user, current_user, staff_user
@@ -98,25 +98,15 @@ async def api_upload(file: UploadFile = File(...), user: User = Depends(current_
     return media.save_upload(user.id, file.filename or "photo", content)
 
 
-@router.get("/api/media/status")
-def api_media_status(user: User = Depends(admin_user)):
-    return media.status()
-
-
-@router.post("/api/media/retry")
-def api_media_retry(user: User = Depends(admin_user)):
-    return {"requeued": media.retry_failed()}
-
-
 @router.get("/api/media/{media_id}/{token}")
 def api_media(media_id: int, token: str, thumb: int = 0):
     row = media.get(media_id)
     if not row or row["token"] != token:                      # the token is part of the file's hash: the address cannot be guessed
         raise HTTPException(404, "Not found")
-    path = media.file_path(media_id, thumb=bool(thumb))
-    if not path:
+    data = media.read(media_id, thumb=bool(thumb))
+    if not data:
         raise HTTPException(404, "The file is not available")
-    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+    return Response(content=data, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
 
 
 # ================================================================ the Admin's form editor

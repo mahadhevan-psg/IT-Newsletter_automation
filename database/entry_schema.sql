@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS entry_drafts (
 );
 CREATE INDEX IF NOT EXISTS idx_draft_owner ON entry_drafts(owner_id);
 
--- Uploaded photos / files. The file lives on disk (resized and compressed) and, once uploaded, in Google Drive.
+-- Uploaded photos. The metadata row is small; the (resized, compressed) pictures live in media_blobs so listings never read image data.
 CREATE TABLE IF NOT EXISTS media_files (
     media_id      INTEGER PRIMARY KEY AUTOINCREMENT,
     owner_id      TEXT NOT NULL,
@@ -49,13 +49,11 @@ CREATE TABLE IF NOT EXISTS media_files (
     width         INTEGER,
     height        INTEGER,
     bytes         INTEGER,
-    local_path    TEXT,
-    thumb_path    TEXT,
-    drive_file_id TEXT,
-    drive_url     TEXT,
-    drive_status  TEXT NOT NULL DEFAULT 'LOCAL' CHECK (drive_status IN ('LOCAL', 'QUEUED', 'UPLOADED', 'FAILED')),
-    drive_error   TEXT,
-    attempts      INTEGER NOT NULL DEFAULT 0,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (owner_id, sha256)
+);
+CREATE TABLE IF NOT EXISTS media_blobs (
+    media_id INTEGER PRIMARY KEY REFERENCES media_files(media_id) ON DELETE CASCADE,
+    data     BLOB NOT NULL,
+    thumb    BLOB
 );

@@ -11,7 +11,7 @@ from PIL import Image
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from backend.app import app  # noqa: E402
-from backend.master import definitions as D, drive, entry, ingest, media  # noqa: E402
+from backend.master import definitions as D, entry, ingest, media  # noqa: E402
 from backend.master.auth import set_staff_password  # noqa: E402
 from backend.review import service  # noqa: E402
 from database import db_manager  # noqa: E402
@@ -27,9 +27,7 @@ def world(monkeypatch, tmp_path):
     monkeypatch.setenv("MASTER_DB_PATH", str(tmp_path / "master.db"))
     monkeypatch.setenv("MASTER_ADMIN_PASSWORD", PASS)
     monkeypatch.setenv("MASTER_SECRET", "entry-secret")
-    monkeypatch.setenv("MEDIA_DIR", str(tmp_path / "media"))
-    for k in ("GOOGLE_DRIVE_FOLDER_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN", "DEMO_MODE", "MEDIA_KEEP_LOCAL"):
-        monkeypatch.delenv(k, raising=False)
+    monkeypatch.delenv("DEMO_MODE", raising=False)
     monkeypatch.setattr(db_manager, "DB_PATH", str(tmp_path / "news.db"))
     db_manager.init_db()
     init_master_db()
@@ -263,20 +261,20 @@ def test_people_look_ups(world):
 
 
 # ------------------------------------------------------------------------------------------------ photos
-def test_a_big_photo_becomes_a_small_file_on_disk_and_only_metadata_in_the_database(world):
+def test_a_big_photo_is_shrunk_and_stored_in_the_database_apart_from_the_listing_row(world):
     raw = jpeg()
     assert len(raw) > 1_000_000
     info = media.save_upload("EMP001", "IMG_0001.jpg", raw)
-    assert max(info["width"], info["height"]) == media.MAX_SIDE and info["bytes"] < len(raw) / 2
-    row = media.get(info["media_id"])
-    assert os.path.getsize(row["local_path"]) == row["bytes"] and os.path.exists(row["thumb_path"]) and os.path.getsize(row["thumb_path"]) < 60_000
-    assert row["drive_status"] == "LOCAL" and info["ref"] == f"media://{info['media_id']}"
+    assert max(info["width"], info["height"]) == media.MAX_SIDE and info["bytes"] < len(raw) / 2 and info["ref"] == f"media://{info['media_id']}"
+    data, thumb = media.read(info["media_id"]), media.read(info["media_id"], thumb=True)
+    assert len(data) == info["bytes"] and len(thumb) < 60_000 and Image.open(io.BytesIO(data)).format == "JPEG"
     with db() as c:
         cols = [r[1] for r in c.execute("PRAGMA table_info(media_files)")]
-        assert not any("blob" in x or "data" in x for x in cols)                                   # no image data column exists
-    assert os.path.getsize(str(world / "master.db")) < 2_000_000                                    # the database did not grow with the picture
+        assert not any(x in ("data", "thumb", "blob") for x in cols)                                # the metadata row never carries picture data
+    assert os.path.getsize(str(world / "master.db")) < len(raw)                                      # the stored picture is the small one, not the original
     assert media.save_upload("EMP001", "again.jpg", raw)["media_id"] == info["media_id"]           # the same photo twice is stored once
-    assert media.resolve(info["ref"]) == row["local_path"]
+    path = media.resolve(info["ref"])                                                                # the newsletter generator gets a file
+    assert path and open(path, "rb").read() == data
 
 
 def test_bad_uploads_are_refused(world):
@@ -285,34 +283,6 @@ def test_bad_uploads_are_refused(world):
             media.save_upload("EMP001", "f.jpg", content)
         assert e.value.status_code == code
     assert media.save_upload("EMP001", "t.png", (lambda b: (Image.new("RGBA", (50, 40), (255, 0, 0, 120)).save(b, "PNG"), b.getvalue())[1])(io.BytesIO()))["width"] == 50     # a PNG with transparency works
-
-
-def test_photos_are_uploaded_to_drive_in_the_background_and_fetched_back_when_needed(world, monkeypatch):
-    monkeypatch.setenv("MEDIA_KEEP_LOCAL", "false")
-    for k in ("GOOGLE_DRIVE_FOLDER_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN"):
-        monkeypatch.setenv(k, "x")
-    stored = {}
-    monkeypatch.setattr(drive, "upload", lambda name, data, year: (stored.setdefault("f1", data) and "f1", "https://drive.example/f1"))
-    monkeypatch.setattr(drive, "download", lambda fid: stored[fid])
-    info = media.save_upload("EMP001", "a.jpg", jpeg(1200, 800))
-    assert media.get(info["media_id"])["drive_status"] == "QUEUED"
-    assert media.upload_pending() == {"uploaded": 1, "failed": 0}
-    row = media.get(info["media_id"])
-    assert row["drive_status"] == "UPLOADED" and row["drive_url"] == "https://drive.example/f1" and not os.path.exists(row["local_path"])      # the big local file is gone
-    assert os.path.exists(row["thumb_path"])
-    path = media.file_path(info["media_id"])                                                                         # the newsletter needs it: fetched from Drive again
-    assert path and os.path.getsize(path) == row["bytes"]
-
-
-def test_a_drive_failure_is_recorded_and_retried(world, monkeypatch):
-    for k in ("GOOGLE_DRIVE_FOLDER_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN"):
-        monkeypatch.setenv(k, "x")
-    monkeypatch.setattr(drive, "upload", lambda *a: (_ for _ in ()).throw(RuntimeError("Google Drive said 403: quota")))
-    info = media.save_upload("EMP001", "a.jpg", jpeg(800, 600))
-    assert media.upload_pending() == {"uploaded": 0, "failed": 1}
-    st = media.status()
-    assert st["counts"] == {"FAILED": 1} and "quota" in st["recent_errors"][0]["drive_error"]
-    assert media.retry_failed() == 1 and media.get(info["media_id"])["drive_status"] == "QUEUED"
 
 
 # ------------------------------------------------------------------------------------------------ the web API

@@ -14,7 +14,7 @@ from backend.master import definitions as D
 
 CONFIG = os.path.join(D.ROOT, "config")
 MAPPINGS_FILE = os.path.join(CONFIG, "form_mappings.json")
-STUDIO_TYPE = {"para": "textarea", "roster_roll": "textarea", "roster_any": "textarea", "date": "date", "choice": "select", "list": "select", "url": "url", "photo": "image"}
+STUDIO_TYPE = {"para": "textarea", "roster_roll": "textarea", "roster_any": "textarea", "date": "date", "choice": "select", "list": "select", "url": "url", "file": "url", "photo": "image"}
 
 
 def _studio_type(q: Dict[str, Any]) -> str:

@@ -50,3 +50,5 @@
 @media (max-width: 960px) { .bd2 { grid-template-columns: 1fr; } .bd2-side { position: static; max-height: none; } }
 @media (max-width: 960px) { .bd, .en-comp { grid-template-columns: 1fr; } .en-fields { grid-template-columns: 1fr; } .en-prev { position: static; } }
 .bd-draft { position: sticky; top: 52px; z-index: 5; } .bd-more { margin-top: 12px; font-size: 13px; } .bd-more summary { cursor: pointer; color: var(--accent); font-weight: 500; margin-bottom: 8px; }
+.en-hd { margin: -2px 0 8px; font-size: 13px; color: var(--muted); max-width: 900px; } .en-doc { margin-top: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; } .en-doc:empty { display: none; } .bd-in { opacity: .7; font-style: italic; }
+.en h4.en-h { font-weight: 700; font-size: 15px; color: var(--text, #111827); margin-top: 22px; }

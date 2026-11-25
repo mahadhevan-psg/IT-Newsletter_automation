@@ -1,0 +1,5771 @@
+{
+ "version": "2.0",
+ "forms": {
+  "form_student": {
+   "form_type": "STUDENT",
+   "date_key": "result_date",
+   "title": "IT Chronicles - Student Achievements Submission Form",
+   "description": "Student competitions, hackathons, projects, higher studies and co-curricular achievements. Enter roll numbers only: names and class details are filled in from the college records.",
+   "section_id": "sec_student",
+   "categories": [
+    "Academic Excellence & Ranks",
+    "Hackathons & Coding Competitions",
+    "Higher Education & Top Placements",
+    "Technical Projects & Innovations",
+    "Sports, Cultural & Co-Curricular Accomplishments"
+   ],
+   "category_config": {
+    "Academic Excellence & Ranks": {
+     "gate": "Do you want to submit Academic Excellence & Ranks?",
+     "defaults": {
+      "abstract": ""
+     }
+    },
+    "Hackathons & Coding Competitions": {
+     "gate": "Do you want to submit Hackathons & Coding Competitions?"
+    },
+    "Higher Education & Top Placements": {
+     "gate": "Do you want to submit Higher Education & Top Placements?"
+    },
+    "Technical Projects & Innovations": {
+     "gate": "Do you want to submit Technical Projects & Innovations?"
+    },
+    "Sports, Cultural & Co-Curricular Accomplishments": {
+     "gate": "Do you want to submit Sports, Cultural & Co-Curricular Accomplishments?"
+    }
+   },
+   "layout": {
+    "common": [
+     "Timestamp",
+     "Email Address",
+     "Achievement or Participation",
+     "Participants (One roll number per line)",
+     "Lead Student Roll Number",
+     "Individual or Team Achievement"
+    ],
+    "blocks": [
+     {
+      "category": "Academic Excellence & Ranks",
+      "gate": "Do you want to submit Academic Excellence & Ranks?",
+      "fields": [
+       "Name of Competition / Award / Project / Event",
+       "Organizing Institute / Company / Awarding Body",
+       "Achievement Level",
+       "Position / Rank / Prize / Scholarship",
+       "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)",
+       "Date of Achievement / Result",
+       "Achievement Domain",
+       "Faculty Mentor / Project Guide",
+       "Academic Year / Semester",
+       "Measurable Academic Result or Impact",
+       "Related Awards / Previous Submission Details (type NA if none)"
+      ]
+     },
+     {
+      "category": "Hackathons & Coding Competitions",
+      "gate": "Do you want to submit Hackathons & Coding Competitions?",
+      "fields": [
+       "Name of Competition / Award / Project / Event",
+       "Organizing Institute / Company / Awarding Body",
+       "Achievement Level",
+       "Position / Rank / Prize / Scholarship",
+       "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)",
+       "Date of Achievement / Result",
+       "Event Start Date",
+       "Event End Date",
+       "Achievement Domain",
+       "Faculty Mentor / Project Guide",
+       "Problem Statement / Challenge Addressed",
+       "Project Abstract / Solution Details",
+       "Tools / Technologies / Programming Languages Used",
+       "Measurable Result or Impact",
+       "Project Demo / Repository / Portfolio URL",
+       "Learning Outcomes / Skills Demonstrated",
+       "Related Awards / Previous Submission Details (type NA if none)"
+      ]
+     },
+     {
+      "category": "Higher Education & Top Placements",
+      "gate": "Do you want to submit Higher Education & Top Placements?",
+      "fields": [
+       "Name of Institution / Company / Examination",
+       "Organizing Institute / Company / Awarding Body",
+       "Achievement Level",
+       "Admission / Placement / Scholarship / Rank Details",
+       "Scholarship / Offer Amount in Rupees (numbers only, 0 if none)",
+       "Date of Achievement / Result",
+       "Achievement Domain",
+       "Faculty Mentor / Project Guide",
+       "Programme / Degree / Job Role",
+       "Institution / Company / University Name",
+       "Measurable Result or Impact",
+       "Related Awards / Previous Submission Details (type NA if none)"
+      ]
+     },
+     {
+      "category": "Technical Projects & Innovations",
+      "gate": "Do you want to submit Technical Projects & Innovations?",
+      "fields": [
+       "Name of Competition / Award / Project / Event",
+       "Organizing Institute / Company / Awarding Body",
+       "Achievement Level",
+       "Position / Rank / Prize / Scholarship",
+       "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)",
+       "Date of Achievement / Result",
+       "Event Start Date",
+       "Event End Date",
+       "Achievement Domain",
+       "Faculty Mentor / Project Guide",
+       "Project Statement / Objective",
+       "Project Abstract / Achievement Details",
+       "Tools / Technologies / Methods Used",
+       "Measurable Result or Impact",
+       "Project Demo / Repository / Portfolio URL",
+       "Learning Outcomes / Skills Demonstrated",
+       "Has this Work Received Other Awards or Been Reported Previously?",
+       "Related Awards / Previous Submission Details (type NA if none)"
+      ]
+     },
+     {
+      "category": "Sports, Cultural & Co-Curricular Accomplishments",
+      "gate": "Do you want to submit Sports, Cultural & Co-Curricular Accomplishments?",
+      "fields": [
+       "Name of Competition / Award / Project / Event",
+       "Organizing Institute / Company / Awarding Body",
+       "Achievement Level",
+       "Position / Rank / Prize / Scholarship",
+       "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)",
+       "Date of Achievement / Result",
+       "Event Start Date",
+       "Event End Date",
+       "Achievement Domain",
+       "Faculty Mentor / Project Guide",
+       "Activity / Event / Performance Details",
+       "Measurable Result or Impact",
+       "Learning Outcomes / Skills Demonstrated",
+       "Related Awards / Previous Submission Details (type NA if none)"
+      ]
+     }
+    ],
+    "closing": [
+     "Key Impact Badge / Metric (e.g. 1st Prize, Winner, National Finalist, ₹50,000 Scholarship)",
+     "Photo Link (Google Drive / Cloud URL)",
+     "Photo Caption & Persons in Image (Names from left to right)",
+     "Certificate / Proof Link",
+     "Is this a Landmark / Milestone Achievement?",
+     "Permission to Publish this Submission",
+     "Accuracy and Authorization Confirmation"
+    ],
+    "closing_rename": {}
+   },
+   "questions": [
+    {
+     "q": "Achievement or Participation",
+     "type": "choice",
+     "req": true,
+     "key": "entry_kind",
+     "choices": [
+      "Achievement (won, ranked or awarded)",
+      "Participation only"
+     ],
+     "help": "Choose 'Participation only' when the students took part without winning or ranking.",
+     "zone": "common"
+    },
+    {
+     "q": "Participants (One roll number per line)",
+     "type": "roster_roll",
+     "req": true,
+     "key": "_participants",
+     "nl": "author_or_person",
+     "help": "One student per line, roll number only, e.g.\n21IT001\n21IT014\nNames are filled in from the college records.",
+     "tf": "names_only",
+     "aliases": [
+      "Participants (one per line: ROLLNO - Student Name)"
+     ],
+     "zone": "common"
+    },
+    {
+     "q": "Lead Student Roll Number",
+     "type": "roll",
+     "req": true,
+     "key": "_lead_roll",
+     "zone": "common"
+    },
+    {
+     "q": "Individual or Team Achievement",
+     "type": "choice",
+     "req": true,
+     "key": "is_team",
+     "choices": [
+      "Individual",
+      "Team"
+     ],
+     "zone": "common"
+    },
+    {
+     "q": "Student Achievement Category",
+     "type": "choice",
+     "key": "category",
+     "nl": "category_id",
+     "zone": "category",
+     "choices": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Higher Education & Top Placements",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ],
+     "req": true
+    },
+    {
+     "q": "Name of Competition / Award / Project / Event",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Organizing Institute / Company / Awarding Body",
+     "type": "text",
+     "req": true,
+     "key": "organizer",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Higher Education & Top Placements",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Achievement Level",
+     "type": "choice",
+     "req": true,
+     "key": "level",
+     "choices": [
+      "Department",
+      "College",
+      "Inter-college",
+      "State",
+      "National",
+      "International"
+     ],
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Higher Education & Top Placements",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Position / Rank / Prize / Scholarship",
+     "type": "text",
+     "req": true,
+     "key": "position",
+     "nl": "grant_or_prize_amount",
+     "help": "e.g. 1st Prize, Runner-up, Scholarship. For participation only, type Participated.",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)",
+     "type": "number",
+     "req": false,
+     "key": "prize_amount",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Date of Achievement / Result",
+     "type": "date",
+     "req": true,
+     "key": "result_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Higher Education & Top Placements",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Achievement Domain",
+     "type": "list",
+     "req": true,
+     "key": "domain",
+     "choices": [
+      "Academic Excellence",
+      "University Rank",
+      "Semester / Subject Topper",
+      "Academic Scholarship",
+      "Competitive Examination",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks"
+     ]
+    },
+    {
+     "q": "Faculty Mentor / Project Guide",
+     "type": "faculty",
+     "req": false,
+     "key": "mentor_emp_id",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Higher Education & Top Placements",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Academic Year / Semester",
+     "type": "text",
+     "req": false,
+     "key": "x_academic_year___semester",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks"
+     ]
+    },
+    {
+     "q": "Measurable Academic Result or Impact",
+     "type": "text",
+     "req": false,
+     "key": "measurable_impact",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks"
+     ]
+    },
+    {
+     "q": "Related Awards / Previous Submission Details (type NA if none)",
+     "type": "text",
+     "req": false,
+     "key": "related_awards",
+     "zone": "block",
+     "cats": [
+      "Academic Excellence & Ranks",
+      "Hackathons & Coding Competitions",
+      "Higher Education & Top Placements",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Event Start Date",
+     "type": "date",
+     "req": false,
+     "key": "event_start",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Event End Date",
+     "type": "date",
+     "req": false,
+     "key": "event_end",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Achievement Domain",
+     "type": "list",
+     "req": true,
+     "key": "domain",
+     "choices": [
+      "Hackathon",
+      "Coding Competition",
+      "Programming Contest",
+      "Artificial Intelligence / Machine Learning",
+      "Cybersecurity",
+      "Web / App Development",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions"
+     ]
+    },
+    {
+     "q": "Faculty Mentor / Project Guide",
+     "type": "faculty",
+     "req": true,
+     "key": "mentor_emp_id",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Problem Statement / Challenge Addressed",
+     "type": "para",
+     "req": false,
+     "key": "project_statement",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions"
+     ]
+    },
+    {
+     "q": "Project Abstract / Solution Details",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions"
+     ]
+    },
+    {
+     "q": "Tools / Technologies / Programming Languages Used",
+     "type": "text",
+     "req": false,
+     "key": "tools_used",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions"
+     ]
+    },
+    {
+     "q": "Measurable Result or Impact",
+     "type": "text",
+     "req": false,
+     "key": "measurable_impact",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions",
+      "Higher Education & Top Placements",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Project Demo / Repository / Portfolio URL",
+     "type": "url",
+     "req": false,
+     "key": "demo_url",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Learning Outcomes / Skills Demonstrated",
+     "type": "para",
+     "req": false,
+     "key": "learning_outcomes",
+     "zone": "block",
+     "cats": [
+      "Hackathons & Coding Competitions",
+      "Technical Projects & Innovations",
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Name of Institution / Company / Examination",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Higher Education & Top Placements"
+     ]
+    },
+    {
+     "q": "Admission / Placement / Scholarship / Rank Details",
+     "type": "text",
+     "req": true,
+     "key": "position",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Higher Education & Top Placements"
+     ]
+    },
+    {
+     "q": "Scholarship / Offer Amount in Rupees (numbers only, 0 if none)",
+     "type": "number",
+     "req": false,
+     "key": "prize_amount",
+     "zone": "block",
+     "cats": [
+      "Higher Education & Top Placements"
+     ]
+    },
+    {
+     "q": "Achievement Domain",
+     "type": "list",
+     "req": true,
+     "key": "domain",
+     "choices": [
+      "Higher Education Admission",
+      "Top Placement",
+      "Competitive Examination",
+      "Scholarship / Fellowship",
+      "International Admission",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Higher Education & Top Placements"
+     ]
+    },
+    {
+     "q": "Programme / Degree / Job Role",
+     "type": "text",
+     "req": false,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Higher Education & Top Placements"
+     ]
+    },
+    {
+     "q": "Institution / Company / University Name",
+     "type": "text",
+     "req": false,
+     "key": "x_institution___company___university_name",
+     "zone": "block",
+     "cats": [
+      "Higher Education & Top Placements"
+     ]
+    },
+    {
+     "q": "Achievement Domain",
+     "type": "list",
+     "req": true,
+     "key": "domain",
+     "choices": [
+      "Software Development",
+      "Hardware / Embedded Systems",
+      "Artificial Intelligence / Machine Learning",
+      "Research Innovation",
+      "Prototype Development",
+      "Patent / Intellectual Property",
+      "Startup / Entrepreneurship",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Project Statement / Objective",
+     "type": "para",
+     "req": true,
+     "key": "project_statement",
+     "zone": "block",
+     "cats": [
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Project Abstract / Achievement Details",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Tools / Technologies / Methods Used",
+     "type": "text",
+     "req": false,
+     "key": "tools_used",
+     "zone": "block",
+     "cats": [
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Has this Work Received Other Awards or Been Reported Previously?",
+     "type": "choice",
+     "req": true,
+     "key": "previously_reported",
+     "choices": [
+      "Yes",
+      "No"
+     ],
+     "zone": "block",
+     "cats": [
+      "Technical Projects & Innovations"
+     ]
+    },
+    {
+     "q": "Achievement Domain",
+     "type": "list",
+     "req": true,
+     "key": "domain",
+     "choices": [
+      "Sports",
+      "Cultural",
+      "Dance / Music / Arts",
+      "Literary Activities",
+      "Student Clubs",
+      "Leadership",
+      "Social Outreach",
+      "Volunteering",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Activity / Event / Performance Details",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Sports, Cultural & Co-Curricular Accomplishments"
+     ]
+    },
+    {
+     "q": "Key Impact Badge / Metric (e.g. 1st Prize, Winner, National Finalist, ₹50,000 Scholarship)",
+     "type": "text",
+     "req": false,
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Link (Google Drive / Cloud URL)",
+     "type": "url",
+     "req": false,
+     "key": "media_url",
+     "nl": "photo_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Caption & Persons in Image (Names from left to right)",
+     "type": "text",
+     "req": false,
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "zone": "closing"
+    },
+    {
+     "q": "Certificate / Proof Link",
+     "type": "url",
+     "req": false,
+     "key": "evidence_url",
+     "nl": "evidence_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Is this a Landmark / Milestone Achievement?",
+     "type": "choice",
+     "req": true,
+     "key": "is_landmark",
+     "choices": [
+      "No (Standard Entry)",
+      "Yes (Nominate for Spotlight Feature)"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Permission to Publish this Submission",
+     "type": "choice",
+     "req": true,
+     "key": "publish_permission",
+     "choices": [
+      "Yes - may be published in the IT Chronicles newsletter",
+      "No - keep for internal records only"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Accuracy and Authorization Confirmation",
+     "type": "confirm",
+     "req": true,
+     "key": "authorization_confirmed",
+     "choices": [
+      "I confirm the information is accurate and I am authorised to submit it."
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Participants (one roll number per line)",
+     "type": "roster_roll",
+     "req": true,
+     "help": "One student per line, roll number only, e.g.\n21IT001\n21IT014\nNames are filled in from the college records.",
+     "key": "_participants",
+     "nl": "author_or_person",
+     "tf": "names_only",
+     "aliases": [
+      "Participants (one per line: ROLLNO - Student Name)"
+     ],
+     "legacy": true
+    },
+    {
+     "q": "Name of Competition / Award / Project / Event",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "legacy": true
+    },
+    {
+     "q": "Organizing Institute / Company / Awarding Body",
+     "type": "text",
+     "req": true,
+     "key": "organizer",
+     "nl": "organization_or_venue",
+     "legacy": true
+    },
+    {
+     "q": "Achievement Level",
+     "type": "choice",
+     "req": true,
+     "choices": [
+      "Department",
+      "College",
+      "Inter-college",
+      "State",
+      "National",
+      "International"
+     ],
+     "key": "level",
+     "legacy": true
+    },
+    {
+     "q": "Position / Rank / Prize / Scholarship",
+     "type": "text",
+     "req": true,
+     "help": "e.g. 1st Prize, Runner-up, Scholarship. For participation only, type Participated.",
+     "key": "position",
+     "nl": "grant_or_prize_amount",
+     "legacy": true
+    },
+    {
+     "q": "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)",
+     "type": "number",
+     "req": false,
+     "key": "prize_amount",
+     "legacy": true
+    },
+    {
+     "q": "Date of Achievement / Result",
+     "type": "date",
+     "req": true,
+     "key": "result_date",
+     "nl": "event_date",
+     "legacy": true
+    },
+    {
+     "q": "Event Start Date",
+     "type": "date",
+     "req": false,
+     "key": "event_start",
+     "legacy": true
+    },
+    {
+     "q": "Event End Date",
+     "type": "date",
+     "req": false,
+     "key": "event_end",
+     "legacy": true
+    },
+    {
+     "q": "Achievement Domain",
+     "type": "list",
+     "req": true,
+     "choices": [
+      "AI / Machine Learning",
+      "Web / App Development",
+      "Cyber Security",
+      "IoT / Embedded",
+      "Cloud / DevOps",
+      "Data Science / Analytics",
+      "Algorithms / Competitive Coding",
+      "Sports",
+      "Cultural",
+      "Entrepreneurship",
+      "Other"
+     ],
+     "key": "domain",
+     "legacy": true
+    },
+    {
+     "q": "Faculty Mentor / Project Guide",
+     "type": "faculty",
+     "req": true,
+     "key": "mentor_emp_id",
+     "legacy": true
+    },
+    {
+     "q": "Project Statement / Objective",
+     "type": "para",
+     "req": false,
+     "key": "project_statement",
+     "legacy": true
+    },
+    {
+     "q": "Project Abstract / Achievement Details",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "legacy": true
+    },
+    {
+     "q": "Tools / Technologies / Methods Used",
+     "type": "text",
+     "req": false,
+     "key": "tools_used",
+     "legacy": true
+    },
+    {
+     "q": "Measurable Result or Impact",
+     "type": "text",
+     "req": false,
+     "key": "measurable_impact",
+     "legacy": true
+    },
+    {
+     "q": "Project Demo / Repository / Portfolio URL",
+     "type": "url",
+     "req": false,
+     "key": "demo_url",
+     "legacy": true
+    },
+    {
+     "q": "Learning Outcomes / Skills Demonstrated",
+     "type": "para",
+     "req": false,
+     "key": "learning_outcomes",
+     "legacy": true
+    },
+    {
+     "q": "Has this Work Received Other Awards or Been Reported Previously?",
+     "type": "choice",
+     "req": false,
+     "choices": [
+      "Yes",
+      "No"
+     ],
+     "key": "previously_reported",
+     "legacy": true
+    },
+    {
+     "q": "Related Awards / Previous Submission Details (type NA if none)",
+     "type": "text",
+     "req": false,
+     "key": "related_awards",
+     "legacy": true
+    },
+    {
+     "q": "Key Impact Badge / Metric",
+     "type": "text",
+     "req": false,
+     "help": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "legacy": true
+    },
+    {
+     "q": "Photo Caption & Persons in Image",
+     "type": "text",
+     "req": false,
+     "help": "Names of the people shown, left to right",
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "legacy": true
+    }
+   ],
+   "legacy_categories": []
+  },
+  "form_research": {
+   "form_type": "RESEARCH",
+   "date_key": "output_date",
+   "title": "IT Chronicles - Research & Innovation Submission Form",
+   "description": "Publications, patents, funded projects, consultancy and innovations. Select your name from the list.",
+   "section_id": "sec_research",
+   "categories": [
+    "Journal Publications",
+    "Conference Publications",
+    "Book / Book Chapters",
+    "Funded Research Projects",
+    "Consultancy Projects",
+    "Patents & Intellectual Property",
+    "Key Research Innovations & Technical Accomplishments"
+   ],
+   "category_config": {
+    "Journal Publications": {
+     "gate": "Do you want to submit Journal Publications?",
+     "defaults": {
+      "current_status": "Published",
+      "review_status": "Peer reviewed"
+     }
+    },
+    "Conference Publications": {
+     "gate": "Do you want to submit Conference Publications?",
+     "defaults": {
+      "current_status": "Published",
+      "review_status": "Peer reviewed"
+     }
+    },
+    "Book / Book Chapters": {
+     "gate": "Do you want to submit Book / Book Chapters?",
+     "defaults": {
+      "current_status": "Published"
+     }
+    },
+    "Funded Research Projects": {
+     "gate": "Do you want to submit Funded Research Projects?",
+     "defaults": {
+      "funding_status": "Funded"
+     }
+    },
+    "Consultancy Projects": {
+     "gate": "Do you want to submit Consultancy Projects?",
+     "defaults": {
+      "funding_status": "Funded"
+     }
+    },
+    "Patents & Intellectual Property": {
+     "gate": "Do you want to submit Patents & Intellectual Property?"
+    },
+    "Key Research Innovations & Technical Accomplishments": {
+     "gate": "Do you want to submit Key Research Innovations & Technical Accomplishments?",
+     "defaults": {
+      "current_status": "Completed"
+     }
+    }
+   },
+   "layout": {
+    "common": [
+     "Timestamp",
+     "Email Address",
+     "Submitting Faculty (Select your name)"
+    ],
+    "blocks": [
+     {
+      "category": "Journal Publications",
+      "gate": "Do you want to submit Journal Publications?",
+      "fields": [
+       "Research Paper / Article Title",
+       "Journal Name",
+       "Publisher",
+       "Author Names and Affiliations",
+       "Corresponding Author",
+       "Volume / Issue / Page Numbers",
+       "Project Start Date",
+       "Publication Date",
+       "DOI / ISSN",
+       "Indexing",
+       "Quartile",
+       "Citation Count (if available)",
+       "Funding Acknowledgement",
+       "Related Publications / Project References",
+       "Dataset / Code / Supplementary Material Link"
+      ]
+     },
+     {
+      "category": "Conference Publications",
+      "gate": "Do you want to submit Conference Publications?",
+      "fields": [
+       "Conference Paper Title",
+       "Conference Name",
+       "Organizing Institution",
+       "Conference Location",
+       "Conference Date",
+       "Publication Date",
+       "Author Names and Affiliations",
+       "Publisher / Proceedings Name",
+       "DOI / ISBN / ISSN",
+       "Conference Type",
+       "Indexing",
+       "Presentation Type",
+       "Funding Acknowledgement",
+       "Related Publications / Project References",
+       "Dataset / Code / Supplementary Material Link"
+      ]
+     },
+     {
+      "category": "Book / Book Chapters",
+      "gate": "Do you want to submit Book / Book Chapters?",
+      "fields": [
+       "Book / Book Chapter Title",
+       "Book Title",
+       "Chapter Number / Chapter Title",
+       "Author / Editor Names",
+       "Publisher",
+       "Publication Date",
+       "ISBN",
+       "Edition / Volume",
+       "Book / Publisher Website",
+       "Indexing / Recognition",
+       "Funding Acknowledgement",
+       "Related Publications / Project References"
+      ]
+     },
+     {
+      "category": "Funded Research Projects",
+      "gate": "Do you want to submit Funded Research Projects?",
+      "fields": [
+       "Project Title",
+       "Principal Investigator",
+       "Co-Principal Investigators / Collaborators",
+       "Funding Agency",
+       "Sanctioned Grant Amount (INR)",
+       "Project Start Date",
+       "Project End Date",
+       "Project Duration",
+       "Grant Reference / Sanction Number",
+       "Project Objectives and Rationale",
+       "Key Research Outcomes / Deliverables",
+       "Measurable Impact",
+       "Project Status",
+       "Related Publications / Project References",
+       "Project Webpage / Supporting Link"
+      ]
+     },
+     {
+      "category": "Consultancy Projects",
+      "gate": "Do you want to submit Consultancy Projects?",
+      "fields": [
+       "Consultancy Project Title",
+       "Client / Organization Name",
+       "Project Coordinator / Faculty Members",
+       "Nature of Consultancy",
+       "Project Start Date",
+       "Project Completion Date",
+       "Consultancy Amount (INR)",
+       "Project Reference Number",
+       "Objectives and Scope of Work",
+       "Key Deliverables",
+       "Industry / Institutional Impact",
+       "Project Status",
+       "Supporting Project Link"
+      ]
+     },
+     {
+      "category": "Patents & Intellectual Property",
+      "gate": "Do you want to submit Patents & Intellectual Property?",
+      "fields": [
+       "Patent / Intellectual Property Title",
+       "Inventor Names and Affiliations",
+       "Patent / IP Type",
+       "Application / Registration Number",
+       "Filing Date",
+       "Publication Date",
+       "Grant / Registration Date",
+       "Patent Office / Registration Authority",
+       "Country / Jurisdiction",
+       "Patent / IP Status",
+       "Technology / Application Area",
+       "Innovation Overview and Significance",
+       "Patent / IP Webpage",
+       "Related Publications / Project References"
+      ]
+     },
+     {
+      "category": "Key Research Innovations & Technical Accomplishments",
+      "gate": "Do you want to submit Key Research Innovations & Technical Accomplishments?",
+      "fields": [
+       "Innovation / Technical Accomplishment Title",
+       "Innovation Overview",
+       "Problem Addressed / Research Gap",
+       "Novelty and Technical Significance",
+       "Faculty / Research Team Members",
+       "Technology / Tools / Methodologies Used",
+       "Prototype / Product / Solution Developed",
+       "Development Date",
+       "Testing / Validation Results",
+       "Industry / Societal / Academic Impact",
+       "Commercialisation / Technology Transfer Status",
+       "Patent / Copyright / IP Reference",
+       "Dataset / Code / Supplementary Material Link",
+       "Related Publications / Project References"
+      ]
+     }
+    ],
+    "closing": [
+     "Key Impact Badge / Metric (e.g. Scopus Q1, Patent Granted, ₹25 Lakh Grant, Best Paper Award)",
+     "Photo Link (Google Drive / Cloud URL)",
+     "Photo Caption & Persons in Image – Names from left to right",
+     "Official Evidence / Certificate / Supporting Document Link",
+     "Is this a Landmark / Milestone Achievement?",
+     "Permission to Publish this Submission",
+     "Accuracy and Authorization Confirmation"
+    ],
+    "closing_rename": {}
+   },
+   "questions": [
+    {
+     "q": "Submitting Faculty (Select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "_submitter",
+     "submitter": true,
+     "zone": "common"
+    },
+    {
+     "q": "Research Subcategory",
+     "type": "choice",
+     "key": "category",
+     "nl": "category_id",
+     "zone": "category",
+     "choices": [
+      "Journal Publications",
+      "Conference Publications",
+      "Book / Book Chapters",
+      "Funded Research Projects",
+      "Consultancy Projects",
+      "Patents & Intellectual Property",
+      "Key Research Innovations & Technical Accomplishments"
+     ],
+     "req": true
+    },
+    {
+     "q": "Research Paper / Article Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Journal Name",
+     "type": "text",
+     "req": true,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Publisher",
+     "type": "text",
+     "req": false,
+     "key": "x_publisher",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Author Names and Affiliations",
+     "type": "roster_any",
+     "req": true,
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+     "tf": "names_only",
+     "zone": "block",
+     "cats": [
+      "Journal Publications",
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Corresponding Author",
+     "type": "text",
+     "req": false,
+     "key": "x_corresponding_author",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Volume / Issue / Page Numbers",
+     "type": "text",
+     "req": false,
+     "key": "x_volume_issue_pages",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Project Start Date",
+     "type": "date",
+     "req": false,
+     "key": "project_start",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Publication Date",
+     "type": "date",
+     "req": false,
+     "key": "output_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Journal Publications",
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "DOI / ISSN",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Indexing",
+     "type": "list",
+     "req": false,
+     "key": "indexing",
+     "nl": "impact_or_indexing",
+     "choices": [
+      "Scopus",
+      "Web of Science",
+      "SCI",
+      "ESCI",
+      "UGC CARE",
+      "Other",
+      "Not Indexed"
+     ],
+     "zone": "block",
+     "cats": [
+      "Journal Publications",
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Quartile",
+     "type": "list",
+     "req": false,
+     "key": "quartile",
+     "choices": [
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Not Applicable"
+     ],
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Citation Count (if available)",
+     "type": "text",
+     "req": false,
+     "key": "x_citations",
+     "zone": "block",
+     "cats": [
+      "Journal Publications"
+     ]
+    },
+    {
+     "q": "Funding Acknowledgement",
+     "type": "text",
+     "req": false,
+     "key": "x_funding_ack",
+     "zone": "block",
+     "cats": [
+      "Journal Publications",
+      "Conference Publications",
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Related Publications / Project References",
+     "type": "para",
+     "req": false,
+     "key": "related_refs",
+     "zone": "block",
+     "cats": [
+      "Journal Publications",
+      "Conference Publications",
+      "Book / Book Chapters",
+      "Funded Research Projects",
+      "Patents & Intellectual Property",
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Dataset / Code / Supplementary Material Link",
+     "type": "url",
+     "req": false,
+     "key": "dataset_url",
+     "zone": "block",
+     "cats": [
+      "Journal Publications",
+      "Conference Publications",
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Conference Paper Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Conference Name",
+     "type": "text",
+     "req": true,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Organizing Institution",
+     "type": "text",
+     "req": false,
+     "key": "x_organizing_institution",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Conference Location",
+     "type": "text",
+     "req": false,
+     "key": "x_conference_location",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Conference Date",
+     "type": "date",
+     "req": false,
+     "key": "output_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Publication Date",
+     "type": "date",
+     "req": false,
+     "key": "x_publication_date",
+     "zone": "block",
+     "cats": [
+      "Conference Publications",
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Publisher / Proceedings Name",
+     "type": "text",
+     "req": false,
+     "key": "x_publisher",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "DOI / ISBN / ISSN",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Conference Type",
+     "type": "list",
+     "req": false,
+     "key": "conference_level",
+     "choices": [
+      "International",
+      "National",
+      "State",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Presentation Type",
+     "type": "list",
+     "req": false,
+     "key": "x_presentation_type",
+     "choices": [
+      "Oral Presentation",
+      "Poster Presentation",
+      "Invited Presentation",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Conference Publications"
+     ]
+    },
+    {
+     "q": "Book / Book Chapter Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Book Title",
+     "type": "text",
+     "req": false,
+     "key": "x_book_title",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Chapter Number / Chapter Title",
+     "type": "text",
+     "req": false,
+     "key": "x_chapter",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Author / Editor Names",
+     "type": "roster_any",
+     "req": true,
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+     "tf": "names_only",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Publisher",
+     "type": "text",
+     "req": true,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "ISBN",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Edition / Volume",
+     "type": "text",
+     "req": false,
+     "key": "x_edition",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Book / Publisher Website",
+     "type": "url",
+     "req": false,
+     "key": "venue_url",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Indexing / Recognition",
+     "type": "text",
+     "req": false,
+     "key": "indexing",
+     "nl": "impact_or_indexing",
+     "zone": "block",
+     "cats": [
+      "Book / Book Chapters"
+     ]
+    },
+    {
+     "q": "Project Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Principal Investigator",
+     "type": "roster_any",
+     "req": true,
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+     "tf": "names_only",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Co-Principal Investigators / Collaborators",
+     "type": "text",
+     "req": false,
+     "key": "collaborators",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Funding Agency",
+     "type": "text",
+     "req": true,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Sanctioned Grant Amount (INR)",
+     "type": "number",
+     "req": true,
+     "key": "funding_amount",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Project Start Date",
+     "type": "date",
+     "req": false,
+     "key": "output_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects",
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Project End Date",
+     "type": "date",
+     "req": false,
+     "key": "x_project_end_date",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Project Duration",
+     "type": "text",
+     "req": false,
+     "key": "x_project_duration",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Grant Reference / Sanction Number",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Project Objectives and Rationale",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Key Research Outcomes / Deliverables",
+     "type": "para",
+     "req": false,
+     "key": "key_findings",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Measurable Impact",
+     "type": "para",
+     "req": false,
+     "key": "impact",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Project Status",
+     "type": "list",
+     "req": false,
+     "key": "current_status",
+     "choices": [
+      "Proposed",
+      "Sanctioned",
+      "Ongoing",
+      "Completed",
+      "On Hold"
+     ],
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects",
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Project Webpage / Supporting Link",
+     "type": "url",
+     "req": false,
+     "key": "venue_url",
+     "zone": "block",
+     "cats": [
+      "Funded Research Projects"
+     ]
+    },
+    {
+     "q": "Consultancy Project Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Client / Organization Name",
+     "type": "text",
+     "req": true,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Project Coordinator / Faculty Members",
+     "type": "roster_any",
+     "req": false,
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+     "tf": "names_only",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Nature of Consultancy",
+     "type": "text",
+     "req": false,
+     "key": "x_nature_of_consultancy",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Project Completion Date",
+     "type": "date",
+     "req": false,
+     "key": "x_project_end_date",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Consultancy Amount (INR)",
+     "type": "number",
+     "req": true,
+     "key": "funding_amount",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Project Reference Number",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Objectives and Scope of Work",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Key Deliverables",
+     "type": "para",
+     "req": false,
+     "key": "key_findings",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Industry / Institutional Impact",
+     "type": "para",
+     "req": false,
+     "key": "impact",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Supporting Project Link",
+     "type": "url",
+     "req": false,
+     "key": "venue_url",
+     "zone": "block",
+     "cats": [
+      "Consultancy Projects"
+     ]
+    },
+    {
+     "q": "Patent / Intellectual Property Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Inventor Names and Affiliations",
+     "type": "roster_any",
+     "req": true,
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+     "tf": "names_only",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Patent / IP Type",
+     "type": "list",
+     "req": false,
+     "key": "x_ip_type",
+     "choices": [
+      "Patent",
+      "Copyright",
+      "Industrial Design",
+      "Trademark",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Application / Registration Number",
+     "type": "text",
+     "req": true,
+     "key": "identifier",
+     "nl": "grant_or_prize_amount",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Filing Date",
+     "type": "date",
+     "req": false,
+     "key": "output_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Grant / Registration Date",
+     "type": "date",
+     "req": false,
+     "key": "x_grant_date",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Patent Office / Registration Authority",
+     "type": "text",
+     "req": false,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Country / Jurisdiction",
+     "type": "text",
+     "req": false,
+     "key": "x_country",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Patent / IP Status",
+     "type": "list",
+     "req": false,
+     "key": "current_status",
+     "nl": "impact_or_indexing",
+     "choices": [
+      "Filed",
+      "Published",
+      "Under Examination",
+      "Granted",
+      "Registered",
+      "Rejected",
+      "Abandoned"
+     ],
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Technology / Application Area",
+     "type": "text",
+     "req": false,
+     "key": "x_technology_area",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Innovation Overview and Significance",
+     "type": "para",
+     "req": false,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Patent / IP Webpage",
+     "type": "url",
+     "req": false,
+     "key": "venue_url",
+     "zone": "block",
+     "cats": [
+      "Patents & Intellectual Property"
+     ]
+    },
+    {
+     "q": "Innovation / Technical Accomplishment Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Innovation Overview",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Problem Addressed / Research Gap",
+     "type": "para",
+     "req": false,
+     "key": "problem",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Novelty and Technical Significance",
+     "type": "para",
+     "req": true,
+     "key": "key_findings",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Faculty / Research Team Members",
+     "type": "roster_any",
+     "req": false,
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "help": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+     "tf": "names_only",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Technology / Tools / Methodologies Used",
+     "type": "para",
+     "req": false,
+     "key": "methodology",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Prototype / Product / Solution Developed",
+     "type": "text",
+     "req": false,
+     "key": "x_prototype",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Development Date",
+     "type": "date",
+     "req": false,
+     "key": "output_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Testing / Validation Results",
+     "type": "para",
+     "req": false,
+     "key": "x_validation_results",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Industry / Societal / Academic Impact",
+     "type": "para",
+     "req": false,
+     "key": "impact",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Commercialisation / Technology Transfer Status",
+     "type": "text",
+     "req": false,
+     "key": "ip_status",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Patent / Copyright / IP Reference",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "zone": "block",
+     "cats": [
+      "Key Research Innovations & Technical Accomplishments"
+     ]
+    },
+    {
+     "q": "Key Impact Badge / Metric (e.g. Scopus Q1, Patent Granted, ₹25 Lakh Grant, Best Paper Award)",
+     "type": "text",
+     "req": false,
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Link (Google Drive / Cloud URL)",
+     "type": "url",
+     "req": false,
+     "key": "media_url",
+     "nl": "photo_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Caption & Persons in Image – Names from left to right",
+     "type": "text",
+     "req": false,
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "zone": "closing"
+    },
+    {
+     "q": "Official Evidence / Certificate / Supporting Document Link",
+     "type": "url",
+     "req": false,
+     "key": "evidence_url",
+     "nl": "evidence_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Is this a Landmark / Milestone Achievement?",
+     "type": "choice",
+     "req": true,
+     "key": "is_landmark",
+     "choices": [
+      "No (Standard Entry)",
+      "Yes (Nominate for Spotlight Feature)"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Permission to Publish this Submission",
+     "type": "choice",
+     "req": true,
+     "key": "publish_permission",
+     "choices": [
+      "Yes - may be published in the IT Chronicles newsletter",
+      "No - keep for internal records only"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Accuracy and Authorization Confirmation",
+     "type": "confirm",
+     "req": true,
+     "key": "authorization_confirmed",
+     "choices": [
+      "I confirm the information is accurate and I am authorised to submit it."
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Submitting Faculty (select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "_submitter",
+     "submitter": true,
+     "legacy": true
+    },
+    {
+     "q": "Title of Publication / Patent / Project / Innovation",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "legacy": true
+    },
+    {
+     "q": "Current Status",
+     "type": "list",
+     "req": true,
+     "choices": [
+      "Published",
+      "Accepted",
+      "Under Review",
+      "Filed",
+      "Granted",
+      "Ongoing",
+      "Completed"
+     ],
+     "key": "current_status",
+     "legacy": true
+    },
+    {
+     "q": "Authors / Investigators (one per line: ID - Name)",
+     "type": "roster_any",
+     "req": true,
+     "help": "In publication order, first = lead. Use the faculty Employee ID or student Roll No for people of this department, and EXT for outsiders, e.g.\nEMP012 - Dr. A. Kumar\n21IT001 - Asha K\nEXT - Dr. J. Smith - Anna University",
+     "key": "_contributors",
+     "nl": "author_or_person",
+     "tf": "names_only",
+     "legacy": true
+    },
+    {
+     "q": "Your Individual Contribution",
+     "type": "text",
+     "req": false,
+     "key": "contribution_statement",
+     "legacy": true
+    },
+    {
+     "q": "Collaborating Institutions / Organizations",
+     "type": "text",
+     "req": false,
+     "key": "collaborators",
+     "legacy": true
+    },
+    {
+     "q": "Venue / Journal / Publisher / Funding Agency / Organization",
+     "type": "text",
+     "req": true,
+     "key": "venue_publisher",
+     "nl": "organization_or_venue",
+     "legacy": true
+    },
+    {
+     "q": "Journal / Conference / Publisher / Funding Agency Website",
+     "type": "url",
+     "req": false,
+     "key": "venue_url",
+     "legacy": true
+    },
+    {
+     "q": "Date of Publication / Filing / Award / Grant",
+     "type": "date",
+     "req": true,
+     "key": "output_date",
+     "nl": "event_date",
+     "legacy": true
+    },
+    {
+     "q": "Project Start Date",
+     "type": "date",
+     "req": false,
+     "key": "project_start",
+     "legacy": true
+    },
+    {
+     "q": "DOI / ISBN / ISSN / Patent Number / Grant Reference",
+     "type": "text",
+     "req": false,
+     "key": "identifier",
+     "nl": "grant_or_prize_amount",
+     "legacy": true
+    },
+    {
+     "q": "Indexing",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Scopus",
+      "Web of Science",
+      "IEEE Xplore",
+      "UGC-CARE",
+      "PubMed",
+      "Not indexed",
+      "Not applicable"
+     ],
+     "key": "indexing",
+     "nl": "impact_or_indexing",
+     "legacy": true
+    },
+    {
+     "q": "Quartile",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Not applicable"
+     ],
+     "key": "quartile",
+     "legacy": true
+    },
+    {
+     "q": "Impact Factor (number, leave blank if none)",
+     "type": "number",
+     "req": false,
+     "key": "impact_factor",
+     "legacy": true
+    },
+    {
+     "q": "Conference Level",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Not applicable",
+      "National",
+      "International"
+     ],
+     "key": "conference_level",
+     "legacy": true
+    },
+    {
+     "q": "Review Status",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Peer reviewed",
+      "Not reviewed",
+      "Not applicable"
+     ],
+     "key": "review_status",
+     "legacy": true
+    },
+    {
+     "q": "Funding Status",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Not funded",
+      "Applied",
+      "Funded"
+     ],
+     "key": "funding_status",
+     "legacy": true
+    },
+    {
+     "q": "Funding Amount in Rupees (numbers only)",
+     "type": "number",
+     "req": false,
+     "key": "funding_amount",
+     "legacy": true
+    },
+    {
+     "q": "Research Problem / Motivation",
+     "type": "para",
+     "req": false,
+     "key": "problem",
+     "legacy": true
+    },
+    {
+     "q": "Abstract / Executive Summary",
+     "type": "para",
+     "req": true,
+     "key": "abstract",
+     "nl": "description",
+     "legacy": true
+    },
+    {
+     "q": "Methodology / Technical Approach",
+     "type": "para",
+     "req": false,
+     "key": "methodology",
+     "legacy": true
+    },
+    {
+     "q": "Key Findings / Novelty / Original Contribution",
+     "type": "para",
+     "req": false,
+     "key": "key_findings",
+     "legacy": true
+    },
+    {
+     "q": "Impact, Application and Beneficiaries",
+     "type": "para",
+     "req": false,
+     "key": "impact",
+     "legacy": true
+    },
+    {
+     "q": "IP Ownership / Licensing / Commercialization Status",
+     "type": "text",
+     "req": false,
+     "key": "ip_status",
+     "legacy": true
+    },
+    {
+     "q": "Dataset / Code / Supplementary Material Link",
+     "type": "url",
+     "req": false,
+     "key": "dataset_url",
+     "legacy": true
+    },
+    {
+     "q": "Related Publications / Project References",
+     "type": "para",
+     "req": false,
+     "key": "related_refs",
+     "legacy": true
+    },
+    {
+     "q": "Key Impact Badge / Metric",
+     "type": "text",
+     "req": false,
+     "help": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "legacy": true
+    },
+    {
+     "q": "Photo Caption & Persons in Image",
+     "type": "text",
+     "req": false,
+     "help": "Names of the people shown, left to right",
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "legacy": true
+    }
+   ],
+   "legacy_categories": []
+  },
+  "form_faculty": {
+   "form_type": "FACULTY",
+   "date_key": "start_date",
+   "title": "IT Chronicles - Faculty Achievements Submission Form",
+   "description": "Awards, certifications, invited lectures, FDPs and professional roles. Select your name from the list. (The form has no date question: the day the response was submitted is used.)",
+   "section_id": "sec_faculty",
+   "categories": [
+    "Awards & Honors Received",
+    "Certifications & Upskilling Completed",
+    "Invited Keynote / Expert Lectures Delivered",
+    "Resource Person / Session Chair Roles",
+    "FDP / Workshops Attended",
+    "Professional Body & Editorial Board Roles"
+   ],
+   "category_config": {
+    "Awards & Honors Received": {
+     "gate": "Do you want to submit Awards & Honors Received?"
+    },
+    "Certifications & Upskilling Completed": {
+     "gate": "Do you want to submit Certifications & Upskilling Completed?"
+    },
+    "Invited Keynote / Expert Lectures Delivered": {
+     "gate": "Do you want to submit Invited Keynote / Expert Lectures Delivered?"
+    },
+    "Resource Person / Session Chair Roles": {
+     "gate": "Do you want to submit Resource Person / Session Chair Roles?"
+    },
+    "FDP / Workshops Attended": {
+     "gate": "Do you want to submit FDP / Workshops Attended?"
+    },
+    "Professional Body & Editorial Board Roles": {
+     "gate": "Do you want to submit Professional Body & Editorial Board Roles?"
+    }
+   },
+   "layout": {
+    "common": [
+     "Timestamp",
+     "Email Address",
+     "Faculty Full Name (Select your name)",
+     "Designation at the Time of Achievement"
+    ],
+    "blocks": [
+     {
+      "category": "Awards & Honors Received",
+      "gate": "Do you want to submit Awards & Honors Received?",
+      "fields": [
+       "Exact Title of Award / Certification / Lecture / Role",
+       "Type of Recognition or Engagement",
+       "Awarding Body / Host Institution / Organizing Organization",
+       "Level",
+       "Names, Affiliations and Roles of Other Contributors (NA if none)",
+       "Organizer Webpage (URL)",
+       "Has this Achievement Been Reported Previously?",
+       "Additional Information for the Review Team"
+      ]
+     },
+     {
+      "category": "Certifications & Upskilling Completed",
+      "gate": "Do you want to submit Certifications & Upskilling Completed?",
+      "fields": [
+       "Exact Title of Award / Certification / Lecture / Role",
+       "Type of Recognition or Engagement",
+       "Awarding Body / Host Institution / Organizing Organization",
+       "Level",
+       "Names, Affiliations and Roles of Other Contributors (NA if none)",
+       "Organizer Webpage (URL)",
+       "Has this Achievement Been Reported Previously?",
+       "Additional Information for the Review Team"
+      ]
+     },
+     {
+      "category": "Invited Keynote / Expert Lectures Delivered",
+      "gate": "Do you want to submit Invited Keynote / Expert Lectures Delivered?",
+      "fields": [
+       "Exact Title of Award / Certification / Lecture / Role",
+       "Type of Recognition or Engagement",
+       "Awarding Body / Host Institution / Organizing Organization",
+       "Level",
+       "Names, Affiliations and Roles of Other Contributors (NA if none)",
+       "Organizer Webpage (URL)",
+       "Has this Achievement Been Reported Previously?",
+       "Additional Information for the Review Team"
+      ]
+     },
+     {
+      "category": "Resource Person / Session Chair Roles",
+      "gate": "Do you want to submit Resource Person / Session Chair Roles?",
+      "fields": [
+       "Exact Title of Award / Certification / Lecture / Role",
+       "Type of Recognition or Engagement",
+       "Awarding Body / Host Institution / Organizing Organization",
+       "Level",
+       "Names, Affiliations and Roles of Other Contributors (NA if none)",
+       "Organizer Webpage (URL)",
+       "Has this Achievement Been Reported Previously?",
+       "Additional Information for the Review Team"
+      ]
+     },
+     {
+      "category": "FDP / Workshops Attended",
+      "gate": "Do you want to submit FDP / Workshops Attended?",
+      "fields": [
+       "Exact Title of Award / Certification / Lecture / Role",
+       "Type of Recognition or Engagement",
+       "Awarding Body / Host Institution / Organizing Organization",
+       "Level",
+       "Names, Affiliations and Roles of Other Contributors (NA if none)",
+       "Organizer Webpage (URL)",
+       "Has this Achievement Been Reported Previously?",
+       "Additional Information for the Review Team"
+      ]
+     },
+     {
+      "category": "Professional Body & Editorial Board Roles",
+      "gate": "Do you want to submit Professional Body & Editorial Board Roles?",
+      "fields": [
+       "Exact Title of Award / Certification / Lecture / Role",
+       "Type of Recognition or Engagement",
+       "Awarding Body / Host Institution / Organizing Organization",
+       "Level",
+       "Names, Affiliations and Roles of Other Contributors (NA if none)",
+       "Organizer Webpage (URL)",
+       "Has this Achievement Been Reported Previously?",
+       "Additional Information for the Review Team"
+      ]
+     }
+    ],
+    "closing": [
+     "Key Impact Badge / Metric (e.g. 1st Prize, Best Faculty Award, International Recognition)",
+     "Photo Link (Google Drive / Cloud URL)",
+     "Photo Caption & Persons in Image",
+     "Official Evidence / Certificate / Supporting Document Link",
+     "Is this a Landmark / Milestone Achievement?",
+     "Permission to Publish this Submission",
+     "Accuracy and Authorization Confirmation"
+    ],
+    "closing_rename": {}
+   },
+   "questions": [
+    {
+     "q": "Faculty Full Name (Select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "emp_id",
+     "nl": "author_or_person",
+     "tf": "names_only",
+     "submitter": true,
+     "zone": "common"
+    },
+    {
+     "q": "Designation at the Time of Achievement",
+     "type": "text",
+     "req": true,
+     "key": "designation_at_time",
+     "zone": "common"
+    },
+    {
+     "q": "Achievement Category",
+     "type": "choice",
+     "key": "category",
+     "nl": "category_id",
+     "zone": "category",
+     "choices": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ],
+     "req": true
+    },
+    {
+     "q": "Exact Title of Award / Certification / Lecture / Role",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Type of Recognition or Engagement",
+     "type": "list",
+     "req": false,
+     "key": "recognition_type",
+     "choices": [
+      "Award",
+      "Honor",
+      "Prize",
+      "Certification",
+      "Keynote Lecture",
+      "Expert Lecture",
+      "Guest Lecture",
+      "Resource Person",
+      "Session Chair",
+      "Panel Moderator",
+      "FDP",
+      "Workshop",
+      "Professional Membership",
+      "Editorial Board Appointment",
+      "Office Bearer / Leadership Role",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Awarding Body / Host Institution / Organizing Organization",
+     "type": "text",
+     "req": true,
+     "key": "host_org",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Level",
+     "type": "choice",
+     "req": true,
+     "key": "level",
+     "nl": "impact_or_indexing",
+     "choices": [
+      "Department",
+      "College",
+      "Inter-college",
+      "State",
+      "National",
+      "International"
+     ],
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Names, Affiliations and Roles of Other Contributors (NA if none)",
+     "type": "para",
+     "req": false,
+     "key": "other_contributors",
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Organizer Webpage (URL)",
+     "type": "url",
+     "req": false,
+     "key": "organizer_url",
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Has this Achievement Been Reported Previously?",
+     "type": "choice",
+     "req": true,
+     "key": "previously_reported",
+     "choices": [
+      "Yes",
+      "No"
+     ],
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Additional Information for the Review Team",
+     "type": "para",
+     "req": false,
+     "key": "description",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Awards & Honors Received",
+      "Certifications & Upskilling Completed",
+      "Invited Keynote / Expert Lectures Delivered",
+      "Resource Person / Session Chair Roles",
+      "FDP / Workshops Attended",
+      "Professional Body & Editorial Board Roles"
+     ]
+    },
+    {
+     "q": "Key Impact Badge / Metric (e.g. 1st Prize, Best Faculty Award, International Recognition)",
+     "type": "text",
+     "req": false,
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Link (Google Drive / Cloud URL)",
+     "type": "url",
+     "req": false,
+     "key": "media_url",
+     "nl": "photo_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Caption & Persons in Image",
+     "type": "text",
+     "req": false,
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "zone": "closing"
+    },
+    {
+     "q": "Official Evidence / Certificate / Supporting Document Link",
+     "type": "url",
+     "req": false,
+     "key": "evidence_url",
+     "nl": "evidence_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Is this a Landmark / Milestone Achievement?",
+     "type": "choice",
+     "req": true,
+     "key": "is_landmark",
+     "choices": [
+      "No (Standard Entry)",
+      "Yes (Nominate for Spotlight Feature)"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Permission to Publish this Submission",
+     "type": "choice",
+     "req": true,
+     "key": "publish_permission",
+     "choices": [
+      "Yes - may be published in the IT Chronicles newsletter",
+      "No - keep for internal records only"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Accuracy and Authorization Confirmation",
+     "type": "confirm",
+     "req": true,
+     "key": "authorization_confirmed",
+     "choices": [
+      "I confirm the information is accurate and I am authorised to submit it."
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Faculty Full Name (select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "emp_id",
+     "nl": "author_or_person",
+     "tf": "names_only",
+     "submitter": true,
+     "legacy": true
+    },
+    {
+     "q": "Exact Title of Award / Certification / Lecture / Role",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "legacy": true
+    },
+    {
+     "q": "Type of Recognition or Engagement",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Award",
+      "Certification",
+      "Invited lecture / Keynote",
+      "Resource person",
+      "Session chair",
+      "FDP / Workshop attended",
+      "Editorial / Reviewer role",
+      "Professional membership",
+      "Other"
+     ],
+     "key": "recognition_type",
+     "legacy": true
+    },
+    {
+     "q": "Awarding Body / Host Institution / Organizing Organization",
+     "type": "text",
+     "req": true,
+     "key": "host_org",
+     "nl": "organization_or_venue",
+     "legacy": true
+    },
+    {
+     "q": "Level",
+     "type": "choice",
+     "req": true,
+     "choices": [
+      "Department",
+      "College",
+      "Inter-college",
+      "State",
+      "National",
+      "International"
+     ],
+     "key": "level",
+     "nl": "impact_or_indexing",
+     "legacy": true
+    },
+    {
+     "q": "Date of Achievement / Start Date",
+     "type": "date",
+     "req": true,
+     "key": "start_date",
+     "nl": "event_date",
+     "legacy": true
+    },
+    {
+     "q": "End Date",
+     "type": "date",
+     "req": false,
+     "key": "end_date",
+     "legacy": true
+    },
+    {
+     "q": "City / Venue",
+     "type": "text",
+     "req": false,
+     "key": "city_venue",
+     "legacy": true
+    },
+    {
+     "q": "Credential / Certificate Number (if any)",
+     "type": "text",
+     "req": false,
+     "key": "credential_no",
+     "legacy": true
+    },
+    {
+     "q": "Duration / Training Hours (number)",
+     "type": "number",
+     "req": false,
+     "key": "duration_hours",
+     "legacy": true
+    },
+    {
+     "q": "Role and Specific Contribution",
+     "type": "para",
+     "req": false,
+     "key": "role_contribution",
+     "legacy": true
+    },
+    {
+     "q": "Selection Criteria / Eligibility / Competitiveness",
+     "type": "para",
+     "req": false,
+     "key": "selection_criteria",
+     "legacy": true
+    },
+    {
+     "q": "Description & Key Highlights",
+     "type": "para",
+     "req": true,
+     "key": "description",
+     "nl": "description",
+     "legacy": true
+    },
+    {
+     "q": "Outcome and Professional Impact",
+     "type": "para",
+     "req": false,
+     "key": "outcome_impact",
+     "legacy": true
+    },
+    {
+     "q": "Individual or Team Achievement",
+     "type": "choice",
+     "req": false,
+     "choices": [
+      "Individual",
+      "Team"
+     ],
+     "key": "is_team",
+     "legacy": true
+    },
+    {
+     "q": "Names, Affiliations and Roles of Other Contributors (NA if none)",
+     "type": "para",
+     "req": false,
+     "key": "other_contributors",
+     "legacy": true
+    },
+    {
+     "q": "Organizer Webpage (URL)",
+     "type": "url",
+     "req": false,
+     "key": "organizer_url",
+     "legacy": true
+    },
+    {
+     "q": "Has this Achievement Been Reported Previously?",
+     "type": "choice",
+     "req": false,
+     "choices": [
+      "Yes",
+      "No"
+     ],
+     "key": "previously_reported",
+     "legacy": true
+    },
+    {
+     "q": "Additional Information for the Review Team",
+     "type": "para",
+     "req": false,
+     "key": "extra_notes",
+     "legacy": true
+    },
+    {
+     "q": "Key Impact Badge / Metric",
+     "type": "text",
+     "req": false,
+     "help": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "legacy": true
+    }
+   ],
+   "date_fallback": "timestamp",
+   "legacy_categories": []
+  },
+  "form_industry": {
+   "form_type": "OUTREACH",
+   "date_key": "start_date",
+   "title": "IT Chronicles - Industry, Alumni & Outreach Submission Form",
+   "description": "Industry visits, expert talks, MoUs, alumni interactions and community outreach.",
+   "section_id": "sec_industry",
+   "categories": [
+    "Industrial Visits & Field Tours",
+    "Industry Expert Lectures & Technical Talks",
+    "MoUs Signed & Industrial Collaborations",
+    "Alumni Interactions & Mentorship Sessions",
+    "Community & Social Outreach Initiatives"
+   ],
+   "category_config": {
+    "Industrial Visits & Field Tours": {
+     "gate": "Do you want to submit Industrial Visits & Field Tours?"
+    },
+    "Industry Expert Lectures & Technical Talks": {
+     "gate": "Do you want to submit Industry Expert Lectures & Technical Talks?"
+    },
+    "MoUs Signed & Industrial Collaborations": {
+     "gate": "Do you want to submit MoUs Signed & Industrial Collaborations?",
+     "date_key": "agreement_effective",
+     "copy": {
+      "start_date": "agreement_effective"
+     }
+    },
+    "Alumni Interactions & Mentorship Sessions": {
+     "gate": "Do you want to submit Alumni Interactions & Mentorship Sessions?",
+     "defaults": {
+      "partner_type": "Alumni Association"
+     }
+    },
+    "Community & Social Outreach Initiatives": {
+     "gate": "Do you want to submit Community & Social Outreach Initiatives?"
+    }
+   },
+   "layout": {
+    "common": [
+     "Timestamp",
+     "Email Address",
+     "Submitting Faculty (Select your name)",
+     "Lead Coordinator",
+     "Other Faculty Involved (Optional, one per line: EmployeeID - Name)"
+    ],
+    "blocks": [
+     {
+      "category": "Industrial Visits & Field Tours",
+      "gate": "Do you want to submit Industrial Visits & Field Tours?",
+      "fields": [
+       "Official Title of Industrial Visit / Field Tour",
+       "Activity Format",
+       "Participating Departments / Units",
+       "Partner Company / Organization",
+       "Partner Type",
+       "Industry Sector / Domain",
+       "Visit Date",
+       "Number of Student Participants",
+       "Number of Faculty Participants",
+       "Speakers / Mentors / Partner Representatives",
+       "Objectives and Rationale",
+       "Key Activities / Areas Visited",
+       "Outputs and Follow-up Commitments",
+       "Measurable Outcomes",
+       "Feedback / Satisfaction Summary",
+       "Budget / Sponsorship / In-kind Support in Rupees (numbers only)"
+      ]
+     },
+     {
+      "category": "Industry Expert Lectures & Technical Talks",
+      "gate": "Do you want to submit Industry Expert Lectures & Technical Talks?",
+      "fields": [
+       "Official Title of Event / Technical Talk",
+       "Activity Format",
+       "Participating Departments / Units",
+       "Partner Company / Organization",
+       "Partner Type",
+       "Industry Sector / Domain",
+       "Speakers / Mentors / Partner Representatives",
+       "Speaker Designation and Organization",
+       "Event Date",
+       "Number of Student Participants",
+       "Number of Faculty Participants",
+       "Topic / Technical Domain Covered",
+       "Objectives and Rationale",
+       "Key Takeaways / Learning Outcomes",
+       "Outputs and Follow-up Commitments",
+       "Measurable Outcomes",
+       "Feedback / Satisfaction Summary",
+       "Budget / Sponsorship / In-kind Support in Rupees (numbers only)"
+      ]
+     },
+     {
+      "category": "MoUs Signed & Industrial Collaborations",
+      "gate": "Do you want to submit MoUs Signed & Industrial Collaborations?",
+      "fields": [
+       "Official Title of MoU / Partnership",
+       "Partner Company / Organization",
+       "Partner Type",
+       "Participating Departments / Units",
+       "Nature of Collaboration",
+       "MoU / Partnership Scope",
+       "Agreement Effective Date",
+       "Agreement Expiry / Renewal Date",
+       "Signatories / Partner Representatives",
+       "Lead Faculty Coordinator",
+       "Proposed Activities Under the Agreement",
+       "Outputs and Follow-up Commitments",
+       "Measurable Outcomes",
+       "Budget / Sponsorship / In-kind Support in Rupees (numbers only)",
+       "Feedback / Partnership Review Summary",
+       "Agreement / Partnership Reference Number"
+      ]
+     },
+     {
+      "category": "Alumni Interactions & Mentorship Sessions",
+      "gate": "Do you want to submit Alumni Interactions & Mentorship Sessions?",
+      "fields": [
+       "Official Title of Event / Interaction",
+       "Activity Format",
+       "Participating Departments / Units",
+       "Partner Company / Organization / Alumni Group",
+       "Alumni Names and Current Designations",
+       "Alumni Company / Organization",
+       "Year of Graduation / Alumni Batch",
+       "Mentorship / Interaction Topic",
+       "Event Date",
+       "Number of Student Participants",
+       "Number of Alumni Participants",
+       "Objectives and Rationale",
+       "Key Insights / Learning Outcomes",
+       "Outputs and Follow-up Commitments",
+       "Measurable Outcomes",
+       "Feedback / Satisfaction Summary",
+       "Budget / Sponsorship / In-kind Support in Rupees (numbers only)"
+      ]
+     },
+     {
+      "category": "Community & Social Outreach Initiatives",
+      "gate": "Do you want to submit Community & Social Outreach Initiatives?",
+      "fields": [
+       "Official Title of Outreach Initiative",
+       "Activity Format",
+       "Participating Departments / Units",
+       "Partner Company / Organization / Community Group",
+       "Partner Type",
+       "Target Community / Beneficiary Group",
+       "Location / Venue",
+       "Activity Start Date",
+       "Activity End Date",
+       "Number of Student Participants",
+       "Number of Faculty Participants",
+       "Number of Beneficiaries Reached",
+       "Objectives and Social Rationale",
+       "Key Activities Conducted",
+       "Outputs and Follow-up Commitments",
+       "Measurable Social Impact",
+       "Feedback / Satisfaction Summary",
+       "Budget / Sponsorship / In-kind Support in Rupees (numbers only)",
+       "Sustainability / Continuation Plan"
+      ]
+     }
+    ],
+    "closing": [
+     "Key Impact Badge / Metric (e.g. MoU Signed, 150+ Attendees, 5 Industry Visits)",
+     "Photo Link (Google Drive / Cloud URL)",
+     "Photo Caption & Persons in Image (Names from left to right)",
+     "Official Evidence / Certificate / Supporting Document Link",
+     "Event Report / Brochure / Partner Announcement Link",
+     "Is this a Landmark / Milestone Achievement?",
+     "Permission to Publish this Submission",
+     "Accuracy and Authorization Confirmation"
+    ],
+    "closing_rename": {}
+   },
+   "questions": [
+    {
+     "q": "Submitting Faculty (Select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "_submitter",
+     "submitter": true,
+     "zone": "common"
+    },
+    {
+     "q": "Lead Coordinator",
+     "type": "faculty",
+     "req": true,
+     "key": "lead_emp_id",
+     "nl": "author_or_person",
+     "tf": "names_only",
+     "zone": "common"
+    },
+    {
+     "q": "Other Faculty Involved (Optional, one per line: EmployeeID - Name)",
+     "type": "roster_any",
+     "req": false,
+     "key": "_faculty_involved",
+     "zone": "common"
+    },
+    {
+     "q": "Outreach Category",
+     "type": "choice",
+     "key": "category",
+     "nl": "category_id",
+     "zone": "category",
+     "choices": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations",
+      "Alumni Interactions & Mentorship Sessions",
+      "Community & Social Outreach Initiatives"
+     ],
+     "req": true
+    },
+    {
+     "q": "Official Title of Industrial Visit / Field Tour",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours"
+     ]
+    },
+    {
+     "q": "Activity Format",
+     "type": "list",
+     "req": false,
+     "key": "activity_format",
+     "choices": [
+      "Industrial Visit",
+      "Factory Visit",
+      "Field Tour",
+      "Plant Visit",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours"
+     ]
+    },
+    {
+     "q": "Participating Departments / Units",
+     "type": "text",
+     "req": false,
+     "key": "units_involved",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations",
+      "Alumni Interactions & Mentorship Sessions",
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Partner Company / Organization",
+     "type": "text",
+     "req": true,
+     "key": "_partner",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Partner Type",
+     "type": "list",
+     "req": false,
+     "key": "partner_type",
+     "choices": [
+      "Industry / Corporate",
+      "Government Organization",
+      "Academic Institution",
+      "Startup / Entrepreneur",
+      "Alumni Association",
+      "NGO / Non-profit",
+      "Community Organization",
+      "Professional Body",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations",
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Industry Sector / Domain",
+     "type": "text",
+     "req": false,
+     "key": "x_industry_sector",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Visit Date",
+     "type": "date",
+     "req": false,
+     "key": "start_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours"
+     ]
+    },
+    {
+     "q": "Number of Student Participants",
+     "type": "number",
+     "req": false,
+     "key": "actual_count",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Number of Faculty Participants",
+     "type": "number",
+     "req": false,
+     "key": "x_faculty_participants",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Speakers / Mentors / Partner Representatives",
+     "type": "para",
+     "req": false,
+     "key": "speakers",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours"
+     ]
+    },
+    {
+     "q": "Objectives and Rationale",
+     "type": "para",
+     "req": false,
+     "key": "objective",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Key Activities / Areas Visited",
+     "type": "para",
+     "req": false,
+     "key": "summary_outcomes",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours"
+     ]
+    },
+    {
+     "q": "Outputs and Follow-up Commitments",
+     "type": "para",
+     "req": false,
+     "key": "follow_up",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations",
+      "Alumni Interactions & Mentorship Sessions",
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Measurable Outcomes",
+     "type": "para",
+     "req": false,
+     "key": "measurable_outcomes",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations",
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Feedback / Satisfaction Summary",
+     "type": "para",
+     "req": false,
+     "key": "feedback_summary",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "Alumni Interactions & Mentorship Sessions",
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Budget / Sponsorship / In-kind Support in Rupees (numbers only)",
+     "type": "number",
+     "req": false,
+     "key": "budget_amount",
+     "zone": "block",
+     "cats": [
+      "Industrial Visits & Field Tours",
+      "Industry Expert Lectures & Technical Talks",
+      "MoUs Signed & Industrial Collaborations",
+      "Alumni Interactions & Mentorship Sessions",
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Official Title of Event / Technical Talk",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Activity Format",
+     "type": "list",
+     "req": false,
+     "key": "activity_format",
+     "choices": [
+      "Expert Lecture",
+      "Technical Talk",
+      "Guest Lecture",
+      "Keynote Address",
+      "Panel Discussion",
+      "Webinar",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Speakers / Mentors / Partner Representatives",
+     "type": "para",
+     "req": true,
+     "key": "speakers",
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Speaker Designation and Organization",
+     "type": "text",
+     "req": false,
+     "key": "x_speaker_designation",
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Event Date",
+     "type": "date",
+     "req": false,
+     "key": "start_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks",
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Topic / Technical Domain Covered",
+     "type": "text",
+     "req": false,
+     "key": "x_topic",
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Key Takeaways / Learning Outcomes",
+     "type": "para",
+     "req": false,
+     "key": "summary_outcomes",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Industry Expert Lectures & Technical Talks"
+     ]
+    },
+    {
+     "q": "Official Title of MoU / Partnership",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Nature of Collaboration",
+     "type": "text",
+     "req": false,
+     "key": "x_nature_of_collaboration",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "MoU / Partnership Scope",
+     "type": "para",
+     "req": true,
+     "key": "mou_scope",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Agreement Effective Date",
+     "type": "date",
+     "req": false,
+     "key": "agreement_effective",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Agreement Expiry / Renewal Date",
+     "type": "date",
+     "req": false,
+     "key": "agreement_expiry",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Signatories / Partner Representatives",
+     "type": "para",
+     "req": false,
+     "key": "speakers",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Lead Faculty Coordinator",
+     "type": "text",
+     "req": false,
+     "key": "x_lead_faculty_coordinator",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Proposed Activities Under the Agreement",
+     "type": "para",
+     "req": false,
+     "key": "agenda",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Feedback / Partnership Review Summary",
+     "type": "para",
+     "req": false,
+     "key": "feedback_summary",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Agreement / Partnership Reference Number",
+     "type": "text",
+     "req": false,
+     "key": "x_agreement_reference",
+     "zone": "block",
+     "cats": [
+      "MoUs Signed & Industrial Collaborations"
+     ]
+    },
+    {
+     "q": "Official Title of Event / Interaction",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Activity Format",
+     "type": "list",
+     "req": false,
+     "key": "activity_format",
+     "choices": [
+      "Alumni Interaction",
+      "Mentorship Session",
+      "Alumni Guest Lecture",
+      "Career Guidance",
+      "Networking Session",
+      "Alumni Reunion",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Partner Company / Organization / Alumni Group",
+     "type": "text",
+     "req": true,
+     "key": "_partner",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Alumni Names and Current Designations",
+     "type": "para",
+     "req": true,
+     "key": "speakers",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Alumni Company / Organization",
+     "type": "text",
+     "req": false,
+     "key": "x_alumni_company",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Year of Graduation / Alumni Batch",
+     "type": "text",
+     "req": false,
+     "key": "x_alumni_batch",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Mentorship / Interaction Topic",
+     "type": "text",
+     "req": false,
+     "key": "x_topic",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Number of Alumni Participants",
+     "type": "number",
+     "req": false,
+     "key": "x_alumni_participants",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Key Insights / Learning Outcomes",
+     "type": "para",
+     "req": false,
+     "key": "summary_outcomes",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Alumni Interactions & Mentorship Sessions"
+     ]
+    },
+    {
+     "q": "Official Title of Outreach Initiative",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Activity Format",
+     "type": "list",
+     "req": false,
+     "key": "activity_format",
+     "choices": [
+      "Community Outreach",
+      "Social Awareness Campaign",
+      "Village / Rural Development",
+      "School Outreach",
+      "Environmental Initiative",
+      "Digital Literacy",
+      "Health / Safety Awareness",
+      "Volunteering",
+      "Other"
+     ],
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Partner Company / Organization / Community Group",
+     "type": "text",
+     "req": true,
+     "key": "_partner",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Target Community / Beneficiary Group",
+     "type": "text",
+     "req": false,
+     "key": "target_audience",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Location / Venue",
+     "type": "text",
+     "req": false,
+     "key": "venue",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Activity Start Date",
+     "type": "date",
+     "req": false,
+     "key": "start_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Activity End Date",
+     "type": "date",
+     "req": false,
+     "key": "end_date",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Number of Student Participants",
+     "type": "number",
+     "req": false,
+     "key": "x_student_participants",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Number of Beneficiaries Reached",
+     "type": "number",
+     "req": false,
+     "key": "actual_count",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Objectives and Social Rationale",
+     "type": "para",
+     "req": false,
+     "key": "objective",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Key Activities Conducted",
+     "type": "para",
+     "req": false,
+     "key": "summary_outcomes",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Measurable Social Impact",
+     "type": "para",
+     "req": false,
+     "key": "measurable_outcomes",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Sustainability / Continuation Plan",
+     "type": "para",
+     "req": false,
+     "key": "x_sustainability",
+     "zone": "block",
+     "cats": [
+      "Community & Social Outreach Initiatives"
+     ]
+    },
+    {
+     "q": "Key Impact Badge / Metric (e.g. MoU Signed, 150+ Attendees, 5 Industry Visits)",
+     "type": "text",
+     "req": false,
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Link (Google Drive / Cloud URL)",
+     "type": "url",
+     "req": false,
+     "key": "media_url",
+     "nl": "photo_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Caption & Persons in Image (Names from left to right)",
+     "type": "text",
+     "req": false,
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "zone": "closing"
+    },
+    {
+     "q": "Official Evidence / Certificate / Supporting Document Link",
+     "type": "url",
+     "req": false,
+     "key": "evidence_url",
+     "nl": "evidence_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Event Report / Brochure / Partner Announcement Link",
+     "type": "url",
+     "req": false,
+     "key": "report_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Is this a Landmark / Milestone Achievement?",
+     "type": "choice",
+     "req": true,
+     "key": "is_landmark",
+     "choices": [
+      "No (Standard Entry)",
+      "Yes (Nominate for Spotlight Feature)"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Permission to Publish this Submission",
+     "type": "choice",
+     "req": true,
+     "key": "publish_permission",
+     "choices": [
+      "Yes - may be published in the IT Chronicles newsletter",
+      "No - keep for internal records only"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Accuracy and Authorization Confirmation",
+     "type": "confirm",
+     "req": true,
+     "key": "authorization_confirmed",
+     "choices": [
+      "I confirm the information is accurate and I am authorised to submit it."
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Submitting Faculty (select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "_submitter",
+     "submitter": true,
+     "legacy": true
+    },
+    {
+     "q": "Other Faculty Involved (optional, one per line: EmployeeID - Name)",
+     "type": "roster_any",
+     "req": false,
+     "key": "_faculty_involved",
+     "legacy": true
+    },
+    {
+     "q": "Official Title of Event / Visit / MoU / Partnership",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "legacy": true
+    },
+    {
+     "q": "Activity Format",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Industrial visit",
+      "Guest lecture / Talk",
+      "Workshop",
+      "MoU / Partnership",
+      "Alumni meet / Mentoring",
+      "Community camp",
+      "Other"
+     ],
+     "key": "activity_format",
+     "legacy": true
+    },
+    {
+     "q": "Participating Departments / Units",
+     "type": "text",
+     "req": false,
+     "key": "units_involved",
+     "legacy": true
+    },
+    {
+     "q": "Partner Company / Organization / Alumni Group",
+     "type": "text",
+     "req": true,
+     "key": "_partner",
+     "nl": "organization_or_venue",
+     "legacy": true
+    },
+    {
+     "q": "Partner Type",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Industry",
+      "Academic institution",
+      "Alumni",
+      "Government",
+      "NGO / Community",
+      "Other"
+     ],
+     "key": "partner_type",
+     "legacy": true
+    },
+    {
+     "q": "Event / Execution Start Date",
+     "type": "date",
+     "req": true,
+     "key": "start_date",
+     "nl": "event_date",
+     "legacy": true
+    },
+    {
+     "q": "End Date",
+     "type": "date",
+     "req": false,
+     "key": "end_date",
+     "legacy": true
+    },
+    {
+     "q": "Venue",
+     "type": "text",
+     "req": false,
+     "key": "venue",
+     "legacy": true
+    },
+    {
+     "q": "Target Audience",
+     "type": "text",
+     "req": false,
+     "key": "target_audience",
+     "nl": "impact_or_indexing",
+     "legacy": true
+    },
+    {
+     "q": "Expected Participant Count (number)",
+     "type": "number",
+     "req": false,
+     "key": "expected_count",
+     "legacy": true
+    },
+    {
+     "q": "Actual Attendance / Participation Count (number)",
+     "type": "number",
+     "req": false,
+     "key": "actual_count",
+     "legacy": true
+    },
+    {
+     "q": "Student Participants (optional, one roll number per line)",
+     "type": "roster_roll",
+     "req": false,
+     "help": "Roll numbers only. Lets each student's participation show in their class record.",
+     "key": "_event_participants",
+     "aliases": [
+      "Student Participants (optional, one per line: ROLLNO - Name)"
+     ],
+     "legacy": true
+    },
+    {
+     "q": "Objective and Institutional Need",
+     "type": "para",
+     "req": false,
+     "key": "objective",
+     "legacy": true
+    },
+    {
+     "q": "Executive Summary and Outcomes",
+     "type": "para",
+     "req": true,
+     "key": "summary_outcomes",
+     "nl": "description",
+     "legacy": true
+    },
+    {
+     "q": "Agenda / Key Activities",
+     "type": "para",
+     "req": false,
+     "key": "agenda",
+     "legacy": true
+    },
+    {
+     "q": "Speakers / Mentors / Partner Representatives",
+     "type": "para",
+     "req": false,
+     "key": "speakers",
+     "legacy": true
+    },
+    {
+     "q": "MoU / Partnership Scope (if applicable)",
+     "type": "para",
+     "req": false,
+     "key": "mou_scope",
+     "legacy": true
+    },
+    {
+     "q": "Agreement Effective Date",
+     "type": "date",
+     "req": false,
+     "key": "agreement_effective",
+     "legacy": true
+    },
+    {
+     "q": "Agreement Expiry / Renewal Date",
+     "type": "date",
+     "req": false,
+     "key": "agreement_expiry",
+     "legacy": true
+    },
+    {
+     "q": "Outputs and Follow-up Commitments",
+     "type": "para",
+     "req": false,
+     "key": "follow_up",
+     "legacy": true
+    },
+    {
+     "q": "Measurable Outcomes",
+     "type": "para",
+     "req": false,
+     "key": "measurable_outcomes",
+     "legacy": true
+    },
+    {
+     "q": "Budget / Sponsorship / In-kind Support in Rupees (numbers only)",
+     "type": "number",
+     "req": false,
+     "key": "budget_amount",
+     "legacy": true
+    },
+    {
+     "q": "Feedback / Satisfaction Summary",
+     "type": "para",
+     "req": false,
+     "key": "feedback_summary",
+     "legacy": true
+    },
+    {
+     "q": "Key Impact Badge / Metric",
+     "type": "text",
+     "req": false,
+     "help": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "legacy": true
+    },
+    {
+     "q": "Photo Caption & Persons in Image",
+     "type": "text",
+     "req": false,
+     "help": "Names of the people shown, left to right",
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "legacy": true
+    }
+   ],
+   "legacy_categories": []
+  },
+  "form_departmental": {
+   "form_type": "DEPARTMENT",
+   "date_key": "start_date",
+   "title": "IT CHRONICLES – Faculty Highlights & Information Collection",
+   "description": "Faculty highlights and information collection for the IT Chronicles newsletter: several categories in one response.",
+   "section_id": "sec_departmental",
+   "categories": [
+    "Highlights",
+    "Achievements / Awards / Recognitions",
+    "Events / Programs",
+    "Research / Publications / Innovation",
+    "Infrastructure / Laboratory Development",
+    "MoU / Industry Collaboration / Partnerships",
+    "Faculty Development / Professional Achievements",
+    "Student Development / Outreach / Social Initiatives",
+    "Accreditation / Quality Assurance / Institutional Initiatives",
+    "Other Significant Initiatives"
+   ],
+   "category_config": {
+    "Highlights": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "overview"
+     ]
+    },
+    "Achievements / Awards / Recognitions": {
+     "gate": "Do you want to submit this category?"
+    },
+    "Events / Programs": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "overview"
+     ],
+     "date_text_key": "venue"
+    },
+    "Research / Publications / Innovation": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "title",
+      "overview"
+     ]
+    },
+    "Infrastructure / Laboratory Development": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "infra_upgrade"
+     ]
+    },
+    "MoU / Industry Collaboration / Partnerships": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "partner_bodies"
+     ],
+     "title_prefix": "Collaboration with "
+    },
+    "Faculty Development / Professional Achievements": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "title",
+      "overview"
+     ],
+     "date_text_key": "venue"
+    },
+    "Student Development / Outreach / Social Initiatives": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "title",
+      "overview"
+     ],
+     "date_text_key": "venue"
+    },
+    "Accreditation / Quality Assurance / Institutional Initiatives": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "overview"
+     ]
+    },
+    "Other Significant Initiatives": {
+     "gate": "Do you want to submit this category?",
+     "title_from": [
+      "overview"
+     ]
+    }
+   },
+   "layout": {
+    "common": [
+     "Timestamp",
+     "Faculty Name",
+     "Faculty Email",
+     "Department / Designation"
+    ],
+    "blocks": [
+     {
+      "category": "Highlights",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Event / Initiative Overview and Key Highlights",
+       "Objectives and Rationale",
+       "Key Outputs / Deliverables",
+       "Measurable Impact / Success Indicators",
+       "Recognition / Ranking / External Validation",
+       "Related Initiatives / Previous Milestones"
+      ]
+     },
+     {
+      "category": "Achievements / Awards / Recognitions",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Achievement Overview",
+       "Award / Recognition Name",
+       "Award Category / Position / Rank",
+       "Awarding Organisation",
+       "Date of Achievement",
+       "Objectives and Rationale",
+       "Key Outputs / Deliverables",
+       "Measurable Impact",
+       "Recognition / External Validation",
+       "Related Achievements / Previous Milestones"
+      ]
+     },
+     {
+      "category": "Events / Programs",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Event Overview and Key Highlights",
+       "Objectives and Rationale",
+       "Event Date and Venue",
+       "Organising Department / Faculty Coordinators",
+       "Number of Participants",
+       "Key Outputs / Deliverables",
+       "Measurable Impact / Success Indicators",
+       "Challenges and Mitigation",
+       "Sustainability / Continuation Plan",
+       "Related Initiatives / Previous Milestones"
+      ]
+     },
+     {
+      "category": "Research / Publications / Innovation",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Research / Innovation Overview",
+       "Research Paper / Project / Patent Title",
+       "Journal / Conference / Publisher",
+       "Publication Indexing (Scopus / Web of Science / SCI / Other)",
+       "DOI / Publication / Patent Number",
+       "Authors / Principal Investigator / Collaborators",
+       "Objectives and Research Rationale",
+       "Key Research Outputs / Deliverables",
+       "Measurable Research Impact",
+       "Recognition / External Validation",
+       "Related Research Initiatives"
+      ]
+     },
+     {
+      "category": "Infrastructure / Laboratory Development",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Infrastructure / Laboratory Upgrade Details",
+       "Objectives and Rationale",
+       "Equipment / Software / Facilities Procured",
+       "Installation / Commissioning Date",
+       "Key Outputs / Deliverables",
+       "Measurable Impact",
+       "Challenges and Mitigation",
+       "Sustainability / Maintenance Plan",
+       "Related Infrastructure Initiatives"
+      ]
+     },
+     {
+      "category": "MoU / Industry Collaboration / Partnerships",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Collaboration Overview and Key Highlights",
+       "Organisation / Industry / Institution Name",
+       "Nature of Collaboration",
+       "MoU Signing Date",
+       "Duration of Agreement",
+       "Objectives and Rationale",
+       "Activities Conducted Under the Collaboration",
+       "Key Outputs / Deliverables",
+       "Measurable Impact",
+       "Sustainability / Continuation Plan",
+       "Related Collaborations / Previous Milestones"
+      ]
+     },
+     {
+      "category": "Faculty Development / Professional Achievements",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Faculty Development Overview",
+       "Faculty Name / Names",
+       "Programme / Certification / Training Title",
+       "Organising Institution / Agency",
+       "Date / Duration",
+       "Number of Faculty Participants",
+       "Objectives and Rationale",
+       "Skills / Competencies Acquired",
+       "Key Outputs / Deliverables",
+       "Measurable Impact",
+       "Recognition / External Validation"
+      ]
+     },
+     {
+      "category": "Student Development / Outreach / Social Initiatives",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Initiative Overview and Key Highlights",
+       "Programme / Initiative Name",
+       "Date and Venue",
+       "Organising Faculty / Coordinators",
+       "Number of Student Participants",
+       "Number of External Beneficiaries",
+       "Objectives and Rationale",
+       "Key Outputs / Deliverables",
+       "Measurable Impact",
+       "Sustainability / Continuation Plan",
+       "Related Initiatives / Previous Milestones"
+      ]
+     },
+     {
+      "category": "Accreditation / Quality Assurance / Institutional Initiatives",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Initiative Overview and Key Highlights",
+       "Accreditation / Quality Framework (NBA / NAAC / NIRF / Other)",
+       "Objectives and Rationale",
+       "Compliance / Improvement Details",
+       "Key Outputs / Deliverables",
+       "Measurable Impact / Success Indicators",
+       "Approvals / Compliance / Accreditation Linkage",
+       "Challenges and Mitigation",
+       "Sustainability / Continuation Plan",
+       "Recognition / Ranking / External Validation"
+      ]
+     },
+     {
+      "category": "Other Significant Initiatives",
+      "gate": "Do you want to submit this category?",
+      "fields": [
+       "Initiative Overview and Key Highlights",
+       "Objectives and Rationale",
+       "Key Outputs / Deliverables",
+       "Measurable Impact / Success Indicators",
+       "Challenges and Mitigation",
+       "Sustainability / Continuation Plan",
+       "Recognition / External Validation",
+       "Related Initiatives / Previous Milestones"
+      ]
+     }
+    ],
+    "closing": [
+     "Event Report / Brochure / Flyer Link",
+     "Budget / Investment in Rupees (numbers only)",
+     "Funding Source",
+     "Infrastructure / Laboratory Upgrade Details",
+     "Approvals / Compliance / Accreditation Linkage (NBA, NAAC, NIRF)",
+     "Challenges and Mitigation",
+     "Sustainability / Maintenance / Continuation Plan",
+     "Recognition / Ranking / External Validation",
+     "Related Initiatives / Previous Milestones",
+     "Key Impact Badge / Metric (Example: 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "Photo Link (Google Drive Cloud URL)",
+     "Photo Caption & Persons in Image – Names from left to right",
+     "Official Evidence / Certificate / Supporting Document Link",
+     "Is this a Landmark / Milestone Achievement?",
+     "Permission to Publish this Submission",
+     "Accuracy and Authorization Confirmation"
+    ],
+    "closing_rename": {
+     "Infrastructure / Laboratory Upgrade Details": "Common section: Infrastructure / Laboratory Upgrade Details",
+     "Challenges and Mitigation": "Common section: Challenges and Mitigation",
+     "Recognition / Ranking / External Validation": "Common section: Recognition / Ranking / External Validation",
+     "Related Initiatives / Previous Milestones": "Common section: Related Initiatives / Previous Milestones"
+    }
+   },
+   "questions": [
+    {
+     "q": "Faculty Name",
+     "type": "text",
+     "req": true,
+     "key": "_submitter",
+     "nl": "author_or_person",
+     "submitter": true,
+     "zone": "common"
+    },
+    {
+     "q": "Faculty Email",
+     "type": "text",
+     "req": true,
+     "key": "x_faculty_email",
+     "zone": "common"
+    },
+    {
+     "q": "Department / Designation",
+     "type": "para",
+     "req": false,
+     "key": "x_department_designation",
+     "zone": "common"
+    },
+    {
+     "q": "Department Highlight Category",
+     "type": "choice",
+     "key": "category",
+     "nl": "category_id",
+     "zone": "category",
+     "choices": [
+      "Highlights",
+      "Achievements / Awards / Recognitions",
+      "Events / Programs",
+      "Research / Publications / Innovation",
+      "Infrastructure / Laboratory Development",
+      "MoU / Industry Collaboration / Partnerships",
+      "Faculty Development / Professional Achievements",
+      "Student Development / Outreach / Social Initiatives",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ],
+     "req": true
+    },
+    {
+     "q": "Event / Initiative Overview and Key Highlights",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Highlights"
+     ]
+    },
+    {
+     "q": "Objectives and Rationale",
+     "type": "para",
+     "req": false,
+     "key": "objectives",
+     "zone": "block",
+     "cats": [
+      "Highlights",
+      "Achievements / Awards / Recognitions",
+      "Events / Programs",
+      "Infrastructure / Laboratory Development",
+      "MoU / Industry Collaboration / Partnerships",
+      "Faculty Development / Professional Achievements",
+      "Student Development / Outreach / Social Initiatives",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Key Outputs / Deliverables",
+     "type": "para",
+     "req": false,
+     "key": "outputs",
+     "zone": "block",
+     "cats": [
+      "Highlights",
+      "Achievements / Awards / Recognitions",
+      "Events / Programs",
+      "Infrastructure / Laboratory Development",
+      "MoU / Industry Collaboration / Partnerships",
+      "Faculty Development / Professional Achievements",
+      "Student Development / Outreach / Social Initiatives",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Measurable Impact / Success Indicators",
+     "type": "para",
+     "req": false,
+     "key": "success_indicators",
+     "zone": "block",
+     "cats": [
+      "Highlights",
+      "Events / Programs",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Recognition / Ranking / External Validation",
+     "type": "para",
+     "req": false,
+     "key": "recognition",
+     "zone": "block",
+     "cats": [
+      "Highlights",
+      "Accreditation / Quality Assurance / Institutional Initiatives"
+     ]
+    },
+    {
+     "q": "Related Initiatives / Previous Milestones",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "zone": "block",
+     "cats": [
+      "Highlights",
+      "Events / Programs",
+      "Student Development / Outreach / Social Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Title",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "help": "Made from the overview; change it if you like.",
+     "derived": true,
+     "zone": "block",
+     "cats": [
+      "Highlights",
+      "Events / Programs",
+      "Infrastructure / Laboratory Development",
+      "MoU / Industry Collaboration / Partnerships",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Achievement Overview",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions"
+     ]
+    },
+    {
+     "q": "Award / Recognition Name",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions"
+     ]
+    },
+    {
+     "q": "Award Category / Position / Rank",
+     "type": "text",
+     "req": false,
+     "key": "x_award_category_position",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions"
+     ]
+    },
+    {
+     "q": "Awarding Organisation",
+     "type": "text",
+     "req": false,
+     "key": "partner_bodies",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions"
+     ]
+    },
+    {
+     "q": "Date of Achievement",
+     "type": "date",
+     "req": false,
+     "key": "start_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions"
+     ]
+    },
+    {
+     "q": "Measurable Impact",
+     "type": "para",
+     "req": false,
+     "key": "success_indicators",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions",
+      "Infrastructure / Laboratory Development",
+      "MoU / Industry Collaboration / Partnerships",
+      "Faculty Development / Professional Achievements",
+      "Student Development / Outreach / Social Initiatives"
+     ]
+    },
+    {
+     "q": "Recognition / External Validation",
+     "type": "para",
+     "req": false,
+     "key": "recognition",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions",
+      "Research / Publications / Innovation",
+      "Faculty Development / Professional Achievements",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Related Achievements / Previous Milestones",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "zone": "block",
+     "cats": [
+      "Achievements / Awards / Recognitions"
+     ]
+    },
+    {
+     "q": "Event Overview and Key Highlights",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Events / Programs"
+     ]
+    },
+    {
+     "q": "Event Date and Venue",
+     "type": "para",
+     "req": false,
+     "key": "venue",
+     "help": "Write the date and the venue, e.g. 12 March 2026, Seminar Hall.",
+     "zone": "block",
+     "cats": [
+      "Events / Programs"
+     ]
+    },
+    {
+     "q": "Organising Department / Faculty Coordinators",
+     "type": "para",
+     "req": false,
+     "key": "units_involved",
+     "zone": "block",
+     "cats": [
+      "Events / Programs"
+     ]
+    },
+    {
+     "q": "Number of Participants",
+     "type": "number",
+     "req": false,
+     "key": "participant_count",
+     "zone": "block",
+     "cats": [
+      "Events / Programs"
+     ]
+    },
+    {
+     "q": "Challenges and Mitigation",
+     "type": "para",
+     "req": false,
+     "key": "challenges",
+     "zone": "block",
+     "cats": [
+      "Events / Programs",
+      "Infrastructure / Laboratory Development",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Sustainability / Continuation Plan",
+     "type": "para",
+     "req": false,
+     "key": "sustainability",
+     "zone": "block",
+     "cats": [
+      "Events / Programs",
+      "MoU / Industry Collaboration / Partnerships",
+      "Student Development / Outreach / Social Initiatives",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Research / Innovation Overview",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Research Paper / Project / Patent Title",
+     "type": "text",
+     "req": false,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Journal / Conference / Publisher",
+     "type": "text",
+     "req": false,
+     "key": "partner_bodies",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Publication Indexing (Scopus / Web of Science / SCI / Other)",
+     "type": "text",
+     "req": false,
+     "key": "x_publication_indexing",
+     "nl": "impact_or_indexing",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "DOI / Publication / Patent Number",
+     "type": "text",
+     "req": false,
+     "key": "x_doi_number",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Authors / Principal Investigator / Collaborators",
+     "type": "para",
+     "req": false,
+     "key": "x_authors",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Objectives and Research Rationale",
+     "type": "para",
+     "req": false,
+     "key": "objectives",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Key Research Outputs / Deliverables",
+     "type": "para",
+     "req": false,
+     "key": "outputs",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Measurable Research Impact",
+     "type": "para",
+     "req": false,
+     "key": "success_indicators",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Related Research Initiatives",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "zone": "block",
+     "cats": [
+      "Research / Publications / Innovation"
+     ]
+    },
+    {
+     "q": "Infrastructure / Laboratory Upgrade Details",
+     "type": "para",
+     "req": true,
+     "key": "infra_upgrade",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Infrastructure / Laboratory Development"
+     ]
+    },
+    {
+     "q": "Equipment / Software / Facilities Procured",
+     "type": "para",
+     "req": false,
+     "key": "x_equipment_procured",
+     "zone": "block",
+     "cats": [
+      "Infrastructure / Laboratory Development"
+     ]
+    },
+    {
+     "q": "Installation / Commissioning Date",
+     "type": "date",
+     "req": false,
+     "key": "start_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "Infrastructure / Laboratory Development"
+     ]
+    },
+    {
+     "q": "Sustainability / Maintenance Plan",
+     "type": "para",
+     "req": false,
+     "key": "sustainability",
+     "zone": "block",
+     "cats": [
+      "Infrastructure / Laboratory Development"
+     ]
+    },
+    {
+     "q": "Related Infrastructure Initiatives",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "zone": "block",
+     "cats": [
+      "Infrastructure / Laboratory Development"
+     ]
+    },
+    {
+     "q": "Collaboration Overview and Key Highlights",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "Organisation / Industry / Institution Name",
+     "type": "text",
+     "req": true,
+     "key": "partner_bodies",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "Nature of Collaboration",
+     "type": "text",
+     "req": false,
+     "key": "highlight_type",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "MoU Signing Date",
+     "type": "date",
+     "req": false,
+     "key": "start_date",
+     "nl": "event_date",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "Duration of Agreement",
+     "type": "text",
+     "req": false,
+     "key": "x_agreement_duration",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "Activities Conducted Under the Collaboration",
+     "type": "para",
+     "req": false,
+     "key": "x_activities_conducted",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "Related Collaborations / Previous Milestones",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "zone": "block",
+     "cats": [
+      "MoU / Industry Collaboration / Partnerships"
+     ]
+    },
+    {
+     "q": "Faculty Development Overview",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Faculty Name / Names",
+     "type": "text",
+     "req": false,
+     "key": "x_faculty_names",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Programme / Certification / Training Title",
+     "type": "text",
+     "req": false,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Organising Institution / Agency",
+     "type": "text",
+     "req": false,
+     "key": "partner_bodies",
+     "nl": "organization_or_venue",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Date / Duration",
+     "type": "text",
+     "req": false,
+     "key": "venue",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Number of Faculty Participants",
+     "type": "number",
+     "req": false,
+     "key": "participant_count",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Skills / Competencies Acquired",
+     "type": "para",
+     "req": false,
+     "key": "x_skills_acquired",
+     "zone": "block",
+     "cats": [
+      "Faculty Development / Professional Achievements"
+     ]
+    },
+    {
+     "q": "Initiative Overview and Key Highlights",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "zone": "block",
+     "cats": [
+      "Student Development / Outreach / Social Initiatives",
+      "Accreditation / Quality Assurance / Institutional Initiatives",
+      "Other Significant Initiatives"
+     ]
+    },
+    {
+     "q": "Programme / Initiative Name",
+     "type": "text",
+     "req": false,
+     "key": "title",
+     "nl": "title",
+     "zone": "block",
+     "cats": [
+      "Student Development / Outreach / Social Initiatives"
+     ]
+    },
+    {
+     "q": "Date and Venue",
+     "type": "para",
+     "req": false,
+     "key": "venue",
+     "zone": "block",
+     "cats": [
+      "Student Development / Outreach / Social Initiatives"
+     ]
+    },
+    {
+     "q": "Organising Faculty / Coordinators",
+     "type": "para",
+     "req": false,
+     "key": "units_involved",
+     "zone": "block",
+     "cats": [
+      "Student Development / Outreach / Social Initiatives"
+     ]
+    },
+    {
+     "q": "Number of Student Participants",
+     "type": "number",
+     "req": false,
+     "key": "participant_count",
+     "zone": "block",
+     "cats": [
+      "Student Development / Outreach / Social Initiatives"
+     ]
+    },
+    {
+     "q": "Number of External Beneficiaries",
+     "type": "number",
+     "req": false,
+     "key": "x_external_beneficiaries",
+     "zone": "block",
+     "cats": [
+      "Student Development / Outreach / Social Initiatives"
+     ]
+    },
+    {
+     "q": "Accreditation / Quality Framework (NBA / NAAC / NIRF / Other)",
+     "type": "text",
+     "req": false,
+     "key": "accreditation_link",
+     "zone": "block",
+     "cats": [
+      "Accreditation / Quality Assurance / Institutional Initiatives"
+     ]
+    },
+    {
+     "q": "Compliance / Improvement Details",
+     "type": "para",
+     "req": false,
+     "key": "x_compliance_details",
+     "zone": "block",
+     "cats": [
+      "Accreditation / Quality Assurance / Institutional Initiatives"
+     ]
+    },
+    {
+     "q": "Approvals / Compliance / Accreditation Linkage",
+     "type": "para",
+     "req": false,
+     "key": "x_approvals_linkage",
+     "zone": "block",
+     "cats": [
+      "Accreditation / Quality Assurance / Institutional Initiatives"
+     ]
+    },
+    {
+     "q": "Event Report / Brochure / Flyer Link",
+     "type": "url",
+     "req": false,
+     "key": "report_url",
+     "nl": "evidence_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Budget / Investment in Rupees (numbers only)",
+     "type": "number",
+     "req": false,
+     "key": "budget_amount",
+     "zone": "closing"
+    },
+    {
+     "q": "Funding Source",
+     "type": "text",
+     "req": false,
+     "key": "funding_source",
+     "zone": "closing"
+    },
+    {
+     "q": "Common section: Infrastructure / Laboratory Upgrade Details",
+     "type": "para",
+     "req": false,
+     "key": "infra_upgrade",
+     "fill": true,
+     "zone": "closing"
+    },
+    {
+     "q": "Approvals / Compliance / Accreditation Linkage (NBA, NAAC, NIRF)",
+     "type": "para",
+     "req": false,
+     "key": "accreditation_link",
+     "fill": true,
+     "zone": "closing"
+    },
+    {
+     "q": "Common section: Challenges and Mitigation",
+     "type": "para",
+     "req": false,
+     "key": "challenges",
+     "fill": true,
+     "zone": "closing"
+    },
+    {
+     "q": "Sustainability / Maintenance / Continuation Plan",
+     "type": "para",
+     "req": false,
+     "key": "sustainability",
+     "fill": true,
+     "zone": "closing"
+    },
+    {
+     "q": "Common section: Recognition / Ranking / External Validation",
+     "type": "para",
+     "req": false,
+     "key": "recognition",
+     "fill": true,
+     "zone": "closing"
+    },
+    {
+     "q": "Common section: Related Initiatives / Previous Milestones",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "fill": true,
+     "zone": "closing"
+    },
+    {
+     "q": "Key Impact Badge / Metric (Example: 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "type": "text",
+     "req": false,
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Link (Google Drive Cloud URL)",
+     "type": "url",
+     "req": false,
+     "key": "media_url",
+     "nl": "photo_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Photo Caption & Persons in Image – Names from left to right",
+     "type": "text",
+     "req": false,
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "zone": "closing"
+    },
+    {
+     "q": "Official Evidence / Certificate / Supporting Document Link",
+     "type": "url",
+     "req": false,
+     "key": "evidence_url",
+     "nl": "evidence_url",
+     "zone": "closing"
+    },
+    {
+     "q": "Is this a Landmark / Milestone Achievement?",
+     "type": "choice",
+     "req": true,
+     "key": "is_landmark",
+     "choices": [
+      "No (Standard Entry)",
+      "Yes (Nominate for Spotlight Feature)"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Permission to Publish this Submission",
+     "type": "choice",
+     "req": true,
+     "key": "publish_permission",
+     "choices": [
+      "Yes - may be published in the IT Chronicles newsletter",
+      "No - keep for internal records only"
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Accuracy and Authorization Confirmation",
+     "type": "confirm",
+     "req": true,
+     "key": "authorization_confirmed",
+     "choices": [
+      "I confirm the information is accurate and I am authorised to submit it."
+     ],
+     "zone": "closing"
+    },
+    {
+     "q": "Submitting Faculty (select your name)",
+     "type": "faculty",
+     "req": true,
+     "key": "_submitter",
+     "submitter": true,
+     "legacy": true
+    },
+    {
+     "q": "Convener / Coordinator",
+     "type": "faculty",
+     "req": true,
+     "key": "convener_emp_id",
+     "nl": "author_or_person",
+     "tf": "names_only",
+     "legacy": true
+    },
+    {
+     "q": "Other Faculty Involved (optional, one per line: EmployeeID - Name)",
+     "type": "roster_any",
+     "req": false,
+     "key": "_faculty_involved",
+     "legacy": true
+    },
+    {
+     "q": "Official Title of Event / Upgrade / Milestone",
+     "type": "text",
+     "req": true,
+     "key": "title",
+     "nl": "title",
+     "legacy": true
+    },
+    {
+     "q": "Highlight Type",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Event",
+      "Infrastructure upgrade",
+      "Milestone",
+      "Student activity",
+      "Other"
+     ],
+     "key": "highlight_type",
+     "legacy": true
+    },
+    {
+     "q": "Department / Programme / Unit Involved",
+     "type": "text",
+     "req": false,
+     "key": "units_involved",
+     "legacy": true
+    },
+    {
+     "q": "Start Date / Event Date",
+     "type": "date",
+     "req": true,
+     "key": "start_date",
+     "nl": "event_date",
+     "legacy": true
+    },
+    {
+     "q": "End Date",
+     "type": "date",
+     "req": false,
+     "key": "end_date",
+     "legacy": true
+    },
+    {
+     "q": "Implementation Status",
+     "type": "list",
+     "req": false,
+     "choices": [
+      "Planned",
+      "Ongoing",
+      "Completed"
+     ],
+     "key": "impl_status",
+     "legacy": true
+    },
+    {
+     "q": "Venue / Campus / Facility",
+     "type": "text",
+     "req": false,
+     "key": "venue",
+     "legacy": true
+    },
+    {
+     "q": "Organizing / Funding / Partner Bodies",
+     "type": "text",
+     "req": false,
+     "key": "partner_bodies",
+     "legacy": true
+    },
+    {
+     "q": "Target Audience / Beneficiaries",
+     "type": "text",
+     "req": false,
+     "key": "target_audience",
+     "legacy": true
+    },
+    {
+     "q": "Total Participants / Direct Beneficiaries (number)",
+     "type": "number",
+     "req": false,
+     "key": "participant_count",
+     "legacy": true
+    },
+    {
+     "q": "Event Overview and Key Highlights",
+     "type": "para",
+     "req": true,
+     "key": "overview",
+     "nl": "description",
+     "legacy": true
+    },
+    {
+     "q": "Objectives and Rationale",
+     "type": "para",
+     "req": false,
+     "key": "objectives",
+     "legacy": true
+    },
+    {
+     "q": "Key Outputs / Deliverables",
+     "type": "para",
+     "req": false,
+     "key": "outputs",
+     "legacy": true
+    },
+    {
+     "q": "Measurable Impact / Success Indicators",
+     "type": "para",
+     "req": false,
+     "key": "success_indicators",
+     "legacy": true
+    },
+    {
+     "q": "Infrastructure / Laboratory Upgrade Details",
+     "type": "para",
+     "req": false,
+     "key": "infra_upgrade",
+     "legacy": true
+    },
+    {
+     "q": "Challenges and Mitigation",
+     "type": "para",
+     "req": false,
+     "key": "challenges",
+     "legacy": true
+    },
+    {
+     "q": "Recognition / Ranking / External Validation",
+     "type": "text",
+     "req": false,
+     "key": "recognition",
+     "legacy": true
+    },
+    {
+     "q": "Related Initiatives / Previous Milestones",
+     "type": "para",
+     "req": false,
+     "key": "related_initiatives",
+     "legacy": true
+    },
+    {
+     "q": "Key Impact Badge / Metric",
+     "type": "text",
+     "req": false,
+     "help": "Short badge for the newsletter (e.g. 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)",
+     "key": "badge_tag",
+     "nl": "badge_tag",
+     "legacy": true
+    },
+    {
+     "q": "Photo Link (Google Drive / Cloud URL)",
+     "type": "url",
+     "req": false,
+     "help": "High-resolution photo. Set sharing to 'Anyone with the link can view'.",
+     "key": "media_url",
+     "nl": "photo_url",
+     "legacy": true
+    },
+    {
+     "q": "Photo Caption & Persons in Image",
+     "type": "text",
+     "req": false,
+     "help": "Names of the people shown, left to right",
+     "key": "photo_caption",
+     "nl": "photo_caption",
+     "legacy": true
+    }
+   ],
+   "date_fallback": "timestamp",
+   "legacy_categories": [
+    "Workshops & FDPs Organized",
+    "Conferences & Symposia Organized",
+    "Infrastructure & Lab Upgrades",
+    "Student Club & Society Activities",
+    "Department Statistics & Major Milestones"
+   ]
+  }
+ },
+ "placement": {
+  "title": "IT Department - Student Placement Data Collection Form",
+  "description": "Collected for the IT Department placement records. Submit one response per offer (if you hold no offer, submit once with the company left blank). Your roll number and class are never shown to other students - only company-level statistics and anonymous experiences are.",
+  "questions": [
+   {
+    "q": "A. You",
+    "type": "section"
+   },
+   {
+    "q": "Roll Number",
+    "type": "roll",
+    "req": true,
+    "key": "roll_no"
+   },
+   {
+    "q": "Placement Academic Year",
+    "type": "years",
+    "req": true,
+    "key": "ay_id",
+    "choices": [
+     "2024-25",
+     "2025-26",
+     "2026-27",
+     "2027-28",
+     "2028-29",
+     "Other"
+    ]
+   },
+   {
+    "q": "Placement Preference",
+    "type": "choice",
+    "req": true,
+    "choices": [
+     "Opted In",
+     "Opted Out"
+    ],
+    "key": "opt_status"
+   },
+   {
+    "q": "Reason for Opting Out (Complete only if Opted Out)",
+    "type": "list",
+    "req": false,
+    "choices": [
+     "Higher Studies",
+     "Entrepreneurship / Startup",
+     "Personal Reasons",
+     "Family Reasons",
+     "Competitive Examination Preparation",
+     "Other"
+    ],
+    "key": "opt_out_reason",
+    "aliases": [
+     "Reason for Opting Out (only if Opted Out)"
+    ]
+   },
+   {
+    "q": "B. Offer (leave the company blank if you have no offer)",
+    "type": "section"
+   },
+   {
+    "q": "Company Name",
+    "type": "text",
+    "req": false,
+    "key": "company"
+   },
+   {
+    "q": "Company Sector",
+    "type": "list",
+    "req": false,
+    "choices": [
+     "Information Technology",
+     "Software / Product Development",
+     "IT Services",
+     "Core Engineering",
+     "Consulting",
+     "Finance / Banking",
+     "Manufacturing",
+     "Research / Education",
+     "Healthcare",
+     "Government / Public Sector",
+     "Startup",
+     "Other"
+    ],
+    "key": "sector"
+   },
+   {
+    "q": "Offer Type",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "FTE",
+     "Intern",
+     "FTE+Intern",
+     "Intern-Converted FTE"
+    ],
+    "key": "offer_type"
+   },
+   {
+    "q": "Package in LPA (numbers only, for FTE offers)",
+    "type": "number",
+    "req": false,
+    "key": "package_lpa"
+   },
+   {
+    "q": "Internship Stipend in Rupees per Month (numbers only)",
+    "type": "number",
+    "req": false,
+    "key": "stipend_per_month"
+   },
+   {
+    "q": "Job Role",
+    "type": "text",
+    "req": false,
+    "key": "job_role"
+   },
+   {
+    "q": "Work Location",
+    "type": "text",
+    "req": false,
+    "key": "work_location"
+   },
+   {
+    "q": "Offer Status",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "Accepted",
+     "Declined",
+     "Pending"
+    ],
+    "key": "offer_status"
+   },
+   {
+    "q": "Recruitment Mode",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "On-campus",
+     "Off-campus"
+    ],
+    "key": "recruitment_mode"
+   },
+   {
+    "q": "Offer Date",
+    "type": "date",
+    "req": false,
+    "key": "offer_date"
+   },
+   {
+    "q": "C. Interview experience",
+    "type": "section"
+   },
+   {
+    "q": "Number of Interview Rounds",
+    "type": "number",
+    "req": false,
+    "key": "rounds_count"
+   },
+   {
+    "q": "Round-wise Details (e.g. Online Test, Technical 1, Technical 2, HR)",
+    "type": "para",
+    "req": false,
+    "help": "e.g. Online test, Technical 1, Technical 2, HR",
+    "key": "round_details",
+    "aliases": [
+     "Round-wise Details"
+    ]
+   },
+   {
+    "q": "Interview Difficulty",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "Easy",
+     "Medium",
+     "Hard"
+    ],
+    "key": "difficulty"
+   },
+   {
+    "q": "Questions Asked",
+    "type": "para",
+    "req": false,
+    "key": "questions_asked"
+   },
+   {
+    "q": "Interview Result",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "Selected",
+     "Rejected",
+     "Waitlisted"
+    ],
+    "key": "result"
+   },
+   {
+    "q": "Your Interview Experience",
+    "type": "para",
+    "req": false,
+    "key": "interview_experience"
+   },
+   {
+    "q": "Tips for Juniors",
+    "type": "para",
+    "req": false,
+    "key": "tips"
+   },
+   {
+    "q": "D. Internship experience",
+    "type": "section"
+   },
+   {
+    "q": "Internship Duration (e.g. 6 months)",
+    "type": "text",
+    "req": false,
+    "help": "e.g. 6 months",
+    "key": "intern_duration",
+    "aliases": [
+     "Internship Duration"
+    ]
+   },
+   {
+    "q": "Internship Mode",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "Onsite",
+     "Remote",
+     "Hybrid"
+    ],
+    "key": "intern_mode"
+   },
+   {
+    "q": "Internship Role",
+    "type": "text",
+    "req": false,
+    "key": "intern_role"
+   },
+   {
+    "q": "Technologies Used in Internship",
+    "type": "text",
+    "req": false,
+    "key": "tech_stack"
+   },
+   {
+    "q": "Work Summary",
+    "type": "para",
+    "req": false,
+    "key": "work_summary"
+   },
+   {
+    "q": "Key Learnings",
+    "type": "para",
+    "req": false,
+    "key": "learnings"
+   },
+   {
+    "q": "Internship Rating (1 = Poor, 5 = Excellent)",
+    "type": "choice",
+    "req": false,
+    "choices": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ],
+    "key": "rating",
+    "aliases": [
+     "Internship Rating (1 = poor, 5 = excellent)"
+    ]
+   },
+   {
+    "q": "Your Internship Experience",
+    "type": "para",
+    "req": false,
+    "key": "internship_experience"
+   },
+   {
+    "q": "E. Consent",
+    "type": "section"
+   },
+   {
+    "q": "Consent to Share Experience Anonymously",
+    "type": "choice",
+    "req": true,
+    "help": "Your name, roll number and photo are never shown, whatever you choose.",
+    "choices": [
+     "Yes - share anonymously with juniors",
+     "No - keep private"
+    ],
+    "key": "consent"
+   },
+   {
+    "q": "Accuracy Confirmation",
+    "type": "confirm",
+    "req": true,
+    "choices": [
+     "I confirm the information is accurate."
+    ],
+    "key": "authorization_confirmed"
+   }
+  ]
+ }
+}

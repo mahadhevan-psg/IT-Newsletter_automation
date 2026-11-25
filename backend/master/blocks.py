@@ -1,23 +1,19 @@
 """Response sheets of the category-based forms.
 
-One response can hold several categories (a person answers YES or NO to each, fills the YES ones, then a few common questions).
-The sheet therefore repeats titles - "Objectives and Rationale" appears in every category - so a row is understood by POSITION:
+One response can hold several categories (the person picks a category, fills its section, then picks the next one or finishes). The sheet
+repeats titles - "Target Audience" appears in several sections - so a row is understood by POSITION:
 
-    common columns | gate, category fields | gate, category fields | ... | closing columns
+    common columns | "which category?", section fields | "which remaining category?", section fields | ... | closing columns
 
 Rows are read into dicts whose repeated titles are made unique ('Title', 'Title#2' ... see common.uniquify_headers) and whose key order is the
-column order. expand() cuts such a row into one FLAT row per category answered: the common columns, that category's fields, the closing columns,
-and the category's name under the form's category question. Flat rows look exactly like the single-category rows of the earlier forms, so the
-importer, the review screen and the newsletter work on one entry (one category) at a time.
+column order. expand() cuts such a row into one FLAT row per section answered: the common columns, that section's fields, the closing columns,
+and the category's name under the form's category question, so the importer, the review screen and the newsletter work on one entry at a time.
 
-The layout lives in config/master_forms.json ("layout", "category_config"), generated from gform_scripts/new_forms.py.
+The layout lives in config/master_forms.json ("layout"), generated from gform_scripts/new_forms.py.
 """
 from typing import Any, Dict, List, Optional
 
 from backend.master.common import base_title, norm_header
-
-GATE = "do you want to submit"
-
 
 def _spec(form_id: str) -> Dict[str, Any]:
     from backend.master import ingest
@@ -70,7 +66,8 @@ def category_of(spec: Dict[str, Any], by_norm: Dict[str, str]) -> Optional[str]:
 
 
 def derive_title(vals: Dict[str, str], cfg: Dict[str, Any]) -> Optional[str]:
-    """A title for an entry whose form has no title question: the first line of the first listed answer, shortened."""
+    """A title for an entry whose form has no title question: the first line of the first listed answer, shortened (the category's name
+    when none of those was answered)."""
     for key in cfg.get("title_from") or []:
         text = " ".join(str(vals.get(key) or "").split())
         if text:
@@ -78,56 +75,49 @@ def derive_title(vals: Dict[str, str], cfg: Dict[str, Any]) -> Optional[str]:
             if len(first) > 90:
                 first = first[:87].rsplit(" ", 1)[0] + "..."
             return (cfg.get("title_prefix") or "") + first
-    return None
+    return cfg.get("title_fallback")
 
 
-def is_blocky(row: Dict[str, Any]) -> bool:
-    return any(norm_header(base_title(k)).startswith(GATE) for k in row)
+def _gates(spec: Dict[str, Any]) -> set:
+    return {norm_header(b["gate"]) for b in spec["layout"]["blocks"]}
 
 
-def _gate_category(spec: Dict[str, Any], gate_title: str, n: int) -> Optional[str]:
-    g = norm_header(gate_title)
-    best = None
-    for name in spec["categories"]:
-        if norm_header(name) and norm_header(name) in g and (best is None or len(name) > len(best)):
-            best = name
-    if best:
-        return best
-    return spec["categories"][n] if n < len(spec["categories"]) else None          # "Do you want to submit this category?": by order
+def is_blocky(spec: Dict[str, Any], row: Dict[str, Any]) -> bool:
+    gates = _gates(spec)
+    return any(norm_header(base_title(k)) in gates for k in row)
 
 
 def expand(form_id: str, row: Dict[str, Any]) -> List[Dict[str, str]]:
-    """One response row -> one flat row per category answered (a row of the earlier single-category forms comes back as it is)."""
+    """One response row -> one flat row per section answered (a row that already holds one entry comes back as it is).
+    The sheet has, in order: the common columns, then for every section a "which category ...?" column followed by that section's columns, then
+    the closing columns."""
     spec = _spec(form_id)
-    if not has_blocks(spec) or not is_blocky(row):
+    if not has_blocks(spec) or not is_blocky(spec, row):
         return [dict(row)]
     keys = list(row.keys())
-    gates = [i for i, k in enumerate(keys) if norm_header(base_title(k)).startswith(GATE)]
-    widths = {b["category"]: len(b["fields"]) for b in spec["layout"]["blocks"]}
-    rename = spec["layout"].get("closing_rename", {})
+    names = _gates(spec)
+    gates = [i for i, k in enumerate(keys) if norm_header(base_title(k)) in names]
     cat_col = category_title(spec)
     top = {base_title(k): row[k] for k in keys[:gates[0]] if k}
-    spans = []
-    for n, gi in enumerate(gates):
-        cat = _gate_category(spec, base_title(keys[gi]), n)
-        end = gates[n + 1] if n + 1 < len(gates) else min(len(keys), gi + 1 + widths.get(cat, len(keys)))
-        spans.append((cat, gi, end))
-    closing = {}
-    for k in keys[spans[-1][2]:]:
-        t = base_title(k)
-        closing[rename.get(t, t)] = row[k]
+    spans, end = [], gates[0]
+    for gi, blk in zip(gates, spec["layout"]["blocks"]):
+        end = min(len(keys), gi + 1 + len(blk["fields"]))
+        spans.append((blk["category"], gi, end))
+    rename = spec["layout"].get("closing_rename", {})                      # a closing column whose title a section also uses
+    closing = {rename.get(base_title(k), base_title(k)): row[k] for k in keys[end:]}
     out = []
-    for cat, gi, end in spans:
-        gate_value = str(row[keys[gi]] or "").strip().lower()
-        fields = {base_title(k): row[k] for k in keys[gi + 1:end]}
-        if cat is None or gate_value.startswith("no") or (not gate_value.startswith("yes") and not any(str(v or "").strip() for v in fields.values())):
+    for cat, gi, stop in spans:
+        fields = {base_title(k): row[k] for k in keys[gi + 1:stop]}
+        if cat not in spec["categories"] and cat not in spec.get("category_aliases", {}):
+            continue
+        if not any(str(v or "").strip() for v in fields.values()):
             continue
         flat: Dict[str, str] = {}
         flat.update(top)
-        flat[cat_col] = cat
+        flat[cat_col] = spec.get("category_aliases", {}).get(cat, cat)
         flat.update(fields)
         flat.update(closing)
-        if not str(flat.get("Email Address") or "").strip():
+        if not str(flat.get("Email Address") or flat.get("Email") or "").strip():
             alt = next((v for k, v in flat.items() if norm_header(k) == "faculty email" and str(v or "").strip()), "")
             if alt:
                 flat["Email Address"] = alt

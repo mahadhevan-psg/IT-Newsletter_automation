@@ -18,6 +18,8 @@ from backend.review import schedule, service, sheets  # noqa: E402
 from database import db_manager  # noqa: E402
 from database.master_db import db, init_master_db  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
+
 PASS = "Review-Test-1"
 client = TestClient(app)
 

@@ -1,5 +1,6 @@
 /* IT Department Portal: staff (tutors, coordinators, HoD, Admin, faculty). Pages shown depend on the signed-in person's roles. */
 const $ = (s, r = document) => r.querySelector(s);
+const fileHref = v => String(v || '').startsWith('media://') ? '/api/media/' + String(v).slice(8) : String(v || '');   // an uploaded photo or document
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let token = sessionStorage.getItem('tok'), me = null, meta = null, current = 'dash';
 
@@ -602,7 +603,7 @@ const initials = n => (n || '?').replace(/^(Dr|Prof|Mr|Mrs|Ms)\.?\s+/i, '').spli
 function actCard(i) {
   const facts = i.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
   const notes = i.notes.map(([k, v]) => `<h5>${esc(k)}</h5><p>${esc(v)}</p>`).join('');
-  const links = i.links.map(l => `<a class="chip-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)} ↗</a>`).join('');
+  const links = i.links.map(l => `<a class="chip-link" href="${esc(fileHref(l.url))}" target="_blank" rel="noopener noreferrer">${esc(l.label)} ↗</a>`).join('');
   return `<details class="act"><summary><div class="act-top"><span class="act-title">${esc(i.title)}</span><span class="act-date">${esc(i.date || i.ay_id || '')}</span></div>
     <div class="act-badges">${i.role ? `<span class="pill role">${esc(i.role)}</span>` : ''}${i.badges.map(b => `<span class="pill ${b.tone || ''}">${esc(b.text)}</span>`).join('')}</div></summary>
     <div class="act-body">${facts ? `<dl class="facts">${facts}</dl>` : ''}${notes}${links ? `<div class="links">${links}</div>` : ''}${!facts && !notes && !links ? '<p class="muted">No more details were entered.</p>' : ''}</div></details>`;

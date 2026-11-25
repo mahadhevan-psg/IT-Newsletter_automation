@@ -268,6 +268,8 @@ CREATE TABLE IF NOT EXISTS department_highlights (
     sustainability     TEXT,
     recognition        TEXT,
     related_initiatives TEXT,
+    agreement_effective DATE,
+    agreement_expiry    DATE,
     report_url         TEXT
 );
 
@@ -343,6 +345,7 @@ CREATE TABLE IF NOT EXISTS placement_offers (
     offer_date    DATE,
     offer_status  TEXT NOT NULL DEFAULT 'Accepted' CHECK (offer_status IN ('Accepted','Declined','Revoked','Pending')),
     is_on_campus  INTEGER,
+    photo         TEXT,
     updated_by    TEXT,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -358,6 +361,8 @@ CREATE TABLE IF NOT EXISTS interview_experiences (
     round_details   TEXT,
     difficulty      TEXT,
     questions_asked TEXT,
+    concepts        TEXT,
+    photo           TEXT,
     result          TEXT,
     experience      TEXT,
     tips            TEXT,
@@ -375,6 +380,8 @@ CREATE TABLE IF NOT EXISTS internship_experiences (
     mode          TEXT,
     role          TEXT,
     tech_stack    TEXT,
+    concepts      TEXT,
+    photo         TEXT,
     work_summary  TEXT,
     learnings     TEXT,
     rating        INTEGER CHECK (rating BETWEEN 1 AND 5),
@@ -409,12 +416,12 @@ WHERE o.offer_status = 'Accepted';
 
 DROP VIEW IF EXISTS v_diary_interviews;
 CREATE VIEW v_diary_interviews AS
-SELECT e.org_id, e.ay_id, e.rounds_count, e.round_details, e.difficulty, e.questions_asked, e.result, e.experience, e.tips
+SELECT e.org_id, e.ay_id, e.rounds_count, e.round_details, e.difficulty, e.questions_asked, e.result, e.experience, e.tips, e.concepts
 FROM interview_experiences e WHERE e.is_shareable = 1;
 
 DROP VIEW IF EXISTS v_diary_internships;
 CREATE VIEW v_diary_internships AS
-SELECT e.org_id, e.ay_id, e.duration, e.mode, e.role, e.tech_stack, e.work_summary, e.learnings, e.rating, e.experience
+SELECT e.org_id, e.ay_id, e.duration, e.mode, e.role, e.tech_stack, e.work_summary, e.learnings, e.rating, e.experience, e.concepts
 FROM internship_experiences e WHERE e.is_shareable = 1;
 
 -- One flat row per (student, achievement): drives every student filter and chart.

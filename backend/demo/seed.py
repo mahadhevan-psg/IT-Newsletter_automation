@@ -53,15 +53,18 @@ def ensure_safe(conn):
 _titles: Dict[str, Dict[str, str]] = {}
 
 
-def _heads(form_id: str) -> Dict[str, str]:
-    if form_id not in _titles:
-        _titles[form_id] = {q["key"]: q["q"] for q in ingest.specs()["forms"][form_id]["questions"] if q.get("key")}
-    return _titles[form_id]
+def _heads(form_id: str, category: str = None) -> Dict[str, str]:
+    """{field key: column title} for one category's questions (sections name the same field differently)."""
+    cache = (form_id, category, id(ingest.specs()))
+    if cache not in _titles:
+        _titles[cache] = {q["key"]: q["q"] for q in ingest.specs()["forms"][form_id]["questions"]
+                          if q.get("key") and (category is None or not q.get("cats") or category in q["cats"])}
+    return _titles[cache]
 
 
-def _choice(form_id: str, key: str, starts: str) -> str:
+def _choice(form_id: str, key: str, starts: str, category: str = None) -> str:
     for q in ingest.specs()["forms"][form_id]["questions"]:
-        if q.get("key") == key:
+        if q.get("key") == key and (category is None or not q.get("cats") or category in q["cats"]):
             return next((c for c in q.get("choices", []) if c.lower().startswith(starts.lower())), starts)
     return starts
 
@@ -69,9 +72,9 @@ def _choice(form_id: str, key: str, starts: str) -> str:
 def _row(form_id: str, when: date, email: str, **keys) -> Dict[str, str]:
     ts = min(when + timedelta(days=_R.randint(1, 12)), date.today())
     raw = {"Timestamp": f"{ts.isoformat()} {_R.randint(9, 17):02d}:{_R.randint(0, 59):02d}:00", "Email Address": email}
-    heads = _heads(form_id)
+    heads = _heads(form_id, keys.get("category"))
     for k, v in keys.items():
-        if v not in (None, ""):
+        if v not in (None, "") and k in heads:                      # a detail this section does not ask for is left out
             raw[heads[k]] = str(v)
     return raw
 
@@ -207,14 +210,11 @@ def _seed_submissions(conn, cohorts: List[Cohort]) -> None:
     senior = [f[0] for f in D.FACULTY if "Professor" in f[2] and "Assistant" not in f[2]]
     all_rolls = [r for c in cohorts for r in c.rolls]
     final_rolls = [r for c in cohorts if c.final for r in c.rolls]
-    yes, perm = _choice("form_research", "is_landmark", "Yes"), "Yes - may be published in the IT Chronicles newsletter"
-    no_lm = _choice("form_research", "is_landmark", "No")
-    lm = lambda p=0.08: yes if _R.random() < p else no_lm
     ext_line = lambda: "EXT - " + " - ".join(_R.choice(D.EXTERNAL_PEOPLE))
 
-    # ---- research & innovation
+    # ---- research contributions & innovations (journal, conference, book, funded, consultancy, patent, innovation, seminar)
     cats = _categories("form_research")
-    for ci, count in enumerate([24, 20, 5, 9, 6, 9, 6]):
+    for ci, count in enumerate([24, 20, 5, 9, 6, 9, 6, 4]):
         cat = cats[ci]
         for n in range(count):
             lead = _R.choice(senior if _R.random() < .55 else fac)
@@ -223,142 +223,135 @@ def _seed_submissions(conn, cohorts: List[Cohort]) -> None:
                 authors.append(ext_line())
             when = _rdate(lo, hi)
             title = f"{_R.choice(D.APPROACHES)} {_R.choice(['Framework', 'Model', 'Approach', 'Architecture'])} for {_R.choice(D.APPLICATIONS).title()} Using {_R.choice(D.TOPICS).title()}"
-            k: Dict[str, Any] = dict(_submitter=lead, category=cat, title=title, _contributors="\n".join(authors), output_date=when.isoformat(), is_landmark=lm(),
-                                     publish_permission=perm, abstract=f"This work studies {_R.choice(D.TOPICS)} for {_R.choice(D.APPLICATIONS)} and reports measurable gains over strong baselines on a real dataset.",
-                                     key_findings="Improved accuracy and lower cost than the existing approach.", impact="Ready to be piloted by the department and an industry partner.")
+            k: Dict[str, Any] = dict(_submitter=lead, category=cat, title=title, _contributors="\n".join(authors), output_date=when.isoformat(),
+                                     abstract=f"This work studies {_R.choice(D.TOPICS)} for {_R.choice(D.APPLICATIONS)} and reports measurable gains over strong baselines on a real dataset.",
+                                     key_findings="Improved accuracy and lower cost than the existing approach.", problem="Existing approaches are costly and inaccurate.")
             if ci == 0:
                 v, idx = _R.choice(D.JOURNALS)
-                k.update(current_status=_R.choice(["Published"] * 4 + ["Accepted", "Under Review"]), venue_publisher=v, indexing=idx, quartile=_R.choice(["Q1", "Q2", "Q2", "Q3", "Q4"]) if idx != "UGC-CARE" else "Not applicable",
-                         impact_factor=round(_R.uniform(1.4, 9.2), 1), review_status="Peer reviewed", identifier=f"10.{_R.randint(1000, 1109)}/{v.split()[0].lower()}.{when.year}.{_R.randint(100000, 999999)}",
-                         funding_status="Not funded")
+                k.update(venue_publisher=v, indexing=_choice("form_research", "indexing", idx.split()[0], cat), quartile=_R.choice(["Q1", "Q2", "Q2", "Q3", "Q4"]),
+                         impact_factor=round(_R.uniform(1.4, 9.2), 1), identifier=f"10.{_R.randint(1000, 1109)}/{v.split()[0].lower()}.{when.year}.{_R.randint(100000, 999999)}")
             elif ci == 1:
-                k.update(current_status=_R.choice(["Published", "Published", "Accepted"]), venue_publisher=_R.choice(D.CONFERENCES), indexing=_R.choice(["Scopus", "IEEE Xplore", "Not indexed"]),
-                         conference_level=_R.choice(["International", "International", "National"]), review_status="Peer reviewed", quartile="Not applicable")
+                k.update(venue_publisher=_R.choice(D.CONFERENCES), indexing=_R.choice(["Scopus", "IEEE Xplore", "Others"]), conference_level=_R.choice(["International", "International", "National"]))
             elif ci == 2:
-                k.update(current_status="Published", venue_publisher=_R.choice(D.PUBLISHERS), identifier=f"978-{_R.randint(81, 93)}-{_R.randint(1000, 9999)}-{_R.randint(100, 999)}-{_R.randint(0, 9)}", indexing="Not applicable")
+                k.update(identifier=f"978-{_R.randint(81, 93)}-{_R.randint(1000, 9999)}-{_R.randint(100, 999)}-{_R.randint(0, 9)}")
             elif ci == 3:
-                k.update(current_status=_R.choice(["Ongoing", "Ongoing", "Completed"]), venue_publisher=_R.choice(D.AGENCIES), funding_status="Funded", funding_amount=_R.choice([3, 5, 7.5, 12, 18, 25, 40]) * 100000,
-                         project_start=(when - timedelta(days=_R.randint(200, 700))).isoformat(), collaborators=_R.choice(D.INSTITUTIONS), identifier=f"SERB/F/{_R.randint(1000, 9999)}/{when.year}")
+                k.update(current_status=_R.choice(["Ongoing", "Ongoing", "Completed"]), venue_publisher=_R.choice(D.AGENCIES), funding_amount=_R.choice([3, 5, 7.5, 12, 18, 25, 40]) * 100000,
+                         collaborators=_R.choice(D.INSTITUTIONS), contribution_statement="Principal Investigator (PI)")
             elif ci == 4:
-                k.update(current_status=_R.choice(["Completed", "Ongoing"]), venue_publisher=_R.choice(D.CLIENTS), funding_status="Funded", funding_amount=_R.choice([0.5, 1, 2, 3.5, 6, 9]) * 100000)
+                k.update(current_status=_R.choice(["Completed", "Ongoing"]), venue_publisher=_R.choice(D.CLIENTS), funding_amount=_R.choice([0.5, 1, 2, 3.5, 6, 9]) * 100000)
             elif ci == 5:
-                k.update(current_status=_R.choice(["Filed", "Filed", "Granted"]), venue_publisher="Indian Patent Office", identifier=f"{when.year}41{_R.randint(100000, 999999)}", ip_status="Filed jointly with the institution")
-            else:
-                k.update(current_status="Completed", venue_publisher="Department Innovation Cell", ip_status="Open source release")
+                k.update(current_status=_R.choice(["Patents filed", "Patents filed", "Patent granted"]), identifier=f"{when.year}41{_R.randint(100000, 999999)}")
             _submit(conn, "form_research", _row("form_research", when, _fac_email(lead), **k))
 
-    # ---- faculty achievements
+    # ---- faculty participation and achievements (awards, certifications, lectures, FDPs, memberships)
     cats = _categories("form_faculty")
-    recog = ["Award", "Certification", "Invited lecture / Keynote", "Resource person / Session chair", "FDP / Workshop attended", "Editorial / Reviewer role"]
-    for ci, count in enumerate([12, 14, 12, 8, 14, 8]):
+    for cat_name, ci, count in [("Awards & Honors Received", 0, 14), ("Certifications & Upskilling Completed", 1, 14), ("Invited Keynote / Expert Lectures Delivered", 2, 12),
+                                ("Resource Person / Session Chair Roles", 5, 8), ("FDP / Workshops Attended", 3, 16), ("Membership in Professional Body & Editorial Board Roles", 4, 8)]:
+        assert cat_name in cats
         for n in range(count):
             emp = fac[(ci * 7 + n * 3) % len(fac)]
             when = _rdate(lo, hi)
             title, host, hours = {
-                0: (_R.choice(D.AWARDS), _R.choice(D.AWARD_BODIES), None), 1: (_R.choice(D.CERTIFICATIONS), "NPTEL / Industry certification body", _R.choice([40, 60, 120])),
-                2: (f"Keynote: {_R.choice(D.TALKS)}", _R.choice(D.INSTITUTIONS), 2), 3: (f"Resource person: {_R.choice(D.TALKS)}", _R.choice(D.INSTITUTIONS), _R.choice([3, 6])),
-                4: (f"FDP: {_R.choice(D.FDP_TOPICS)}", _R.choice(D.INSTITUTIONS), _R.choice([30, 40])), 5: (_R.choice(D.PROFESSIONAL_ROLES), "Professional body", None)}[ci]
-            k = dict(emp_id=emp, category=cats[ci], title=title, recognition_type=recog[ci], host_org=host, level=_R.choice(["State", "National", "National", "International", "College"]),
-                     start_date=when.isoformat(), end_date=(when + timedelta(days=int(hours // 6) if hours and hours >= 30 else 0)).isoformat(), city_venue=_R.choice(["Coimbatore", "Chennai", "Madurai", "Online"]),
-                     duration_hours=hours, description=f"{title} - recognised for contributions to teaching and research in the department.", outcome_impact="Shared learnings with colleagues through an internal session.",
-                     is_team="Individual", is_landmark=lm(), publish_permission=perm)
+                0: (_R.choice(D.AWARDS), _R.choice(D.AWARD_BODIES), None), 1: (_R.choice(D.CERTIFICATIONS), "NPTEL / Industry certification body", None),
+                2: (f"Keynote: {_R.choice(D.TALKS)}", _R.choice(D.INSTITUTIONS), 2), 3: (f"FDP: {_R.choice(D.FDP_TOPICS)}", _R.choice(D.INSTITUTIONS), None),
+                4: (_R.choice(D.PROFESSIONAL_ROLES), "Professional body", None), 5: (f"Resource person: {_R.choice(D.TALKS)}", _R.choice(D.INSTITUTIONS), None)}[ci]
+            k = dict(emp_id=emp, category=cat_name, title=title, x_professional_body=title if ci == 4 else None, host_org=host,
+                     level=_R.choice(["State", "National", "National", "International"]), recognition_type=[None, None, "Keynote Address", "Workshop", "Life Membership", "Resource Person"][ci],
+                     start_date=when.isoformat(), end_date=(when + timedelta(days=_R.choice([0, 2, 5]))).isoformat(), city_venue=_R.choice(["Coimbatore", "Chennai", "Madurai", "Online"]),
+                     duration_hours=hours, description=f"{title} - recognised for contributions to teaching and research in the department.", outcome_impact="Shared learnings with colleagues through an internal session.")
             _submit(conn, "form_faculty", _row("form_faculty", when, _fac_email(emp), **k))
 
-    # ---- departmental highlights (the ten categories of the faculty highlights form)
+    # ---- department milestones (awards, events, infrastructure, MoUs, FDPs organised, student development, accreditation, other)
     cats = _categories("form_departmental")
     plain = "A department-wide activity shared with all stakeholders."
-    for ci, count in enumerate([4, 3, 5, 3, 3, 3, 3, 3, 3, 3]):
+    for ci, count in enumerate([4, 6, 3, 4, 4, 4, 3, 3]):
         for n in range(count):
             conv = _R.choice(fac)
             when = _rdate(lo, hi)
-            title, over = {0: (_R.choice(D.MILESTONES), plain), 1: (_R.choice(D.AWARDS), "Recognised for the department's contribution to teaching and research."),
-                           2: (_R.choice(D.WORKSHOPS + D.CONFERENCES_ORG), "A hands-on programme for students and faculty with practical sessions."),
-                           3: (f"{_R.choice(D.APPROACHES)} {_R.choice(D.TOPICS).title()} Initiative", "Applied research carried out with students and published outcomes."),
-                           4: (D.INFRA[n % len(D.INFRA)][0] + " inaugurated", D.INFRA[n % len(D.INFRA)][1]), 5: (f"Collaboration with {_R.choice(D.PARTNERS)[0]}", "A partnership for joint projects, internships and guest lectures."),
-                           6: (f"FDP: {_R.choice(D.FDP_TOPICS)}", "Faculty upskilled through a structured training programme."), 7: (_R.choice(D.CLUBS), "Student-run activity supported by faculty coordinators."),
-                           8: (_R.choice(D.MILESTONES), "A quality assurance step towards accreditation."), 9: (_R.choice(D.MILESTONES), plain)}[ci]
-            k = dict(_submitter=conv, convener_emp_id=conv, _faculty_involved="\n".join(_R.sample([f for f in fac if f != conv], 2)), category=cats[ci], title=title,
-                     highlight_type=["Milestone", "Milestone", "Event", "Event", "Infrastructure upgrade", "Milestone", "Event", "Student activity", "Milestone", "Milestone"][ci],
-                     start_date=when.isoformat(), end_date=(when + timedelta(days=_R.choice([0, 1, 2, 4]))).isoformat(),
-                     impl_status="Completed", venue="IT Department Seminar Hall", target_audience="Students and faculty", participant_count=_R.choice([40, 65, 90, 120, 180, 250]),
-                     overview=over, budget_amount=_R.choice([15000, 40000, 75000, 150000, 600000]) if ci in (2, 4, 6) else None, funding_source=_R.choice(["Department fund", "AICTE grant", "Alumni contribution"]),
-                     is_landmark=lm(.12), publish_permission=perm)
+            title, over = {0: (_R.choice(D.AWARDS), "Recognised for the department's contribution to teaching and research."),
+                           1: (_R.choice(D.WORKSHOPS), "A hands-on programme for students and faculty with practical sessions."),
+                           2: (D.INFRA[n % len(D.INFRA)][0] + " inaugurated", D.INFRA[n % len(D.INFRA)][1]), 3: (f"Collaboration with {_R.choice(D.PARTNERS)[0]}", "Joint projects, internships and guest lectures."),
+                           4: (_R.choice(D.CONFERENCES_ORG), "Faculty and researchers took part over several sessions."), 5: (_R.choice(D.CLUBS), "Student-run activity supported by faculty coordinators."),
+                           6: (_R.choice(D.MILESTONES), "A quality assurance step towards accreditation."), 7: (_R.choice(D.MILESTONES), plain)}[ci]
+            k = dict(_submitter=conv, category=cats[ci], title=title, overview=f"{title}. {over}", infra_upgrade=f"{title}. {over}", objectives=over,
+                     partner_bodies=_R.choice(D.PARTNERS)[0] if ci == 3 else _R.choice(D.AWARD_BODIES), highlight_type=["NBA Accreditation Visit", "NAAC Assessment Visit", "ISO Audit"][n % 3],
+                     impl_status="Completed", start_date=when.isoformat(), venue=f"{when.strftime('%d %B %Y')}, IT Department Seminar Hall", units_involved="Information Technology",
+                     target_audience="Students and faculty", participant_count=_R.choice([40, 65, 90, 120, 180, 250]), budget_amount=_R.choice([15000, 40000, 75000, 150000, 600000]),
+                     funding_source=_R.choice(["Department fund", "AICTE grant", "Alumni contribution"]))
+            if ci == 3:                                                       # MoUs: active, active, expiring within 90 days, expired
+                effective = today - timedelta(days=[400, 700, 1000, 1200][n % 4])
+                expiry = today + timedelta(days=[700, 380, _R.randint(25, 80), -_R.randint(20, 120)][n % 4])
+                k.update(agreement_effective=effective.isoformat(), agreement_expiry=expiry.isoformat())
+                when = effective
             _submit(conn, "form_departmental", _row("form_departmental", when, _fac_email(conv), **k))
 
-    # ---- industry, alumni and outreach (with student rosters and MoU dates spread over active / expiring / expired)
+    # ---- industry, alumni and outreach (visits, expert lectures, alumni, community)
     cats = _categories("form_industry")
-    mou_n = 0
-    for ci, count in enumerate([8, 9, 8, 6, 5]):
+    for cat_name, ci, count in [("Industrial Visits & Field Tours", 0, 10), ("Industry Expert Lectures & Technical Talks", 1, 11), ("MoUs Signed & Industrial Collaborations", 4, 5),
+                                ("Alumni Interactions & Mentorship Sessions", 2, 8), ("Community & Social Outreach Initiatives", 3, 6)]:
+        assert cat_name in cats
         for n in range(count):
             lead = _R.choice(fac)
             when = _rdate(lo, hi)
-            partner, ptype = D.PARTNERS[(ci * 3 + n) % len(D.PARTNERS)] if ci != 4 else D.PARTNERS[-1]
-            roster = "\n".join(_R.sample(all_rolls, _R.choice([0, 15, 25, 40])))
-            k = dict(_submitter=lead, lead_emp_id=lead, _faculty_involved="\n".join(_R.sample([f for f in fac if f != lead], 1)), category=cats[ci], _partner=partner, partner_type=ptype,
-                     start_date=when.isoformat(), venue=_R.choice(["Partner campus", "IT Department Seminar Hall", "Online"]), target_audience="Second and third year students",
-                     expected_count=_R.choice([40, 60, 100]), actual_count=_R.choice([32, 55, 90, 120]), _event_participants=roster, is_landmark=lm(), publish_permission=perm)
-            if ci == 0:
-                k.update(title=f"Industrial visit to {partner}", activity_format="Industrial visit", summary_outcomes=f"Students toured {_R.choice(D.VISIT_PLACES)} and met the engineering teams.")
-            elif ci == 1:
-                k.update(title=f"Expert talk: {_R.choice(D.OUTREACH_TALKS)}", activity_format="Guest lecture / Talk", speakers=f"Engineering lead, {partner}", summary_outcomes="An interactive session followed by a Q&A.")
-            elif ci == 2:
-                bucket = mou_n % 4                                                # active, active, expiring within 90 days, expired
-                eff = today - timedelta(days={0: 400, 1: 700, 2: 1000, 3: 1200}[bucket])
-                exp = {0: today + timedelta(days=700), 1: today + timedelta(days=380), 2: today + timedelta(days=_R.randint(25, 80)), 3: today - timedelta(days=_R.randint(20, 120))}[bucket]
-                k.update(title=f"MoU with {partner}", activity_format="MoU / Partnership", mou_scope="Joint projects, internships, guest lectures and lab support for three years.", start_date=eff.isoformat(),
-                         agreement_effective=eff.isoformat(), agreement_expiry=exp.isoformat(), summary_outcomes="Agreement signed in the presence of both leadership teams.", expected_count=None, actual_count=None, _event_participants="")
-                when = eff
-                mou_n += 1
-            elif ci == 3:
-                k.update(title=f"Alumni interaction with {partner}", activity_format="Alumni meet / Mentoring", partner_type="Alumni", _partner="Coimbatore Alumni Association",
-                         summary_outcomes="Alumni shared career journeys and offered mentoring to final years.")
-            else:
-                k.update(title="Digital literacy camp for rural schools", activity_format="Community camp", _partner=partner, partner_type="NGO / Community", summary_outcomes="Students taught basic computing to school children.")
+            partner = D.PARTNERS[(ci * 3 + n) % len(D.PARTNERS)][0] if ci != 3 else D.PARTNERS[-1][0]
+            title = [f"Industrial visit to {partner}", f"Expert talk: {_R.choice(D.OUTREACH_TALKS)}", f"Alumni interaction with {partner}", "Digital literacy camp for rural schools", f"MoU with {partner}"][ci]
+            k = dict(_submitter=lead, category=cat_name, title=title, _partner="Coimbatore Alumni Association" if ci == 2 else partner, start_date=when.isoformat(),
+                     venue=_R.choice(["Partner campus", "IT Department Seminar Hall", "Online"]) if ci != 1 else "Online", target_audience="Second and third year students",
+                     actual_count=_R.choice([32, 55, 90, 120]), objective="Give students a view of how the work is done in practice.", speakers=f"Engineering lead, {partner}",
+                     summary_outcomes=[None, "An interactive session followed by a Q&A.", "Alumni shared career journeys and offered mentoring to final years.", "Students taught basic computing to school children.", None][ci],
+                     measurable_outcomes="Feedback was positive and two follow-ups are planned.", activity_format=["", "Technical Talk", "Alumni meet / Mentoring", "Community camp", "MoU / Partnership"][ci])
+            if ci == 4:
+                effective = today - timedelta(days=[500, 800, 1100][n % 3])
+                k.update(mou_scope="Joint projects, internships and guest lectures.", agreement_effective=effective.isoformat(),
+                         agreement_expiry=(today + timedelta(days=[600, 45, -40][n % 3])).isoformat())
+                when = effective
             _submit(conn, "form_industry", _row("form_industry", when, _fac_email(lead), **k))
 
-    # ---- student achievements and participation
+    # ---- student participation and achievements
     cats = _categories("form_student")
-    domains = {key: _choice("form_student", "domain", key) for key in ("AI", "Web", "Cyber", "IoT", "Cloud", "Algorithms", "Sports", "Cultural", "Data", "Other")}
+    at = {name: i for i, name in enumerate(cats)}
     weights = [len(c.rolls) * max(1, (c.end - c.start).days) for c in cohorts]
     ach, part = _choice("form_student", "entry_kind", "Achievement"), _choice("form_student", "entry_kind", "Participation")
     tutor_of = {c.class_id: D.TUTORS[i] for i, c in enumerate(cohorts[:10])}
-    for ci, count in enumerate([18, 34, 14, 30, 24]):
+    kinds = [("hack", "Hackathons / Coding Competitions", 34), ("project", "Project Presentations / Exhibitions", 30), ("sport", "Sports Achievements", 16), ("culture", "Cultural Activities", 8),
+             ("rank", "Others", 12), ("cert", "Professional Certifications", 14), ("paper", "Paper Presentations", 6),
+             ("project", "Technical Competitions", 5), ("paper", "Technical Symposiums", 4), ("project", "Innovation / Startup Competitions", 4), ("paper", "Research Publications / Patents", 4),
+             ("cert", "Internships / Industrial Training", 4), ("cert", "Workshops / Technical Training", 4), ("culture", "NSS / NCC / Social Service", 4),
+             ("culture", "Leadership / Student Association Activities", 4)]
+    for kind, category, count in kinds:
+        assert category in at
         made, guard = 0, 0
         while made < count and guard < 500:
             guard += 1
             c = _R.choices(cohorts, weights)[0]
-            if ci == 2 and not c.final:
-                continue
-            size = _R.choice([2, 3, 4]) if ci in (1, 3) and _R.random() < .7 else 1
+            size = _R.choice([2, 3, 4]) if kind in ("hack", "project") and _R.random() < .7 else 1
             team = _R.sample(c.rolls, size)
             lo_c, hi_c = max(c.start + timedelta(days=60), lo), min(c.end, hi)
             if hi_c <= lo_c:
                 continue
             when = _rdate(lo_c, hi_c)
-            participation = ci in (1, 3, 4) and _R.random() < .3
+            participation = kind in ("hack", "project", "sport", "culture") and _R.random() < .3
             mentor = tutor_of.get(c.class_id) or _R.choice(fac)
-            level, prize = _R.choice(["College", "Inter-college", "State", "National", "National"]), None
-            if ci == 0:
+            level, prize = _R.choice(["College", "Inter-College", "State", "National", "National"]), None
+            if kind == "rank":
                 ev, org = _R.choice(D.RANK_EVENTS)
-                title, organizer, position, dom, level = f"University rank {_R.randint(1, 15)} - {ev}", org, f"Rank {_R.randint(1, 15)}", domains["Other"], "State"
-            elif ci == 1:
+                title, organizer, position, level = f"University rank {_R.randint(1, 15)} - {ev}", org, f"Rank {_R.randint(1, 15)}", "State"
+            elif kind in ("hack", "paper"):
                 ev, org = _R.choice(D.HACKATHONS)
-                title, organizer, position, dom = f"{ev} {when.year}", org, "Participated" if participation else _R.choice(D.POSITIONS_WIN), domains[_R.choice(["AI", "Web", "Cyber", "IoT", "Cloud", "Algorithms"])]
-                prize = None if participation else _R.choice([10000, 25000, 50000, 100000])
-            elif ci == 2:
-                ev, org = _R.choice(D.HIGHER_ED)
-                title, organizer, position, dom, level = ev, org, "Admitted", domains["Other"], "National"
-            elif ci == 3:
+                title, organizer, position = f"{ev} {when.year}", org, "Participated" if participation else _R.choice(D.POSITIONS_WIN)
+                prize = None if participation or kind == "paper" else _R.choice([10000, 25000, 50000, 100000])
+            elif kind == "cert":
+                title, organizer, position, level = _R.choice(D.CERTIFICATIONS), "NPTEL", "Certified", "National"
+            elif kind == "project":
                 ev, org = _R.choice(D.PROJECT_EVENTS)
-                title, organizer, position, dom = f"{_R.choice(D.PROJECT_TITLES)} ({ev})", org, "Participated" if participation else _R.choice(D.POSITIONS_WIN), domains[_R.choice(["AI", "Web", "IoT", "Data", "Cloud"])]
+                title, organizer, position = f"{_R.choice(D.PROJECT_TITLES)} ({ev})", org, "Participated" if participation else _R.choice(D.POSITIONS_WIN)
                 prize = None if participation else _R.choice([5000, 10000, 20000])
             else:
-                ev, org, kind = _R.choice(D.SPORTS)
-                title, organizer, position, dom = ev, org, "Participated" if participation else _R.choice(D.POSITIONS_WIN[:5]), domains[kind]
-            k = dict(entry_kind=part if participation else ach, _participants="\n".join(team), _lead_roll=team[0], is_team="Team" if size > 1 else "Individual", category=cats[ci], title=title,
-                     organizer=organizer, level=level, position=position, prize_amount=prize, result_date=when.isoformat(), domain=dom, mentor_emp_id=mentor,
-                     abstract=f"{title}: the team prepared for weeks, with guidance from the mentor.", tools_used=_R.choice(["Python, TensorFlow", "React, Node.js", "Java, Spring Boot", "Arduino, MQTT", "Flutter, Firebase"]) if ci in (1, 3) else None,
-                     previously_reported="No", is_landmark=lm(.07), publish_permission=perm)
+                ev, org, _kind = _R.choice(D.SPORTS)
+                title, organizer, position = ev, org, "Participated" if participation else _R.choice(D.POSITIONS_WIN[:5])
+            k = dict(entry_kind=part if participation else ach, _participants="\n".join(team), category=category, title=title, organizer=organizer,
+                     level=_choice("form_student", "level", level), position=position, prize_amount=prize, x_prize_received="Yes" if prize else "No", result_date=when.isoformat(),
+                     mentor_emp_id=mentor, abstract=f"{title}: the team prepared for weeks, with guidance from the mentor.", learning_outcomes="Teamwork, problem solving and presentation.")
             _submit(conn, "form_student", _row("form_student", when, _fac_email(mentor), **k))
             made += 1
 

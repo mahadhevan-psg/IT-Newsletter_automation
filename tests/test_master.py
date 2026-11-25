@@ -21,6 +21,8 @@ from backend.app import app  # noqa: E402
 from backend.master import ingest  # noqa: E402
 from database.master_db import init_master_db  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
+
 client = TestClient(app)
 
 
@@ -294,7 +296,7 @@ def test_downloaded_templates_round_trip_and_match_the_importers(world):
     assert [c.value for c in openpyxl.load_workbook(io.BytesIO(r.content))["Data"][1]] == ["Employee ID", "Full Name", "Email", "Phone", "Designation", "Qualification", "Date of Joining"]
     assert client.get("/api/master/faculty-template", headers=auth(world["t1"])).status_code == 403
     # the placement template's example row has one value per column
-    assert len(placements.EXAMPLE) == len(placements.template_headers())
+    assert len(placements.example_row()) == len(placements.template_headers())
 
 
 def test_newsletter_api_needs_a_signed_in_admin_or_hod(world):

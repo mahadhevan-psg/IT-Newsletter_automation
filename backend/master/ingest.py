@@ -227,7 +227,7 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
         for col, who in (("emp_id", None), ("lead_emp_id", "lead coordinator"), ("convener_emp_id", "convener")):
             if col in cols and not detail.get(col) and (col not in vals or _placeholder(vals[col])):
                 detail[col] = submitter
-                if who:
+                if who and any(q.get("key") == col for q in spec["questions"]):              # only when the form asks for that person
                     warnings.append(f"No {who} was chosen from the list: the submitting faculty is used (change it here if someone else led it)")
     if "entry_kind" in detail:
         detail["entry_kind"] = "PARTICIPATION" if str(detail["entry_kind"]).lower().startswith("participation") else "ACHIEVEMENT"
@@ -238,6 +238,7 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
         _student_people(conn, sid, vals, on, warnings)
     elif ftype == "RESEARCH":
         _contributors(conn, sid, vals.get("_contributors", ""), warnings)
+        _include_submitter(conn, sid, submitter)
     for ln in parse_lines(vals.get("_faculty_involved", "")):
         emp = resolve_faculty(conn, ln["id"])
         if emp:
@@ -261,8 +262,10 @@ def ingest_row(conn, form_id: str, raw: Dict[str, Any], newsletter_entry_id: Opt
 
 
 def _student_people(conn, sid, vals, on, warnings):
-    lead = (vals.get("_lead_roll") or "").strip().upper()
     lines = parse_lines(vals.get("_participants", ""))
+    lead = (vals.get("_lead_roll") or (lines[0]["id"] if lines else "") or "").strip().upper()           # with no lead question, the first line is the lead
+    if "_lead_roll" not in vals:
+        conn.execute("UPDATE student_achievements SET is_team = ? WHERE submission_id = ?", (1 if len(lines) > 1 else 0, sid))
     seen = set()
     d = parse_datetime(on) or datetime.now()
     for i, ln in enumerate(lines, 1):
@@ -284,6 +287,14 @@ def _student_people(conn, sid, vals, on, warnings):
         conn.execute(
             "INSERT INTO student_achievement_participants (submission_id, line_no, roll_no, raw_text, name, is_lead, class_id_snapshot, year_snapshot, semester_snapshot) "
             "VALUES (?,?,?,?,?,1,?,?,?)", (sid, len(lines) + 1, roll, lead, person_name(roll, conn) if roll else None, cls, year, semester_at(conn, cls, on) if cls else None))
+
+
+def _include_submitter(conn, sid, emp):
+    """The forms ask for co-authors only: the faculty member who entered the work is its first author unless they listed themselves."""
+    if not emp or conn.execute("SELECT 1 FROM research_contributors WHERE submission_id = ? AND emp_id = ?", (sid, emp)).fetchone():
+        return
+    conn.execute("INSERT INTO research_contributors (submission_id, author_order, person_type, emp_id, roll_no, name, affiliation) VALUES (?, 0, 'FACULTY', ?, NULL, ?, NULL)",
+                 (sid, emp, _name_of(conn, emp) or emp))
 
 
 def _contributors(conn, sid, text, warnings):

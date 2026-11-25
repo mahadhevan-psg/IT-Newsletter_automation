@@ -87,6 +87,6 @@ def company(conn, org_id: int) -> Dict[str, Any]:
         "placed": sum(y["placed"] for y in by_year), "interns": sum(y["interns"] for y in by_year), **_pk(offers),
         "by_year": by_year, "offer_types": [{"label": k, "value": v} for k, v in sorted(types.items(), key=lambda x: -x[1])],
         "roles": [{"label": k, "value": v} for k, v in sorted(roles.items(), key=lambda x: -x[1])],
-        "interviews": d("SELECT ay_id, rounds_count, round_details, difficulty, questions_asked, result, experience, tips FROM v_diary_interviews WHERE org_id = ? ORDER BY ay_id DESC"),
-        "internships": d("SELECT ay_id, duration, mode, role, tech_stack, work_summary, learnings, rating, experience FROM v_diary_internships WHERE org_id = ? ORDER BY ay_id DESC"),
+        "interviews": d("SELECT ay_id, rounds_count, round_details, difficulty, questions_asked, result, experience, tips, concepts FROM v_diary_interviews WHERE org_id = ? ORDER BY ay_id DESC"),
+        "internships": d("SELECT ay_id, duration, mode, role, tech_stack, work_summary, learnings, rating, experience, concepts FROM v_diary_internships WHERE org_id = ? ORDER BY ay_id DESC"),
     }

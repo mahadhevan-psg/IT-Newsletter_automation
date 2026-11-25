@@ -9,10 +9,12 @@ from backend.master.common import EFF_CLASS, norm_header, parse_date, parse_int,
 from backend.master.ingest import specs, upsert_org
 from database.master_db import audit, ay_for, ensure_ay
 
-EXAMPLE = ["21IT001", "2026-27", "Opted In", "", "Acme Technologies", "Product", "FTE", "8.5", "", "Software Engineer", "Chennai",
-           "Accepted", "On-campus", "2026-09-15", "3", "Online test, technical, HR", "Medium", "Arrays, SQL joins", "Selected",
-           "Friendly panel, focus on projects", "Practise DSA daily", "", "", "", "", "", "", "", "", "Yes - share anonymously with juniors",
-           "I confirm the information is accurate."]
+_EXAMPLE = {   # one filled row, by field name: the Excel template shows it under its columns
+    "roll_no": "21IT001", "ay_id": "2026-27", "opt_status": "Opted In", "offer_type": "Full Time Only", "company": "Acme Technologies", "sector": "IT / Software",
+    "package_lpa": "8.5", "job_role": "Software Engineer", "work_location": "Chennai", "offer_status": "Accepted", "recruitment_mode": "On-campus", "offer_date": "2026-09-15",
+    "rounds_count": "3", "round_details": "Online test, technical, HR", "difficulty": "Medium", "questions_asked": "Arrays, SQL joins", "result": "Selected",
+    "interview_concepts": "Data structures, DBMS, operating systems", "interview_experience": "Friendly panel, focus on projects", "tips": "Practise DSA daily",
+    "consent": "Yes - share anonymously with juniors", "authorization_confirmed": "I confirm the information is accurate."}
 
 
 def questions():
@@ -21,6 +23,10 @@ def questions():
 
 def template_headers() -> List[str]:
     return [q["q"] for q in questions()]
+
+
+def example_row() -> List[str]:
+    return [_EXAMPLE.get(q["key"], "") for q in questions()]
 
 
 def _offer_type(text: str, package, stipend) -> Optional[str]:
@@ -49,7 +55,7 @@ def _can_edit_student(conn, user: User, roll: str) -> bool:
 
 def keyed(rows: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     """Rows as they stand in a sheet ({column title: text}) -> {field name: text}, empty cells dropped."""
-    keymap = {norm_header(q["q"]): q["key"] for q in questions()}
+    keymap = {norm_header(t): q["key"] for q in questions() for t in (*q.get("aliases", []), q["q"])}
     out = []
     for rec in rows:
         row = {keymap[norm_header(k)]: str(v).strip() for k, v in rec.items() if norm_header(k) in keymap and v is not None and str(v).strip()}
@@ -90,31 +96,31 @@ def apply_rows(conn, user: User, by_roll: Dict[str, List[Dict[str, str]]], defau
             for r in rows:
                 if not r.get("company"):
                     continue
-                share = 1 if r.get("consent", "").lower().startswith("yes") else 0
+                share = 0 if r.get("consent", "").lower().startswith("no") else 1       # consent is not asked any more: shared (without names) unless an earlier answer said no
                 org = upsert_org(conn, r["company"], sector=r.get("sector"))
                 pkg, stp = parse_num(r.get("package_lpa")), parse_num(r.get("stipend_per_month"))
                 otype = _offer_type(r.get("offer_type"), pkg, stp)
                 if otype:
                     status = next((s for s in ("Accepted", "Declined", "Pending", "Revoked") if s.lower() in r.get("offer_status", "accepted").lower()), "Accepted")
                     conn.execute(
-                        "INSERT INTO placement_offers (roll_no, ay_id, org_id, offer_type, package_lpa, stipend_per_month, job_role, work_location, offer_date, offer_status, is_on_campus, updated_by) "
-                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "INSERT INTO placement_offers (roll_no, ay_id, org_id, offer_type, package_lpa, stipend_per_month, job_role, work_location, offer_date, offer_status, is_on_campus, photo, updated_by) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (roll, ay, org, otype, pkg, stp, r.get("job_role"), r.get("work_location"), parse_date(r.get("offer_date")), status,
-                         None if not r.get("recruitment_mode") else 1 if r["recruitment_mode"].lower().startswith("on") else 0, user.id))
+                         None if not r.get("recruitment_mode") else 1 if r["recruitment_mode"].lower().startswith("on") else 0, r.get("offer_photo"), user.id))
                     stats["offers"] += 1
                     has_offer = True
-                if any(r.get(k) for k in ("rounds_count", "round_details", "difficulty", "questions_asked", "result", "interview_experience", "tips")):
+                if any(r.get(k) for k in ("rounds_count", "round_details", "difficulty", "questions_asked", "result", "interview_concepts", "interview_experience", "tips", "interview_photo")):
                     conn.execute(
-                        "INSERT INTO interview_experiences (roll_no, ay_id, org_id, rounds_count, round_details, difficulty, questions_asked, result, experience, tips, is_shareable) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                        "INSERT INTO interview_experiences (roll_no, ay_id, org_id, rounds_count, round_details, difficulty, questions_asked, result, experience, tips, concepts, photo, is_shareable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (roll, ay, org, parse_int(r.get("rounds_count")), r.get("round_details"), r.get("difficulty"), r.get("questions_asked"),
-                         r.get("result"), r.get("interview_experience"), r.get("tips"), share))
+                         r.get("result"), r.get("interview_experience"), r.get("tips"), r.get("interview_concepts"), r.get("interview_photo"), share))
                     stats["interview_experiences"] += 1
-                if any(r.get(k) for k in ("intern_duration", "intern_mode", "intern_role", "tech_stack", "work_summary", "learnings", "rating", "internship_experience")):
+                if any(r.get(k) for k in ("intern_duration", "intern_mode", "intern_role", "tech_stack", "work_summary", "learnings", "rating", "intern_concepts", "internship_experience", "internship_photo")):
                     rating = parse_int(r.get("rating"))
                     conn.execute(
-                        "INSERT INTO internship_experiences (roll_no, ay_id, org_id, duration, mode, role, tech_stack, work_summary, learnings, rating, experience, is_shareable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "INSERT INTO internship_experiences (roll_no, ay_id, org_id, duration, mode, role, tech_stack, work_summary, learnings, rating, experience, concepts, photo, is_shareable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (roll, ay, org, r.get("intern_duration"), r.get("intern_mode"), r.get("intern_role"), r.get("tech_stack"), r.get("work_summary"),
-                         r.get("learnings"), rating if rating and 1 <= rating <= 5 else None, r.get("internship_experience"), share))
+                         r.get("learnings"), rating if rating and 1 <= rating <= 5 else None, r.get("internship_experience"), r.get("intern_concepts"), r.get("internship_photo"), share))
                     stats["internship_experiences"] += 1
             opt_text = next((r["opt_status"] for r in reversed(rows) if r.get("opt_status")), "")
             opted_out = "out" in opt_text.lower() and not has_offer

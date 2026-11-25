@@ -1410,7 +1410,7 @@ function renderFixedPreview() {
     ${s.author_or_person ? `<div class="fp-sub">By ${esc(s.author_or_person)}</div>` : ""}
     ${s.organization_or_venue ? `<div>${esc(s.organization_or_venue)}${s.event_date ? " · " + esc(s.event_date) : ""}</div>` : ""}
     ${s.description ? `<p>${esc(s.description)}</p>` : ""}
-    ${s.evidence_url ? `<a class="fp-link">${esc(s.evidence_url)}</a>` : ""}`;
+    ${s.evidence_url ? `<a class="fp-link">${esc(String(s.evidence_url).startsWith("media://") ? "Supporting document on file" : s.evidence_url)}</a>` : ""}`;
   const img = (side, cap) => `<div class="fp-img ${side}"><img src="${esc(photo)}" alt="" onerror="this.onerror=null; this.src=DEMO_PHOTO">${cap ? `<div class="fp-cap">${esc(cap)}</div>` : ""}</div>`;
   const note = t => `<div class="fp-note">${t}</div>`;
   let body;

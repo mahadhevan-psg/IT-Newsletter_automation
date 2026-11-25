@@ -75,6 +75,11 @@ LABELS = {  # shorter headings than the form's wording; anything not listed keep
     "Workshops & FDPs Organized": "Workshops & FDPs organised", "Conferences & Symposia Organized": "Conferences & symposia organised",
     "Infrastructure & Lab Upgrades": "Infrastructure & lab upgrades", "Student Club & Society Activities": "Club & society activities",
     "Department Statistics & Major Milestones": "Department milestones",
+    "Patents & Intellectual Property Rights (IPR)": "Patents & IP", "Research Seminar": "Research seminars",
+    "Membership in Professional Body & Editorial Board Roles": "Professional bodies & editorial boards",
+    "Departmental Achievements / Awards / Recognitions": "Department awards", "Events / Programs Conducted": "Events & programmes",
+    "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised": "FDPs, conferences & long-term programmes",
+    "Student Development, Outreach, and Social Initiatives Undertaken by the Department": "Student development & outreach",
     "Industrial Visits & Field Tours": "Industrial visits", "Industry Expert Lectures & Technical Talks": "Industry expert talks",
     "MoUs Signed & Industrial Collaborations": "MoUs & collaborations", "Alumni Interactions & Mentorship Sessions": "Alumni interactions",
     "Community & Social Outreach Initiatives": "Community outreach",
@@ -183,7 +188,7 @@ def _span(start, end):
 def _faculty_ach_items(conn, where: str, args: list, people: bool = False) -> List[Dict[str, Any]]:
     """Faculty achievements. people=True (by-work view) names the faculty member, which a person's own page does not need."""
     out = []
-    for r in _rows(conn, f"""SELECT fs.submission_id, fs.ay_id, fa.start_date, fs.category, fs.title, fs.evidence_url, fs.media_url, fs.badge_tag, fs.is_landmark,
+    for r in _rows(conn, f"""SELECT fs.submission_id, fs.ay_id, COALESCE(fa.start_date, fs.event_date) AS start_date, fs.category, fs.title, fs.evidence_url, fs.media_url, fs.badge_tag, fs.is_landmark,
                                    fa.recognition_type, fa.host_org, fa.level, fa.end_date, fa.city_venue, fa.credential_no, fa.duration_hours, fa.role_contribution,
                                    fa.selection_criteria, fa.description, fa.outcome_impact, fa.is_team, fa.other_contributors, fa.organizer_url, u.full_name AS person
                             FROM form_submissions fs JOIN faculty_achievements fa USING (submission_id) LEFT JOIN faculty u ON u.emp_id = fa.emp_id
@@ -207,7 +212,7 @@ def _event_items(conn, where: str, args: list, emp: Optional[str] = None) -> Lis
     out = []
     for r in _rows(conn, f"""SELECT fs.submission_id, fs.ay_id, fs.event_date, fs.category, fs.title, fs.evidence_url, fs.media_url, fs.badge_tag, fs.is_landmark, fs.submitter_emp_id,
                                    d.convener_emp_id, d.highlight_type, d.units_involved, d.start_date, d.end_date, d.impl_status, d.venue, d.partner_bodies, d.participant_count,
-                                   d.overview, d.objectives, d.outputs, d.success_indicators, d.budget_amount, d.funding_source, d.recognition, d.report_url,
+                                   d.overview, d.objectives, d.outputs, d.success_indicators, d.budget_amount, d.funding_source, d.recognition, d.report_url, d.agreement_effective, d.agreement_expiry,
                                    cf.full_name AS convener, {_INVOLVED} AS involved, {mine}
                             FROM form_submissions fs JOIN department_highlights d USING (submission_id) LEFT JOIN faculty cf ON cf.emp_id = d.convener_emp_id
                             WHERE ({where}) ORDER BY fs.event_date DESC""", ([emp] if emp else []) + args):
@@ -215,7 +220,8 @@ def _event_items(conn, where: str, args: list, emp: Optional[str] = None) -> Lis
         out.append(item(r["submission_id"], r["category"], r["title"], r["event_date"], r["ay_id"], role,
                         [badge(r["impl_status"], "ok" if r["impl_status"] == "Completed" else None), badge(r["highlight_type"]), badge(r["badge_tag"], "warn")],
                         [("Convener", None if emp else r["convener"]), ("Faculty involved", None if emp else r["involved"]),
-                         ("Dates", _span(r["start_date"], r["end_date"])), ("Venue", r["venue"]), ("Participants", r["participant_count"]),
+                         ("Dates", _span(r["start_date"], r["end_date"])), ("Agreement", f"{r['agreement_effective'] or '?'} to {r['agreement_expiry'] or 'open-ended'}" if r["agreement_effective"] or r["agreement_expiry"] else None),
+                         ("Venue", r["venue"]), ("Participants", r["participant_count"]),
                          ("Partners / funding bodies", r["partner_bodies"]), ("Budget", inr(r["budget_amount"])), ("Funding source", r["funding_source"]), ("Recognition", r["recognition"])],
                         [("Overview", r["overview"]), ("Objectives", r["objectives"]), ("Key outputs", r["outputs"]), ("Success indicators", r["success_indicators"])],
                         [("Event report", r["report_url"]), ("Evidence", r["evidence_url"]), ("Photo", r["media_url"])], r["is_landmark"]))
@@ -276,7 +282,7 @@ def faculty_profile(conn, user: User, emp_id: str, ay: Optional[str] = None) -> 
             "contact": [x for x in (f["email"], f["phone"], f["qualification"]) if x]}
     count = lambda cat: sum(1 for i in research if i["category"] == cat)
     fund = sum(i.get("amount") or 0 for i in research if i["category"] == "Funded Research Projects")
-    summary = [("Journal papers", count("Journal Publications")), ("Conference papers", count("Conference Publications")), ("Patents", count("Patents & Intellectual Property")),
+    summary = [("Journal papers", count("Journal Publications")), ("Conference papers", count("Conference Publications")), ("Patents", count("Patents & Intellectual Property Rights (IPR)") + count("Patents & Intellectual Property")),
                ("Funded projects", count("Funded Research Projects")), ("Awards & honours", sum(1 for i in prof if i["category"] == "Awards & Honors Received")),
                ("Talks & sessions", sum(1 for i in prof if i["category"] in ("Invited Keynote / Expert Lectures Delivered", "Resource Person / Session Chair Roles"))),
                ("Events organised", len(events)), ("Students mentored", len(mentored))]
@@ -330,12 +336,12 @@ def student_profile(conn, user: User, roll_no: str, ay: Optional[str] = None) ->
     for e in _rows(conn, "SELECT e.*, g.name AS company FROM internship_experiences e JOIN organizations g ON g.org_id = e.org_id WHERE e.roll_no = ? ORDER BY e.ay_id DESC", (roll_no,)):
         pl_items["Internship experience"].append(item(None, "Internship experience", e["company"], None, e["ay_id"], e["role"],
                                                       [badge(e["mode"]), badge(f"{e['rating']}/5" if e["rating"] else None)], [("Duration", e["duration"]), ("Technologies", e["tech_stack"])],
-                                                      [("Work done", e["work_summary"]), ("Learnings", e["learnings"]), ("Experience", e["experience"])]))
+                                                      [("Concepts and skills applied", e["concepts"]), ("Work done", e["work_summary"]), ("Learnings", e["learnings"]), ("Experience", e["experience"])]))
     for e in _rows(conn, "SELECT e.*, g.name AS company FROM interview_experiences e JOIN organizations g ON g.org_id = e.org_id WHERE e.roll_no = ? ORDER BY e.ay_id DESC", (roll_no,)):
         pl_items["Interview experience"].append(item(None, "Interview experience", e["company"], None, e["ay_id"], None,
                                                      [badge(e["result"], "ok" if e["result"] == "Selected" else None), badge(e["difficulty"])],
                                                      [("Rounds", f"{e['rounds_count']}: {e['round_details']}" if e["rounds_count"] and e["round_details"] else e["rounds_count"] or e["round_details"])],
-                                                     [("Questions asked", e["questions_asked"]), ("Experience", e["experience"]), ("Tips", e["tips"])]))
+                                                     [("Concepts and skills assessed", e["concepts"]), ("Questions asked", e["questions_asked"]), ("Experience", e["experience"]), ("Tips", e["tips"])]))
     placement_all = [i for v in pl_items.values() for i in v]
 
     sections = [

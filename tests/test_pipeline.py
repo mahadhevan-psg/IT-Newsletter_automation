@@ -10,6 +10,9 @@ from database.db_manager import init_db, get_entries, update_entry_status, get_a
 from backend.services.ingestion_service import IngestionService
 from backend.services.docx_generator import DOCXGenerator
 from backend.services.newsletter_builder import NewsletterBuilder
+import pytest  # noqa: E402
+
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
 
 class TestNewsletterPipeline(unittest.TestCase):
     @classmethod

@@ -2,62 +2,66 @@
   "version": "1.0",
   "forms": {
     "form_research": {
-      "form_name": "IT Chronicles - Research & Innovation Submission Form",
+      "form_name": "Research Contributions & Innovations",
       "section_id": "sec_research",
-      "category_field": "Research Subcategory",
+      "category_field": "Research Category",
       "category_map": {
         "Journal Publications": "cat_journal_pub",
         "Conference Publications": "cat_conf_pub",
         "Book / Book Chapters": "cat_books",
         "Funded Research Projects": "cat_funded_projects",
         "Consultancy Projects": "cat_consultancy",
-        "Patents & Intellectual Property": "cat_patents",
-        "Key Research Innovations & Technical Accomplishments": "cat_innovations"
+        "Patents & Intellectual Property Rights (IPR)": "cat_patents",
+        "Key Research Innovations & Technical Accomplishments": "cat_innovations",
+        "Research Seminar": "cat_research_research_seminar"
       },
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
-        "Research Paper / Article Title": "title",
-        "Journal Name": "organization_or_venue",
-        "Author Names and Affiliations": "author_or_person",
-        "Publication Date": "event_date",
-        "DOI / ISSN": "grant_or_prize_amount",
+        "Title of the Research Paper": "title",
+        "Name of the Journal": "organization_or_venue",
         "Indexing": "impact_or_indexing",
-        "Conference Paper Title": "title",
-        "Conference Name": "organization_or_venue",
-        "Conference Date": "event_date",
-        "DOI / ISBN / ISSN": "grant_or_prize_amount",
-        "Book / Book Chapter Title": "title",
-        "Author / Editor Names": "author_or_person",
-        "Publisher": "organization_or_venue",
-        "ISBN": "grant_or_prize_amount",
-        "Indexing / Recognition": "impact_or_indexing",
-        "Project Title": "title",
-        "Principal Investigator": "author_or_person",
-        "Funding Agency": "organization_or_venue",
-        "Sanctioned Grant Amount (INR)": "grant_or_prize_amount",
-        "Project Start Date": "event_date",
-        "Project Objectives and Rationale": "description",
-        "Consultancy Project Title": "title",
-        "Client / Organization Name": "organization_or_venue",
-        "Project Coordinator / Faculty Members": "author_or_person",
-        "Consultancy Amount (INR)": "grant_or_prize_amount",
-        "Objectives and Scope of Work": "description",
-        "Patent / Intellectual Property Title": "title",
-        "Inventor Names and Affiliations": "author_or_person",
+        "DOI (Digital Object Identifier)": "grant_or_prize_amount",
+        "Month and Year of Publication": "event_date",
+        "Names of Co-authors": "author_or_person",
+        "Upload Published Research Paper / Supporting Proof": "evidence_url",
+        "Name of the Conference": "organization_or_venue",
+        "Conference Proceedings Indexing": "impact_or_indexing",
+        "DOI": "grant_or_prize_amount",
+        "Upload Published Paper / Proceedings Proof": "evidence_url",
+        "Title of the Book / Edited Volume / Book Chapter": "title",
+        "ISBN / e-ISBN": "grant_or_prize_amount",
+        "Names of Co-authors / Contributors": "author_or_person",
+        "Date of Publication": "event_date",
+        "Upload Book Cover / Publication Proof": "evidence_url",
+        "Title of the Research Project": "title",
+        "Name of the Funding Agency / Sponsoring Organization": "organization_or_venue",
+        "Names of Co-Principal Investigators / Collaborators": "author_or_person",
+        "Date of Project Sanction": "event_date",
+        "Total Sanctioned Amount (₹)": "grant_or_prize_amount",
+        "Objectives / Brief Description of the Project": "description",
+        "Upload Sanction Letter / Approval Document": "evidence_url",
+        "Title of the Consultancy Project": "title",
+        "Name of the Client Organization / Industry": "organization_or_venue",
+        "Date of Commencement": "event_date",
+        "Total Consultancy Amount (₹)": "grant_or_prize_amount",
+        "Names of Other Faculty Members / Collaborators Involved": "author_or_person",
+        "Upload Consultancy Agreement / Work Order": "evidence_url",
+        "Title / Name of the Intellectual Property": "title",
         "Application / Registration Number": "grant_or_prize_amount",
-        "Filing Date": "event_date",
-        "Patent Office / Registration Authority": "organization_or_venue",
-        "Patent / IP Status": "impact_or_indexing",
-        "Innovation Overview and Significance": "description",
-        "Innovation / Technical Accomplishment Title": "title",
-        "Innovation Overview": "description",
-        "Faculty / Research Team Members": "author_or_person",
-        "Development Date": "event_date",
-        "Key Impact Badge / Metric (e.g. Scopus Q1, Patent Granted, ₹25 Lakh Grant, Best Paper Award)": "badge_tag",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image – Names from left to right": "photo_caption",
-        "Official Evidence / Certificate / Supporting Document Link": "evidence_url"
+        "Brief Description of the Invention / Intellectual Property": "description",
+        "Names of Inventors / Creators": "author_or_person",
+        "Date of Filing / Application": "event_date",
+        "Upload Application / Publication / Grant Certificate": "evidence_url",
+        "Title of the Innovation / Technical Accomplishment": "title",
+        "Brief Description of the Innovation / Technical Achievement": "description",
+        "Faculty Members Involved": "author_or_person",
+        "Upload Achievement Photo": "photo_url",
+        "Supporting Document Link": "evidence_url",
+        "Title / Topic of the Research Seminar": "title",
+        "Date of the Seminar": "event_date",
+        "Upload Seminar Invitation / Circular": "evidence_url",
+        "Supporting Photographs": "photo_url"
       },
       "column_metadata": {
         "Timestamp": {
@@ -72,28 +76,29 @@
           "required": false,
           "description": "Collected by Google Forms"
         },
-        "Submitting Faculty (Select your name)": {
+        "Faculty Name": {
           "canonical_tag": "custom",
           "type": "text",
           "required": true,
           "description": ""
         },
-        "Research Subcategory": {
+        "Research Category": {
           "canonical_tag": "category_id",
           "type": "select",
           "required": true,
           "description": ""
         },
-        "Research Paper / Article Title": {
+        "Title of the Research Paper": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
           "description": "",
           "categories": [
+            "Conference Publications",
             "Journal Publications"
           ]
         },
-        "Journal Name": {
+        "Name of the Journal": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
@@ -102,71 +107,19 @@
             "Journal Publications"
           ]
         },
-        "Publisher": {
+        "Type of Journal": {
           "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Book / Book Chapters",
-            "Journal Publications"
-          ]
-        },
-        "Author Names and Affiliations": {
-          "canonical_tag": "author_or_person",
-          "type": "textarea",
+          "type": "select",
           "required": true,
-          "description": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+          "description": "",
           "categories": [
-            "Conference Publications",
             "Journal Publications"
           ]
         },
-        "Corresponding Author": {
+        "Publisher Name": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Journal Publications"
-          ]
-        },
-        "Volume / Issue / Page Numbers": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Journal Publications"
-          ]
-        },
-        "Project Start Date": {
-          "canonical_tag": "custom",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Consultancy Projects",
-            "Funded Research Projects",
-            "Journal Publications"
-          ]
-        },
-        "Publication Date": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Book / Book Chapters",
-            "Conference Publications",
-            "Journal Publications",
-            "Patents & Intellectual Property"
-          ]
-        },
-        "DOI / ISSN": {
-          "canonical_tag": "grant_or_prize_amount",
-          "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Journal Publications"
@@ -174,78 +127,104 @@
         },
         "Indexing": {
           "canonical_tag": "impact_or_indexing",
-          "type": "select",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Journal Publications"
+          ]
+        },
+        "ISSN (Print / Online)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Journal Publications"
+          ]
+        },
+        "DOI (Digital Object Identifier)": {
+          "canonical_tag": "grant_or_prize_amount",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Journal Publications"
+          ]
+        },
+        "Volume Number and Issue Number": {
+          "canonical_tag": "custom",
+          "type": "text",
           "required": false,
           "description": "",
           "categories": [
-            "Conference Publications",
+            "Journal Publications"
+          ]
+        },
+        "Month and Year of Publication": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "Pick any day of that month.",
+          "categories": [
             "Journal Publications"
           ]
         },
         "Quartile": {
           "canonical_tag": "custom",
           "type": "select",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Journal Publications"
           ]
         },
-        "Citation Count (if available)": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Journal Publications"
-          ]
-        },
-        "Funding Acknowledgement": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Book / Book Chapters",
-            "Conference Publications",
-            "Journal Publications"
-          ]
-        },
-        "Related Publications / Project References": {
-          "canonical_tag": "custom",
+        "Names of Co-authors": {
+          "canonical_tag": "author_or_person",
           "type": "textarea",
           "required": false,
-          "description": "",
+          "description": "One person per line. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
           "categories": [
-            "Book / Book Chapters",
-            "Conference Publications",
-            "Funded Research Projects",
-            "Journal Publications",
-            "Key Research Innovations & Technical Accomplishments",
-            "Patents & Intellectual Property"
+            "Journal Publications"
           ]
         },
-        "Dataset / Code / Supplementary Material Link": {
+        "Impact Factor (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "Write NA if it does not apply.",
+          "categories": [
+            "Journal Publications"
+          ]
+        },
+        "Upload Published Research Paper / Supporting Proof": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Journal Publications"
+          ]
+        },
+        "Published Article URL": {
           "canonical_tag": "custom",
           "type": "url",
           "required": false,
           "description": "",
           "categories": [
-            "Conference Publications",
-            "Journal Publications",
-            "Key Research Innovations & Technical Accomplishments"
+            "Journal Publications"
           ]
         },
-        "Conference Paper Title": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": true,
+        "Journal Website URL": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
           "description": "",
           "categories": [
-            "Conference Publications"
+            "Journal Publications"
           ]
         },
-        "Conference Name": {
+        "Name of the Conference": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
@@ -254,46 +233,19 @@
             "Conference Publications"
           ]
         },
-        "Organizing Institution": {
+        "Conference Proceedings Indexing": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Conference Publications"
+          ]
+        },
+        "Conference Organizing Institution": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Conference Publications"
-          ]
-        },
-        "Conference Location": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Conference Publications"
-          ]
-        },
-        "Conference Date": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Conference Publications"
-          ]
-        },
-        "Publisher / Proceedings Name": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Conference Publications"
-          ]
-        },
-        "DOI / ISBN / ISSN": {
-          "canonical_tag": "grant_or_prize_amount",
-          "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Conference Publications"
@@ -302,22 +254,67 @@
         "Conference Type": {
           "canonical_tag": "custom",
           "type": "select",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Conference Publications"
           ]
         },
-        "Presentation Type": {
+        "Conference Mode": {
           "canonical_tag": "custom",
           "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Conference Publications"
+          ]
+        },
+        "DOI": {
+          "canonical_tag": "grant_or_prize_amount",
+          "type": "text",
           "required": false,
           "description": "",
           "categories": [
             "Conference Publications"
           ]
         },
-        "Book / Book Chapter Title": {
+        "Upload Published Paper / Proceedings Proof": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Conference Publications"
+          ]
+        },
+        "Upload Conference Presentation / Participation Certificate": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Conference Publications"
+          ]
+        },
+        "Published Paper / Proceedings URL": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Conference Publications"
+          ]
+        },
+        "Remarks if Any": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Conference Publications"
+          ]
+        },
+        "Title of the Book / Edited Volume / Book Chapter": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
@@ -326,52 +323,52 @@
             "Book / Book Chapters"
           ]
         },
-        "Book Title": {
+        "Type of Publication": {
           "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
+          "type": "select",
+          "required": true,
           "description": "",
           "categories": [
             "Book / Book Chapters"
           ]
         },
-        "Chapter Number / Chapter Title": {
-          "canonical_tag": "custom",
+        "ISBN / e-ISBN": {
+          "canonical_tag": "grant_or_prize_amount",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Book / Book Chapters"
           ]
         },
-        "Author / Editor Names": {
+        "Names of Co-authors / Contributors": {
           "canonical_tag": "author_or_person",
           "type": "textarea",
           "required": true,
-          "description": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+          "description": "One person per line. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
           "categories": [
             "Book / Book Chapters"
           ]
         },
-        "ISBN": {
-          "canonical_tag": "grant_or_prize_amount",
-          "type": "text",
+        "Date of Publication": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Book / Book Chapters"
+          ]
+        },
+        "Upload Book Cover / Publication Proof": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
           "required": false,
           "description": "",
           "categories": [
             "Book / Book Chapters"
           ]
         },
-        "Edition / Volume": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Book / Book Chapters"
-          ]
-        },
-        "Book / Publisher Website": {
+        "Publisher Website / Publication URL": {
           "canonical_tag": "custom",
           "type": "url",
           "required": false,
@@ -380,16 +377,7 @@
             "Book / Book Chapters"
           ]
         },
-        "Indexing / Recognition": {
-          "canonical_tag": "impact_or_indexing",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Book / Book Chapters"
-          ]
-        },
-        "Project Title": {
+        "Title of the Research Project": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
@@ -398,25 +386,7 @@
             "Funded Research Projects"
           ]
         },
-        "Principal Investigator": {
-          "canonical_tag": "author_or_person",
-          "type": "textarea",
-          "required": true,
-          "description": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
-          "categories": [
-            "Funded Research Projects"
-          ]
-        },
-        "Co-Principal Investigators / Collaborators": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Funded Research Projects"
-          ]
-        },
-        "Funding Agency": {
+        "Name of the Funding Agency / Sponsoring Organization": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
@@ -425,19 +395,46 @@
             "Funded Research Projects"
           ]
         },
-        "Sanctioned Grant Amount (INR)": {
-          "canonical_tag": "grant_or_prize_amount",
-          "type": "text",
+        "Category of Funding Agency": {
+          "canonical_tag": "custom",
+          "type": "select",
           "required": true,
           "description": "",
           "categories": [
             "Funded Research Projects"
           ]
         },
-        "Project End Date": {
+        "Role in the Project": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Funded Research Projects"
+          ]
+        },
+        "Names of Co-Principal Investigators / Collaborators": {
+          "canonical_tag": "author_or_person",
+          "type": "textarea",
+          "required": true,
+          "description": "One person per line. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+          "categories": [
+            "Funded Research Projects"
+          ]
+        },
+        "Date of Project Proposal Submission": {
           "canonical_tag": "custom",
           "type": "date",
-          "required": false,
+          "required": true,
+          "description": "",
+          "categories": [
+            "Funded Research Projects"
+          ]
+        },
+        "Date of Project Sanction": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
           "description": "",
           "categories": [
             "Funded Research Projects"
@@ -446,22 +443,32 @@
         "Project Duration": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
+          "description": "",
+          "categories": [
+            "Consultancy Projects",
+            "Funded Research Projects"
+          ]
+        },
+        "Total Sanctioned Amount (₹)": {
+          "canonical_tag": "grant_or_prize_amount",
+          "type": "text",
+          "required": true,
           "description": "",
           "categories": [
             "Funded Research Projects"
           ]
         },
-        "Grant Reference / Sanction Number": {
+        "Research Domain / Area": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Funded Research Projects"
           ]
         },
-        "Project Objectives and Rationale": {
+        "Objectives / Brief Description of the Project": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": true,
@@ -470,27 +477,27 @@
             "Funded Research Projects"
           ]
         },
-        "Key Research Outcomes / Deliverables": {
+        "Expected / Achieved Research Outcomes": {
           "canonical_tag": "custom",
           "type": "textarea",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Funded Research Projects"
           ]
         },
-        "Measurable Impact": {
+        "Industry / Institutional Collaboration (if any)": {
           "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
+          "type": "text",
+          "required": true,
+          "description": "Write NA if there is none.",
           "categories": [
             "Funded Research Projects"
           ]
         },
-        "Project Status": {
+        "Related Publications / Project References": {
           "canonical_tag": "custom",
-          "type": "select",
+          "type": "textarea",
           "required": false,
           "description": "",
           "categories": [
@@ -498,7 +505,26 @@
             "Funded Research Projects"
           ]
         },
-        "Project Webpage / Supporting Link": {
+        "Upload Sanction Letter / Approval Document": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Funded Research Projects"
+          ]
+        },
+        "Project Status": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Consultancy Projects",
+            "Funded Research Projects"
+          ]
+        },
+        "Project Website / Relevant URL (if any)": {
           "canonical_tag": "custom",
           "type": "url",
           "required": false,
@@ -507,7 +533,7 @@
             "Funded Research Projects"
           ]
         },
-        "Consultancy Project Title": {
+        "Title of the Consultancy Project": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
@@ -516,7 +542,7 @@
             "Consultancy Projects"
           ]
         },
-        "Client / Organization Name": {
+        "Name of the Client Organization / Industry": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
@@ -525,16 +551,25 @@
             "Consultancy Projects"
           ]
         },
-        "Project Coordinator / Faculty Members": {
-          "canonical_tag": "author_or_person",
-          "type": "textarea",
-          "required": false,
-          "description": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+        "Category of Client Organization": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
           "categories": [
             "Consultancy Projects"
           ]
         },
         "Nature of Consultancy": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Consultancy Projects"
+          ]
+        },
+        "Role": {
           "canonical_tag": "custom",
           "type": "text",
           "required": false,
@@ -543,16 +578,16 @@
             "Consultancy Projects"
           ]
         },
-        "Project Completion Date": {
-          "canonical_tag": "custom",
+        "Date of Commencement": {
+          "canonical_tag": "event_date",
           "type": "date",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Consultancy Projects"
           ]
         },
-        "Consultancy Amount (INR)": {
+        "Total Consultancy Amount (₹)": {
           "canonical_tag": "grant_or_prize_amount",
           "type": "text",
           "required": true,
@@ -561,76 +596,40 @@
             "Consultancy Projects"
           ]
         },
-        "Project Reference Number": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
+        "Names of Other Faculty Members / Collaborators Involved": {
+          "canonical_tag": "author_or_person",
+          "type": "textarea",
+          "required": true,
+          "description": "One person per line. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
           "categories": [
             "Consultancy Projects"
           ]
         },
-        "Objectives and Scope of Work": {
-          "canonical_tag": "description",
-          "type": "textarea",
+        "Industry Contact Person / Designation": {
+          "canonical_tag": "custom",
+          "type": "text",
           "required": true,
           "description": "",
           "categories": [
             "Consultancy Projects"
           ]
         },
-        "Key Deliverables": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Consultancy Projects"
-          ]
-        },
-        "Industry / Institutional Impact": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Consultancy Projects"
-          ]
-        },
-        "Supporting Project Link": {
-          "canonical_tag": "custom",
+        "Upload Consultancy Agreement / Work Order": {
+          "canonical_tag": "evidence_url",
           "type": "url",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Consultancy Projects"
           ]
         },
-        "Patent / Intellectual Property Title": {
+        "Title / Name of the Intellectual Property": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
           "description": "",
           "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Inventor Names and Affiliations": {
-          "canonical_tag": "author_or_person",
-          "type": "textarea",
-          "required": true,
-          "description": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Patent / IP Type": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
+            "Patents & Intellectual Property Rights (IPR)"
           ]
         },
         "Application / Registration Number": {
@@ -639,82 +638,127 @@
           "required": true,
           "description": "",
           "categories": [
-            "Patents & Intellectual Property"
+            "Patents & Intellectual Property Rights (IPR)"
           ]
         },
-        "Filing Date": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Grant / Registration Date": {
-          "canonical_tag": "custom",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Patent Office / Registration Authority": {
-          "canonical_tag": "organization_or_venue",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Country / Jurisdiction": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Patent / IP Status": {
-          "canonical_tag": "impact_or_indexing",
-          "type": "select",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Technology / Application Area": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Patents & Intellectual Property"
-          ]
-        },
-        "Innovation Overview and Significance": {
+        "Brief Description of the Invention / Intellectual Property": {
           "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Revenue Generated through Commercialization (₹), if applicable": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Commercialization / Licensing Details": {
+          "canonical_tag": "custom",
           "type": "textarea",
           "required": false,
           "description": "",
           "categories": [
-            "Patents & Intellectual Property"
+            "Patents & Intellectual Property Rights (IPR)"
           ]
         },
-        "Patent / IP Webpage": {
+        "Type of Intellectual Property": {
           "canonical_tag": "custom",
-          "type": "url",
+          "type": "select",
           "required": false,
           "description": "",
           "categories": [
-            "Patents & Intellectual Property"
+            "Patents & Intellectual Property Rights (IPR)"
           ]
         },
-        "Innovation / Technical Accomplishment Title": {
+        "Names of Inventors / Creators": {
+          "canonical_tag": "author_or_person",
+          "type": "textarea",
+          "required": true,
+          "description": "One person per line. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Date of Filing / Application": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Date of Publication (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Date of Grant / Registration (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Current Status": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Patent Classification / Technology Domain": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Name of Co-applicant Institution / Organization (if any)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "Write NA if there is none.",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Country of Filing / Registration": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Upload Application / Publication / Grant Certificate": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Patents & Intellectual Property Rights (IPR)"
+          ]
+        },
+        "Title of the Innovation / Technical Accomplishment": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
@@ -723,7 +767,7 @@
             "Key Research Innovations & Technical Accomplishments"
           ]
         },
-        "Innovation Overview": {
+        "Brief Description of the Innovation / Technical Achievement": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": true,
@@ -732,16 +776,16 @@
             "Key Research Innovations & Technical Accomplishments"
           ]
         },
-        "Problem Addressed / Research Gap": {
+        "Research Domain / Technology Area": {
           "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
+          "type": "text",
+          "required": true,
           "description": "",
           "categories": [
             "Key Research Innovations & Technical Accomplishments"
           ]
         },
-        "Novelty and Technical Significance": {
+        "Problem Addressed / Motivation Behind the Innovation": {
           "canonical_tag": "custom",
           "type": "textarea",
           "required": true,
@@ -750,16 +794,16 @@
             "Key Research Innovations & Technical Accomplishments"
           ]
         },
-        "Faculty / Research Team Members": {
+        "Faculty Members Involved": {
           "canonical_tag": "author_or_person",
           "type": "textarea",
           "required": false,
-          "description": "In publication order, first = lead. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
+          "description": "One person per line. Employee ID or Roll No for people of this department, EXT for outsiders, e.g.\nC6608 - Dr. M. L. Valarmathi\nEXT - Dr. J. Smith - Anna University",
           "categories": [
             "Key Research Innovations & Technical Accomplishments"
           ]
         },
-        "Technology / Tools / Methodologies Used": {
+        "Student Contributors (if any)": {
           "canonical_tag": "custom",
           "type": "textarea",
           "required": false,
@@ -768,95 +812,113 @@
             "Key Research Innovations & Technical Accomplishments"
           ]
         },
-        "Prototype / Product / Solution Developed": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Key Research Innovations & Technical Accomplishments"
-          ]
-        },
-        "Development Date": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Key Research Innovations & Technical Accomplishments"
-          ]
-        },
-        "Testing / Validation Results": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Key Research Innovations & Technical Accomplishments"
-          ]
-        },
-        "Industry / Societal / Academic Impact": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Key Research Innovations & Technical Accomplishments"
-          ]
-        },
-        "Commercialisation / Technology Transfer Status": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Key Research Innovations & Technical Accomplishments"
-          ]
-        },
-        "Patent / Copyright / IP Reference": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Key Research Innovations & Technical Accomplishments"
-          ]
-        },
-        "Key Impact Badge / Metric (e.g. Scopus Q1, Patent Granted, ₹25 Lakh Grant, Best Paper Award)": {
-          "canonical_tag": "badge_tag",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Photo Link (Google Drive / Cloud URL)": {
+        "Upload Achievement Photo": {
           "canonical_tag": "photo_url",
           "type": "image",
           "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Key Research Innovations & Technical Accomplishments"
+          ]
         },
-        "Photo Caption & Persons in Image – Names from left to right": {
-          "canonical_tag": "photo_caption",
-          "type": "text",
+        "Has the innovation been implemented or deployed?": {
+          "canonical_tag": "custom",
+          "type": "select",
           "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Key Research Innovations & Technical Accomplishments"
+          ]
         },
-        "Official Evidence / Certificate / Supporting Document Link": {
+        "Supporting Document Link": {
           "canonical_tag": "evidence_url",
           "type": "url",
           "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Key Research Innovations & Technical Accomplishments"
+          ]
         },
-        "Is this a Landmark / Milestone Achievement?": {
+        "Research Scholar ID and Name": {
           "canonical_tag": "custom",
-          "type": "select",
+          "type": "text",
           "required": true,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
         },
-        "Permission to Publish this Submission": {
+        "Supervisor Name": {
           "canonical_tag": "custom",
-          "type": "select",
+          "type": "text",
           "required": true,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Title / Topic of the Research Seminar": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Date of the Seminar": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Research Area / Domain": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Upload Seminar Invitation / Circular": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Supporting Photographs": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Target Audience": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
+        },
+        "Number of participants": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Research Seminar"
+          ]
         },
         "Accuracy and Authorization Confirmation": {
           "canonical_tag": "custom",
@@ -867,58 +929,58 @@
       },
       "category_field_mappings": {},
       "transforms": {
-        "Author Names and Affiliations": "names_only",
-        "Author / Editor Names": "names_only",
-        "Principal Investigator": "names_only",
-        "Project Coordinator / Faculty Members": "names_only",
-        "Inventor Names and Affiliations": "names_only",
-        "Faculty / Research Team Members": "names_only"
-      },
-      "legacy_field_mappings": {
-        "Submitter Full Name": "submitter_name",
-        "Authors / Investigators / Team Members": "author_or_person",
-        "Date of Publication / Award / Grant": "event_date",
-        "Impact Factor / Indexing (e.g., Scopus, Web of Science, IEEE, Q1/Q2)": "impact_or_indexing",
-        "DOI / Patent Number / Grant Amount / URL Link": "grant_or_prize_amount",
-        "Abstract / Executive Summary / Highlights": "description",
-        "Evidence / Certificate Link (Google Drive / Document URL)": "evidence_url",
-        "Title of Publication / Patent / Project / Innovation": "title",
-        "Authors / Investigators (one per line: ID - Name)": "author_or_person",
-        "Venue / Journal / Publisher / Funding Agency / Organization": "organization_or_venue",
-        "Date of Publication / Filing / Award / Grant": "event_date",
-        "DOI / ISBN / ISSN / Patent Number / Grant Reference": "grant_or_prize_amount",
-        "Abstract / Executive Summary": "description",
-        "Key Impact Badge / Metric": "badge_tag",
-        "Photo Caption & Persons in Image": "photo_caption"
-      },
-      "legacy_transforms": {
-        "Authors / Investigators (one per line: ID - Name)": "names_only"
+        "Names of Co-authors": "names_only",
+        "Names of Co-authors / Contributors": "names_only",
+        "Names of Co-Principal Investigators / Collaborators": "names_only",
+        "Names of Other Faculty Members / Collaborators Involved": "names_only",
+        "Names of Inventors / Creators": "names_only",
+        "Faculty Members Involved": "names_only"
       }
     },
     "form_faculty": {
-      "form_name": "IT Chronicles - Faculty Achievements Submission Form",
+      "form_name": "Faculty Participation and Achievements",
       "section_id": "sec_faculty",
       "category_field": "Achievement Category",
       "category_map": {
         "Awards & Honors Received": "cat_fac_awards",
         "Certifications & Upskilling Completed": "cat_fac_certifications",
         "Invited Keynote / Expert Lectures Delivered": "cat_fac_keynotes",
-        "Resource Person / Session Chair Roles": "cat_fac_session_chairs",
+        "Resource Person / Session Chair Roles": "cat_faculty_resource_person_session_chai",
         "FDP / Workshops Attended": "cat_fac_fdp_attended",
-        "Professional Body & Editorial Board Roles": "cat_fac_memberships"
+        "Membership in Professional Body & Editorial Board Roles": "cat_fac_memberships"
       },
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
-        "Faculty Full Name (Select your name)": "author_or_person",
-        "Exact Title of Award / Certification / Lecture / Role": "title",
-        "Awarding Body / Host Institution / Organizing Organization": "organization_or_venue",
+        "Faculty Full Name": "author_or_person",
+        "Exact Title of Award / Recognition": "title",
+        "Awarding Authority / Recognizing Institution / Organizing Organization": "organization_or_venue",
         "Level": "impact_or_indexing",
-        "Additional Information for the Review Team": "description",
-        "Key Impact Badge / Metric (e.g. 1st Prize, Best Faculty Award, International Recognition)": "badge_tag",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image": "photo_caption",
-        "Official Evidence / Certificate / Supporting Document Link": "evidence_url"
+        "Additional highlights of the recognition if any.": "description",
+        "Upload Achievement Photo": "photo_url",
+        "Official Evidence / Certificate / Supporting Document Link": "evidence_url",
+        "Title of the Certification / Course Completed": "title",
+        "Date of Completion": "event_date",
+        "Conducting Body / Organizing Institution / Host Organization": "organization_or_venue",
+        "How has this certification contributed to professional development or skill enhancement?": "description",
+        "Upload Completion Certificate": "evidence_url",
+        "Title of the Keynote Address / Expert Lecture": "title",
+        "Organizing Institution / Host Organization": "organization_or_venue",
+        "Date of the Lecture": "event_date",
+        "Level of the Event": "impact_or_indexing",
+        "Upload Certificate of Appreciation / Recognition": "evidence_url",
+        "Title of the Session / Event": "title",
+        "Date of the Session": "event_date",
+        "Topic / Brief Description": "description",
+        "Upload Certificate / Invitation Letter": "evidence_url",
+        "Title of the FDP / Workshop / Training Programme": "title",
+        "Programme Level": "impact_or_indexing",
+        "Start Date": "event_date",
+        "Relevance to Teaching, Research or Professional Development": "description",
+        "Date of Membership": "event_date",
+        "Upload Supporting Document": "evidence_url",
+        "Publisher / Organizing Institution": "organization_or_venue",
+        "Title": "title"
       },
       "column_metadata": {
         "Timestamp": {
@@ -933,16 +995,16 @@
           "required": false,
           "description": "Collected by Google Forms"
         },
-        "Faculty Full Name (Select your name)": {
+        "Faculty Full Name": {
           "canonical_tag": "author_or_person",
           "type": "text",
           "required": true,
           "description": ""
         },
-        "Designation at the Time of Achievement": {
+        "Designation": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": true,
+          "required": false,
           "description": ""
         },
         "Achievement Category": {
@@ -951,46 +1013,22 @@
           "required": true,
           "description": ""
         },
-        "Exact Title of Award / Certification / Lecture / Role": {
+        "Exact Title of Award / Recognition": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
           "description": "",
           "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
+            "Awards & Honors Received"
           ]
         },
-        "Type of Recognition or Engagement": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
-          ]
-        },
-        "Awarding Body / Host Institution / Organizing Organization": {
+        "Awarding Authority / Recognizing Institution / Organizing Organization": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
           "description": "",
           "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
+            "Awards & Honors Received"
           ]
         },
         "Level": {
@@ -1000,104 +1038,643 @@
           "description": "",
           "categories": [
             "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
+            "Certifications & Upskilling Completed"
           ]
         },
-        "Names, Affiliations and Roles of Other Contributors (NA if none)": {
+        "Names, Affiliations and Roles of Other Contributors": {
           "canonical_tag": "custom",
           "type": "textarea",
           "required": false,
-          "description": "",
+          "description": "Enter NA if none.",
           "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
+            "Awards & Honors Received"
           ]
         },
-        "Organizer Webpage (URL)": {
+        "Name of the Organizing Institution / Conducting Agency": {
           "canonical_tag": "custom",
-          "type": "url",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
-          ]
-        },
-        "Has this Achievement Been Reported Previously?": {
-          "canonical_tag": "custom",
-          "type": "select",
+          "type": "text",
           "required": true,
           "description": "",
           "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
+            "Awards & Honors Received"
           ]
         },
-        "Additional Information for the Review Team": {
+        "Date and Venue of the Award / Recognition Ceremony": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "Write the date and the venue, e.g. 12 March 2026, Chennai.",
+          "categories": [
+            "Awards & Honors Received"
+          ]
+        },
+        "Additional highlights of the recognition if any.": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": false,
           "description": "",
           "categories": [
-            "Awards & Honors Received",
-            "Certifications & Upskilling Completed",
-            "FDP / Workshops Attended",
-            "Invited Keynote / Expert Lectures Delivered",
-            "Professional Body & Editorial Board Roles",
-            "Resource Person / Session Chair Roles"
+            "Awards & Honors Received"
           ]
         },
-        "Key Impact Badge / Metric (e.g. 1st Prize, Best Faculty Award, International Recognition)": {
-          "canonical_tag": "badge_tag",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Photo Link (Google Drive / Cloud URL)": {
+        "Upload Achievement Photo": {
           "canonical_tag": "photo_url",
           "type": "image",
           "required": false,
-          "description": ""
-        },
-        "Photo Caption & Persons in Image": {
-          "canonical_tag": "photo_caption",
-          "type": "text",
-          "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Awards & Honors Received"
+          ]
         },
         "Official Evidence / Certificate / Supporting Document Link": {
           "canonical_tag": "evidence_url",
           "type": "url",
           "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Awards & Honors Received",
+            "FDP / Workshops Attended"
+          ]
         },
-        "Is this a Landmark / Milestone Achievement?": {
+        "Title of the Certification / Course Completed": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Mode of Learning": {
           "canonical_tag": "custom",
           "type": "select",
           "required": true,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
         },
-        "Permission to Publish this Submission": {
+        "Duration of the Course / Training": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Date of Commencement": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Date of Completion": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Certification Level": {
           "canonical_tag": "custom",
           "type": "select",
           "required": true,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Key Skills / Competencies Acquired": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Conducting Body / Organizing Institution / Host Organization": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Score / Grade / Percentage Obtained (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "Write NA if it does not apply.",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "How has this certification contributed to professional development or skill enhancement?": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Official Webpage of the Organizing Institution / Certification Provider (URL)": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Upload Completion Certificate": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Certifications & Upskilling Completed"
+          ]
+        },
+        "Title of the Keynote Address / Expert Lecture": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Nature of the Engagement": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Topic / Area of Expertise": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Name of the Event / Programme": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Organizing Institution / Host Organization": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended",
+            "Invited Keynote / Expert Lectures Delivered",
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Date of the Lecture": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Venue of the Lecture": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Mode of Delivery": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Duration of the Lecture (in Hours)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Approximate Number of Participants": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Target Audience": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Level of the Event": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered",
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Organizer's Official Webpage / Event URL": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Upload the Event Brochure / Programme Schedule": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Upload Certificate of Appreciation / Recognition": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Invited Keynote / Expert Lectures Delivered"
+          ]
+        },
+        "Title of the Session / Event": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Role": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Date of the Session": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Venue": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Mode of Participation": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended",
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Topic / Brief Description": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Upload Certificate / Invitation Letter": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Resource Person / Session Chair Roles"
+          ]
+        },
+        "Title of the FDP / Workshop / Training Programme": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Nature of the Programme": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Programme Level": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Conducting Body / Sponsoring Agency": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Collaborating Institution / Industry (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "Write NA if there is none.",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Venue / Location (If Applicable)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "Write NA if there is none.",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Start Date": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "End Date": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Major Topics / Domains Covered": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Relevance to Teaching, Research or Professional Development": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Upload Participation / Completion Certificate": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Additional Remarks": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "FDP / Workshops Attended"
+          ]
+        },
+        "Name of the Professional Body / Society / Association": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Type of Membership": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Membership ID / Registration Number": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Membership Category / Grade": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Date of Membership": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Membership Validity": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Official Website of the Professional Body": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Upload Supporting Document": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Nature of Professional Role": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Name of the Journal / Publication / Conference": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Publisher / Organizing Institution": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "ISSN / ISBN / DOI (if applicable)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Subject Area / Editorial Domain": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Date of Appointment / Joining": {
+          "canonical_tag": "custom",
+          "type": "date",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Tenure / Duration of the Role": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Official Journal / Editorial Board Webpage (URL)": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Upload Editorial Board Appointment Letter / Confirmation": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
+        },
+        "Title": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "Made from the answers.",
+          "categories": [
+            "Membership in Professional Body & Editorial Board Roles"
+          ]
         },
         "Accuracy and Authorization Confirmation": {
           "canonical_tag": "custom",
@@ -1108,53 +1685,44 @@
       },
       "category_field_mappings": {},
       "transforms": {
-        "Faculty Full Name (Select your name)": "names_only"
+        "Faculty Full Name": "names_only"
       },
       "legacy_field_mappings": {
-        "Faculty Full Name": "author_or_person",
-        "Title of Award / Certification / Keynote / Workshop": "title",
-        "Organization / Host Institution / Awarding Body": "organization_or_venue",
-        "Date of Event / Award / Completion": "event_date",
-        "Level (International / National / State / University)": "impact_or_indexing",
-        "Evidence / Certificate Link (Google Drive URL)": "evidence_url",
-        "Faculty Full Name (select your name)": "author_or_person",
-        "Date of Achievement / Start Date": "event_date",
-        "Description & Key Highlights": "description",
-        "Key Impact Badge / Metric": "badge_tag"
-      },
-      "legacy_transforms": {
-        "Faculty Full Name (select your name)": "names_only"
+        "Upload Completion certificate": "evidence_url"
       }
     },
     "form_student": {
-      "form_name": "IT Chronicles - Student Achievements Submission Form",
+      "form_name": "Student Participation and Achievements",
       "section_id": "sec_student",
-      "category_field": "Student Achievement Category",
+      "category_field": "Category of Participation / Achievement",
       "category_map": {
-        "Academic Excellence & Ranks": "cat_stu_academic",
-        "Hackathons & Coding Competitions": "cat_stu_hackathons",
-        "Higher Education & Top Placements": "cat_stu_placements",
-        "Technical Projects & Innovations": "cat_stu_projects",
-        "Sports, Cultural & Co-Curricular Accomplishments": "cat_stu_extracurricular"
+        "Technical Competitions": "cat_student_technical_competitions",
+        "Hackathons / Coding Competitions": "cat_stu_hackathons",
+        "Paper Presentations": "cat_student_paper_presentations",
+        "Project Presentations / Exhibitions": "cat_student_project_presentations_exhibi",
+        "Technical Symposiums": "cat_student_technical_symposiums",
+        "Innovation / Startup Competitions": "cat_student_innovation_startup_competiti",
+        "Research Publications / Patents": "cat_student_research_publications_patent",
+        "Professional Certifications": "cat_student_professional_certifications",
+        "Internships / Industrial Training": "cat_student_internships_industrial_train",
+        "Workshops / Technical Training": "cat_student_workshops_technical_training",
+        "Sports Achievements": "cat_student_sports_achievements",
+        "Cultural Activities": "cat_student_cultural_activities",
+        "NSS / NCC / Social Service": "cat_student_nss_ncc_social_service",
+        "Leadership / Student Association Activities": "cat_student_leadership_student_associati",
+        "Others": "cat_student_others"
       },
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
-        "Participants (One roll number per line)": "author_or_person",
-        "Name of Competition / Award / Project / Event": "title",
-        "Organizing Institute / Company / Awarding Body": "organization_or_venue",
-        "Position / Rank / Prize / Scholarship": "grant_or_prize_amount",
-        "Date of Achievement / Result": "event_date",
-        "Project Abstract / Solution Details": "description",
-        "Name of Institution / Company / Examination": "title",
-        "Admission / Placement / Scholarship / Rank Details": "grant_or_prize_amount",
-        "Programme / Degree / Job Role": "description",
-        "Project Abstract / Achievement Details": "description",
-        "Activity / Event / Performance Details": "description",
-        "Key Impact Badge / Metric (e.g. 1st Prize, Winner, National Finalist, ₹50,000 Scholarship)": "badge_tag",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image (Names from left to right)": "photo_caption",
-        "Certificate / Proof Link": "evidence_url"
+        "Student Roll Numbers": "author_or_person",
+        "Title of the Event / Certification Programme / Competition": "title",
+        "Level of Participation": "impact_or_indexing",
+        "Name of the Organizing Institution / Organization": "organization_or_venue",
+        "Date of the Event": "event_date",
+        "Brief Description of the Activity / Achievement": "description",
+        "Position / Award / Recognition Received": "grant_or_prize_amount",
+        "Upload Supporting Certificate / Evidence": "evidence_url"
       },
       "column_metadata": {
         "Timestamp": {
@@ -1173,435 +1741,176 @@
           "canonical_tag": "custom",
           "type": "select",
           "required": true,
-          "description": "Choose 'Participation only' when the students took part without winning or ranking."
+          "description": "Choose Participation only when students participated without winning or ranking."
         },
-        "Participants (One roll number per line)": {
+        "Student Roll Numbers": {
           "canonical_tag": "author_or_person",
           "type": "textarea",
           "required": true,
-          "description": "One student per line, roll number only, e.g.\n21IT001\n21IT014\nNames are filled in from the college records."
+          "description": "Enter roll numbers only, one per line (the first is the lead). Names are filled in from the college records."
         },
-        "Lead Student Roll Number": {
+        "Faculty Mentor / Coordinator": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
+        "Year of Study": {
           "canonical_tag": "custom",
           "type": "text",
           "required": true,
           "description": ""
         },
-        "Individual or Team Achievement": {
+        "Programme / Section": {
           "canonical_tag": "custom",
-          "type": "select",
+          "type": "text",
           "required": true,
           "description": ""
         },
-        "Student Achievement Category": {
+        "Academic Year": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Student's LinkedIn Profile / Portfolio URL": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "Enter NA if there is none."
+        },
+        "Title of the Event / Certification Programme / Competition": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Category of Participation / Achievement": {
           "canonical_tag": "category_id",
           "type": "select",
           "required": true,
           "description": ""
         },
-        "Name of Competition / Award / Project / Event": {
-          "canonical_tag": "title",
-          "type": "text",
+        "Nature of Participation": {
+          "canonical_tag": "custom",
+          "type": "select",
           "required": true,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
+          "description": ""
         },
-        "Organizing Institute / Company / Awarding Body": {
+        "Level of Participation": {
+          "canonical_tag": "impact_or_indexing",
+          "type": "select",
+          "required": true,
+          "description": ""
+        },
+        "Name of the Organizing Institution / Organization": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
+          "description": ""
         },
-        "Achievement Level": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Position / Rank / Prize / Scholarship": {
-          "canonical_tag": "grant_or_prize_amount",
-          "type": "text",
-          "required": true,
-          "description": "e.g. 1st Prize, Runner-up, Scholarship. For participation only, type Participated.",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Prize / Scholarship Amount in Rupees (numbers only, 0 if none)": {
+        "Venue / Location": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
+          "required": true,
+          "description": ""
         },
-        "Date of Achievement / Result": {
+        "Date of the Event": {
           "canonical_tag": "event_date",
           "type": "date",
           "required": true,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
+          "description": ""
         },
-        "Achievement Domain": {
+        "Duration of the event": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": ""
+        },
+        "Was any prize money / cash award received?": {
           "canonical_tag": "custom",
           "type": "select",
           "required": true,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
+          "description": ""
         },
-        "Faculty Mentor / Project Guide": {
+        "Award Amount (in ₹), if applicable": {
           "canonical_tag": "custom",
           "type": "text",
           "required": false,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
+          "description": ""
         },
-        "Academic Year / Semester": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks"
-          ]
-        },
-        "Measurable Academic Result or Impact": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks"
-          ]
-        },
-        "Related Awards / Previous Submission Details (type NA if none)": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Academic Excellence & Ranks",
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Event Start Date": {
-          "canonical_tag": "custom",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Event End Date": {
-          "canonical_tag": "custom",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Problem Statement / Challenge Addressed": {
+        "Key Skills / Competencies Demonstrated / Skills Developed": {
           "canonical_tag": "custom",
           "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions"
-          ]
+          "required": true,
+          "description": ""
         },
-        "Project Abstract / Solution Details": {
+        "Brief Description of the Activity / Achievement": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": true,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions"
-          ]
+          "description": ""
         },
-        "Tools / Technologies / Programming Languages Used": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions"
-          ]
-        },
-        "Measurable Result or Impact": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions",
-            "Higher Education & Top Placements",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Project Demo / Repository / Portfolio URL": {
-          "canonical_tag": "custom",
-          "type": "url",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Learning Outcomes / Skills Demonstrated": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Hackathons & Coding Competitions",
-            "Sports, Cultural & Co-Curricular Accomplishments",
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Name of Institution / Company / Examination": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Higher Education & Top Placements"
-          ]
-        },
-        "Admission / Placement / Scholarship / Rank Details": {
+        "Position / Award / Recognition Received": {
           "canonical_tag": "grant_or_prize_amount",
           "type": "text",
           "required": true,
-          "description": "",
-          "categories": [
-            "Higher Education & Top Placements"
-          ]
+          "description": "Enter NA if it does not apply."
         },
-        "Scholarship / Offer Amount in Rupees (numbers only, 0 if none)": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Higher Education & Top Placements"
-          ]
-        },
-        "Programme / Degree / Job Role": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Higher Education & Top Placements"
-          ]
-        },
-        "Institution / Company / University Name": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Higher Education & Top Placements"
-          ]
-        },
-        "Project Statement / Objective": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Project Abstract / Achievement Details": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Tools / Technologies / Methods Used": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Has this Work Received Other Awards or Been Reported Previously?": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Technical Projects & Innovations"
-          ]
-        },
-        "Activity / Event / Performance Details": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Sports, Cultural & Co-Curricular Accomplishments"
-          ]
-        },
-        "Key Impact Badge / Metric (e.g. 1st Prize, Winner, National Finalist, ₹50,000 Scholarship)": {
-          "canonical_tag": "badge_tag",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Photo Link (Google Drive / Cloud URL)": {
-          "canonical_tag": "photo_url",
-          "type": "image",
-          "required": false,
-          "description": ""
-        },
-        "Photo Caption & Persons in Image (Names from left to right)": {
-          "canonical_tag": "photo_caption",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Certificate / Proof Link": {
+        "Upload Supporting Certificate / Evidence": {
           "canonical_tag": "evidence_url",
           "type": "url",
-          "required": false,
-          "description": ""
-        },
-        "Is this a Landmark / Milestone Achievement?": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": ""
-        },
-        "Permission to Publish this Submission": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": ""
-        },
-        "Accuracy and Authorization Confirmation": {
-          "canonical_tag": "custom",
-          "type": "text",
           "required": true,
           "description": ""
         }
       },
       "category_field_mappings": {},
       "transforms": {
-        "Participants (One roll number per line)": "names_only"
+        "Student Roll Numbers": "names_only"
       },
       "legacy_field_mappings": {
-        "Student Name(s)": "author_or_person",
-        "Organizing Institute / Company / Body": "organization_or_venue",
-        "Position / Rank / Prize / CTC (e.g. 1st Place, Cash Prize of $1000)": "grant_or_prize_amount",
-        "Date of Event / Award": "event_date",
-        "Participants (one per line: ROLLNO - Student Name)": "author_or_person",
-        "Participants (one roll number per line)": "author_or_person",
-        "Key Impact Badge / Metric": "badge_tag",
-        "Photo Caption & Persons in Image": "photo_caption",
-        "Team size": "grant_or_prize_amount"
-      },
-      "legacy_transforms": {
-        "Participants (one per line: ROLLNO - Student Name)": "names_only",
-        "Participants (one roll number per line)": "names_only"
+        "Name of the Student and Roll Number": "author_or_person"
       }
     },
     "form_industry": {
-      "form_name": "IT Chronicles - Industry, Alumni & Outreach Submission Form",
+      "form_name": "Industry, Alumni & Outreach",
       "section_id": "sec_industry",
-      "category_field": "Outreach Category",
+      "category_field": "Activity Category",
       "category_map": {
         "Industrial Visits & Field Tours": "cat_ind_visits",
         "Industry Expert Lectures & Technical Talks": "cat_ind_talks",
-        "MoUs Signed & Industrial Collaborations": "cat_ind_mous",
+        "MoUs Signed & Industrial Collaborations": "cat_outreach_mous_signed_industrial_colla",
         "Alumni Interactions & Mentorship Sessions": "cat_ind_alumni",
         "Community & Social Outreach Initiatives": "cat_ind_outreach"
       },
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
-        "Lead Coordinator": "author_or_person",
-        "Official Title of Industrial Visit / Field Tour": "title",
-        "Partner Company / Organization": "organization_or_venue",
-        "Visit Date": "event_date",
-        "Key Activities / Areas Visited": "description",
-        "Official Title of Event / Technical Talk": "title",
-        "Event Date": "event_date",
-        "Key Takeaways / Learning Outcomes": "description",
-        "Official Title of MoU / Partnership": "title",
-        "MoU / Partnership Scope": "description",
-        "Agreement Effective Date": "event_date",
-        "Official Title of Event / Interaction": "title",
-        "Partner Company / Organization / Alumni Group": "organization_or_venue",
-        "Key Insights / Learning Outcomes": "description",
-        "Official Title of Outreach Initiative": "title",
-        "Partner Company / Organization / Community Group": "organization_or_venue",
-        "Activity Start Date": "event_date",
-        "Key Activities Conducted": "description",
-        "Key Impact Badge / Metric (e.g. MoU Signed, 150+ Attendees, 5 Industry Visits)": "badge_tag",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image (Names from left to right)": "photo_caption",
-        "Official Evidence / Certificate / Supporting Document Link": "evidence_url"
+        "Faculty name": "author_or_person",
+        "Title / Name of the Visit": "title",
+        "Name of the Industry / Organization Visited": "organization_or_venue",
+        "Date of Visit": "event_date",
+        "Objective / Purpose of the Visit": "description",
+        "Upload Supporting Photographs": "photo_url",
+        "Upload Visit Report (if available)": "evidence_url",
+        "Title / Topic of the Lecture or Technical Talk": "title",
+        "Organization / Company / Institution": "organization_or_venue",
+        "Professional Profile / Area of Expertise": "description",
+        "Upload Event Photo": "photo_url",
+        "Title of the MoU / Collaboration": "title",
+        "Industry / Organization Name": "organization_or_venue",
+        "Scope and Objectives of the Collaboration": "description",
+        "MoU Start Date": "event_date",
+        "Upload Signed MoU / Supporting Document": "evidence_url",
+        "Title / Topic of the Alumni Interaction or Mentorship Session": "title",
+        "Organization / Company": "organization_or_venue",
+        "Date of the Session": "event_date",
+        "Brief Description of the Interaction / Mentorship Activity": "description",
+        "Title / Name of the Outreach Activity": "title",
+        "Organizing / Collaborating Organization": "organization_or_venue",
+        "Date of the Activity": "event_date",
+        "Key Outcomes / Social Impact": "description",
+        "Upload Activity Report / Supporting Documents": "evidence_url"
       },
       "column_metadata": {
         "Timestamp": {
@@ -1616,31 +1925,19 @@
           "required": false,
           "description": "Collected by Google Forms"
         },
-        "Submitting Faculty (Select your name)": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": true,
-          "description": ""
-        },
-        "Lead Coordinator": {
+        "Faculty name": {
           "canonical_tag": "author_or_person",
           "type": "text",
           "required": true,
           "description": ""
         },
-        "Other Faculty Involved (Optional, one per line: EmployeeID - Name)": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Outreach Category": {
+        "Activity Category": {
           "canonical_tag": "category_id",
           "type": "select",
           "required": true,
           "description": ""
         },
-        "Official Title of Industrial Visit / Field Tour": {
+        "Title / Name of the Visit": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
@@ -1649,177 +1946,100 @@
             "Industrial Visits & Field Tours"
           ]
         },
-        "Activity Format": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Participating Departments / Units": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks",
-            "MoUs Signed & Industrial Collaborations"
-          ]
-        },
-        "Partner Company / Organization": {
+        "Name of the Industry / Organization Visited": {
           "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
           "description": "",
           "categories": [
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks",
-            "MoUs Signed & Industrial Collaborations"
+            "Industrial Visits & Field Tours"
           ]
         },
-        "Partner Type": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks",
-            "MoUs Signed & Industrial Collaborations"
-          ]
-        },
-        "Industry Sector / Domain": {
+        "Location of the Organization": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
+            "Industrial Visits & Field Tours"
           ]
         },
-        "Visit Date": {
+        "Date of Visit": {
           "canonical_tag": "event_date",
           "type": "date",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Industrial Visits & Field Tours"
           ]
         },
-        "Number of Student Participants": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Number of Faculty Participants": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Speakers / Mentors / Partner Representatives": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Objectives and Rationale": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Key Activities / Areas Visited": {
+        "Objective / Purpose of the Visit": {
           "canonical_tag": "description",
           "type": "textarea",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Industrial Visits & Field Tours"
           ]
         },
-        "Outputs and Follow-up Commitments": {
+        "Class / Year of Students": {
           "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
+          "type": "text",
+          "required": true,
           "description": "",
           "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks",
-            "MoUs Signed & Industrial Collaborations"
+            "Industrial Visits & Field Tours"
+          ]
+        },
+        "Number of Students Participated": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industrial Visits & Field Tours"
+          ]
+        },
+        "Number of Faculty Coordinators": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industrial Visits & Field Tours"
           ]
         },
         "Measurable Outcomes": {
           "canonical_tag": "custom",
           "type": "textarea",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks",
-            "MoUs Signed & Industrial Collaborations"
+            "Industrial Visits & Field Tours"
           ]
         },
-        "Feedback / Satisfaction Summary": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions",
-            "Community & Social Outreach Initiatives",
-            "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Budget / Sponsorship / In-kind Support in Rupees (numbers only)": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
+        "Upload Supporting Photographs": {
+          "canonical_tag": "photo_url",
+          "type": "image",
+          "required": true,
           "description": "",
           "categories": [
             "Alumni Interactions & Mentorship Sessions",
             "Community & Social Outreach Initiatives",
             "Industrial Visits & Field Tours",
-            "Industry Expert Lectures & Technical Talks",
             "MoUs Signed & Industrial Collaborations"
           ]
         },
-        "Official Title of Event / Technical Talk": {
+        "Upload Visit Report (if available)": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Industrial Visits & Field Tours"
+          ]
+        },
+        "Title / Topic of the Lecture or Technical Talk": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
@@ -1828,45 +2048,90 @@
             "Industry Expert Lectures & Technical Talks"
           ]
         },
-        "Speaker Designation and Organization": {
+        "Name of the Resource Person": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "Industry Expert Lectures & Technical Talks"
           ]
         },
-        "Event Date": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
+        "Designation of the Resource Person": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industry Expert Lectures & Technical Talks"
+          ]
+        },
+        "Organization / Company / Institution": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industry Expert Lectures & Technical Talks"
+          ]
+        },
+        "Professional Profile / Area of Expertise": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industry Expert Lectures & Technical Talks"
+          ]
+        },
+        "Nature of the Session": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industry Expert Lectures & Technical Talks"
+          ]
+        },
+        "Venue / Mode of Delivery": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Industry Expert Lectures & Technical Talks"
+          ]
+        },
+        "Target Audience": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
           "description": "",
           "categories": [
             "Alumni Interactions & Mentorship Sessions",
             "Industry Expert Lectures & Technical Talks"
           ]
         },
-        "Topic / Technical Domain Covered": {
-          "canonical_tag": "custom",
-          "type": "text",
+        "Upload Event Photo": {
+          "canonical_tag": "photo_url",
+          "type": "image",
           "required": false,
           "description": "",
           "categories": [
             "Industry Expert Lectures & Technical Talks"
           ]
         },
-        "Key Takeaways / Learning Outcomes": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Industry Expert Lectures & Technical Talks"
-          ]
-        },
-        "Official Title of MoU / Partnership": {
+        "Title of the MoU / Collaboration": {
           "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "MoUs Signed & Industrial Collaborations"
+          ]
+        },
+        "Industry / Organization Name": {
+          "canonical_tag": "organization_or_venue",
           "type": "text",
           "required": true,
           "description": "",
@@ -1877,13 +2142,13 @@
         "Nature of Collaboration": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "MoUs Signed & Industrial Collaborations"
           ]
         },
-        "MoU / Partnership Scope": {
+        "Scope and Objectives of the Collaboration": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": true,
@@ -1892,20 +2157,20 @@
             "MoUs Signed & Industrial Collaborations"
           ]
         },
-        "Agreement Effective Date": {
+        "MoU Start Date": {
           "canonical_tag": "event_date",
           "type": "date",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "MoUs Signed & Industrial Collaborations"
           ]
         },
-        "Agreement Expiry / Renewal Date": {
+        "MoU Expiry Date": {
           "canonical_tag": "custom",
           "type": "date",
           "required": false,
-          "description": "",
+          "description": "Leave empty if the agreement has no end date. The dashboard flags MoUs that expire within 90 days.",
           "categories": [
             "MoUs Signed & Industrial Collaborations"
           ]
@@ -1919,254 +2184,186 @@
             "MoUs Signed & Industrial Collaborations"
           ]
         },
-        "Lead Faculty Coordinator": {
+        "Faculty Coordinator(s)": {
           "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
+          "type": "textarea",
+          "required": true,
           "description": "",
           "categories": [
+            "Community & Social Outreach Initiatives",
             "MoUs Signed & Industrial Collaborations"
           ]
         },
-        "Proposed Activities Under the Agreement": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "MoUs Signed & Industrial Collaborations"
-          ]
-        },
-        "Feedback / Partnership Review Summary": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "MoUs Signed & Industrial Collaborations"
-          ]
-        },
-        "Agreement / Partnership Reference Number": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "MoUs Signed & Industrial Collaborations"
-          ]
-        },
-        "Official Title of Event / Interaction": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Partner Company / Organization / Alumni Group": {
-          "canonical_tag": "organization_or_venue",
-          "type": "text",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Alumni Names and Current Designations": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Alumni Company / Organization": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Year of Graduation / Alumni Batch": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Mentorship / Interaction Topic": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Number of Alumni Participants": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Key Insights / Learning Outcomes": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Alumni Interactions & Mentorship Sessions"
-          ]
-        },
-        "Official Title of Outreach Initiative": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Partner Company / Organization / Community Group": {
-          "canonical_tag": "organization_or_venue",
-          "type": "text",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Target Community / Beneficiary Group": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Location / Venue": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Activity Start Date": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Activity End Date": {
-          "canonical_tag": "custom",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Number of Beneficiaries Reached": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Objectives and Social Rationale": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Key Activities Conducted": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Measurable Social Impact": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Sustainability / Continuation Plan": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Community & Social Outreach Initiatives"
-          ]
-        },
-        "Key Impact Badge / Metric (e.g. MoU Signed, 150+ Attendees, 5 Industry Visits)": {
-          "canonical_tag": "badge_tag",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Photo Link (Google Drive / Cloud URL)": {
-          "canonical_tag": "photo_url",
-          "type": "image",
-          "required": false,
-          "description": ""
-        },
-        "Photo Caption & Persons in Image (Names from left to right)": {
-          "canonical_tag": "photo_caption",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Official Evidence / Certificate / Supporting Document Link": {
+        "Upload Signed MoU / Supporting Document": {
           "canonical_tag": "evidence_url",
           "type": "url",
           "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "MoUs Signed & Industrial Collaborations"
+          ]
         },
-        "Event Report / Brochure / Partner Announcement Link": {
+        "Title / Topic of the Alumni Interaction or Mentorship Session": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Name of the Alumni": {
           "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Batch / Year of Graduation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Current Designation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Organization / Company": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Area of Expertise / Professional Domain": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Nature of Alumni Engagement": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Date of the Session": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Duration of the Session": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Brief Description of the Interaction / Mentorship Activity": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Alumni Interactions & Mentorship Sessions"
+          ]
+        },
+        "Title / Name of the Outreach Activity": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Category of Outreach Initiative": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Organizing / Collaborating Organization": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Date of the Activity": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Venue / Location": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Objective / Purpose of the Activity": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Key Outcomes / Social Impact": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
+        },
+        "Upload Activity Report / Supporting Documents": {
+          "canonical_tag": "evidence_url",
           "type": "url",
           "required": false,
-          "description": ""
-        },
-        "Is this a Landmark / Milestone Achievement?": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": ""
-        },
-        "Permission to Publish this Submission": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": ""
+          "description": "",
+          "categories": [
+            "Community & Social Outreach Initiatives"
+          ]
         },
         "Accuracy and Authorization Confirmation": {
           "canonical_tag": "custom",
@@ -2177,70 +2374,52 @@
       },
       "category_field_mappings": {},
       "transforms": {
-        "Lead Coordinator": "names_only"
-      },
-      "legacy_field_mappings": {
-        "Coordinator / Faculty Name": "author_or_person",
-        "Title of Event / Visit / MoU Partner": "title",
-        "Company / Organization / Alumni Details": "organization_or_venue",
-        "Date of Event / Execution": "event_date",
-        "Target Audience & Number of Participants": "impact_or_indexing",
-        "Executive Summary & Outcomes": "description",
-        "Event Report / Brochure Link": "evidence_url",
-        "Official Title of Event / Visit / MoU / Partnership": "title",
-        "Event / Execution Start Date": "event_date",
-        "Target Audience": "impact_or_indexing",
-        "Executive Summary and Outcomes": "description",
-        "Key Impact Badge / Metric": "badge_tag",
-        "Photo Caption & Persons in Image": "photo_caption"
+        "Faculty name": "names_only"
       }
     },
     "form_departmental": {
-      "form_name": "IT CHRONICLES – Faculty Highlights & Information Collection",
+      "form_name": "Department Milestones & Achievements",
       "section_id": "sec_departmental",
       "category_field": "Department Highlight Category",
       "category_map": {
-        "Highlights": "cat_dept_highlights",
-        "Achievements / Awards / Recognitions": "cat_dept_awards",
-        "Events / Programs": "cat_dept_events",
-        "Research / Publications / Innovation": "cat_dept_research",
+        "Departmental Achievements / Awards / Recognitions": "cat_dept_awards",
+        "Events / Programs Conducted": "cat_dept_events",
         "Infrastructure / Laboratory Development": "cat_dept_infra_dev",
         "MoU / Industry Collaboration / Partnerships": "cat_dept_mou",
-        "Faculty Development / Professional Achievements": "cat_dept_fdp",
-        "Student Development / Outreach / Social Initiatives": "cat_dept_student_dev",
+        "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised": "cat_dept_fdp",
+        "Student Development, Outreach, and Social Initiatives Undertaken by the Department": "cat_dept_student_dev",
         "Accreditation / Quality Assurance / Institutional Initiatives": "cat_dept_accreditation",
-        "Other Significant Initiatives": "cat_dept_other"
+        "Other Significant Highlights": "cat_dept_other"
       },
       "field_mappings": {
         "Timestamp": "submission_timestamp",
         "Email Address": "submitter_email",
         "Faculty Name": "author_or_person",
-        "Event / Initiative Overview and Key Highlights": "description",
+        "Overview and Key Highlights of the recognition / achievement / award": "description",
+        "Enter the name of the organization or institution that conferred the award.": "organization_or_venue",
+        "Upload Supporting Photo": "photo_url",
+        "Official Evidence / Certificate / Supporting Document Link": "evidence_url",
         "Title": "title",
-        "Achievement Overview": "description",
-        "Award / Recognition Name": "title",
-        "Awarding Organisation": "organization_or_venue",
-        "Date of Achievement": "event_date",
+        "Title of the Event": "title",
         "Event Overview and Key Highlights": "description",
-        "Research / Innovation Overview": "description",
-        "Research Paper / Project / Patent Title": "title",
-        "Journal / Conference / Publisher": "organization_or_venue",
-        "Publication Indexing (Scopus / Web of Science / SCI / Other)": "impact_or_indexing",
+        "Official Evidence / Brochure / Attendance / Supporting Document": "evidence_url",
         "Infrastructure / Laboratory Upgrade Details": "description",
         "Installation / Commissioning Date": "event_date",
-        "Collaboration Overview and Key Highlights": "description",
-        "Organisation / Industry / Institution Name": "organization_or_venue",
-        "MoU Signing Date": "event_date",
-        "Faculty Development Overview": "description",
-        "Programme / Certification / Training Title": "title",
-        "Organising Institution / Agency": "organization_or_venue",
-        "Initiative Overview and Key Highlights": "description",
-        "Programme / Initiative Name": "title",
-        "Event Report / Brochure / Flyer Link": "evidence_url",
-        "Key Impact Badge / Metric (Example: 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)": "badge_tag",
-        "Photo Link (Google Drive Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image – Names from left to right": "photo_caption",
-        "Official Evidence / Certificate / Supporting Document Link": "evidence_url"
+        "Official Evidence / Bills / Supporting Document": "evidence_url",
+        "Industry / Organisation Details": "organization_or_venue",
+        "Key Objectives of collaboration": "description",
+        "MoU Start Date": "event_date",
+        "Upload Supporting Photos": "photo_url",
+        "Official Evidence / Certificate / Supporting Document": "evidence_url",
+        "Title of the Programme": "title",
+        "Key highlights / Objectives of the Programme": "description",
+        "Official Evidence / Brochure / Supporting Documents": "evidence_url",
+        "Key objectives of the Initiative": "description",
+        "Partnership / Sponsorship / Other Organisations involved": "organization_or_venue",
+        "Official Evidence / Certificate / Attendance / Supporting Document": "evidence_url",
+        "Date of Visit": "event_date",
+        "Enter additional remarks or significant outcomes of the visit.": "description",
+        "Key objectives of the Highlights": "description"
       },
       "column_metadata": {
         "Timestamp": {
@@ -2261,15 +2440,15 @@
           "required": true,
           "description": ""
         },
+        "Designation": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": false,
+          "description": ""
+        },
         "Faculty Email": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": true,
-          "description": ""
-        },
-        "Department / Designation": {
-          "canonical_tag": "custom",
-          "type": "textarea",
           "required": false,
           "description": ""
         },
@@ -2279,174 +2458,86 @@
           "required": true,
           "description": ""
         },
-        "Event / Initiative Overview and Key Highlights": {
+        "Overview and Key Highlights of the recognition / achievement / award": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": true,
           "description": "",
           "categories": [
-            "Highlights"
+            "Departmental Achievements / Awards / Recognitions"
           ]
         },
-        "Objectives and Rationale": {
+        "Validity period with date (mention NA if not applicable)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Departmental Achievements / Awards / Recognitions"
+          ]
+        },
+        "Enter the name of the organization or institution that conferred the award.": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Departmental Achievements / Awards / Recognitions"
+          ]
+        },
+        "Members involved from department": {
           "canonical_tag": "custom",
           "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Departmental Achievements / Awards / Recognitions"
+          ]
+        },
+        "Upload Supporting Photo": {
+          "canonical_tag": "photo_url",
+          "type": "image",
           "required": false,
           "description": "",
           "categories": [
             "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Achievements / Awards / Recognitions",
-            "Events / Programs",
-            "Faculty Development / Professional Achievements",
-            "Highlights",
+            "Departmental Achievements / Awards / Recognitions",
+            "Events / Programs Conducted",
             "Infrastructure / Laboratory Development",
-            "MoU / Industry Collaboration / Partnerships",
-            "Other Significant Initiatives",
-            "Student Development / Outreach / Social Initiatives"
+            "Other Significant Highlights"
           ]
         },
-        "Key Outputs / Deliverables": {
-          "canonical_tag": "custom",
-          "type": "textarea",
+        "Official Evidence / Certificate / Supporting Document Link": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
           "required": false,
           "description": "",
           "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Achievements / Awards / Recognitions",
-            "Events / Programs",
-            "Faculty Development / Professional Achievements",
-            "Highlights",
-            "Infrastructure / Laboratory Development",
-            "MoU / Industry Collaboration / Partnerships",
-            "Other Significant Initiatives",
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Measurable Impact / Success Indicators": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Events / Programs",
-            "Highlights",
-            "Other Significant Initiatives"
-          ]
-        },
-        "Recognition / Ranking / External Validation": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Highlights"
-          ]
-        },
-        "Related Initiatives / Previous Milestones": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Events / Programs",
-            "Highlights",
-            "Other Significant Initiatives",
-            "Student Development / Outreach / Social Initiatives"
+            "Departmental Achievements / Awards / Recognitions",
+            "Other Significant Highlights"
           ]
         },
         "Title": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
-          "description": "Made from the overview; change it if you like.",
+          "description": "Made from the answers.",
           "categories": [
             "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Events / Programs",
-            "Highlights",
+            "Departmental Achievements / Awards / Recognitions",
             "Infrastructure / Laboratory Development",
             "MoU / Industry Collaboration / Partnerships",
-            "Other Significant Initiatives"
+            "Other Significant Highlights",
+            "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
           ]
         },
-        "Achievement Overview": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions"
-          ]
-        },
-        "Award / Recognition Name": {
+        "Title of the Event": {
           "canonical_tag": "title",
           "type": "text",
           "required": true,
           "description": "",
           "categories": [
-            "Achievements / Awards / Recognitions"
-          ]
-        },
-        "Award Category / Position / Rank": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions"
-          ]
-        },
-        "Awarding Organisation": {
-          "canonical_tag": "organization_or_venue",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions"
-          ]
-        },
-        "Date of Achievement": {
-          "canonical_tag": "event_date",
-          "type": "date",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions"
-          ]
-        },
-        "Measurable Impact": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions",
-            "Faculty Development / Professional Achievements",
-            "Infrastructure / Laboratory Development",
-            "MoU / Industry Collaboration / Partnerships",
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Recognition / External Validation": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions",
-            "Faculty Development / Professional Achievements",
-            "Other Significant Initiatives",
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Related Achievements / Previous Milestones": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Achievements / Awards / Recognitions"
+            "Events / Programs Conducted"
           ]
         },
         "Event Overview and Key Highlights": {
@@ -2455,46 +2546,98 @@
           "required": true,
           "description": "",
           "categories": [
-            "Events / Programs"
+            "Events / Programs Conducted"
+          ]
+        },
+        "Objectives and Rationale": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted",
+            "Infrastructure / Laboratory Development"
           ]
         },
         "Event Date and Venue": {
           "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
+          "type": "text",
+          "required": true,
           "description": "Write the date and the venue, e.g. 12 March 2026, Seminar Hall.",
           "categories": [
-            "Events / Programs"
+            "Events / Programs Conducted"
           ]
         },
-        "Organising Department / Faculty Coordinators": {
+        "Organising Department(s)": {
           "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
+          "type": "text",
+          "required": true,
           "description": "",
           "categories": [
-            "Events / Programs"
+            "Events / Programs Conducted"
+          ]
+        },
+        "Faculty Coordinators": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted"
           ]
         },
         "Number of Participants": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
-            "Events / Programs"
+            "Events / Programs Conducted"
           ]
         },
-        "Challenges and Mitigation": {
+        "Category of Participants (Students / Faculty Members / Non-teaching staff)": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted"
+          ]
+        },
+        "Name of the Resource Person": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted"
+          ]
+        },
+        "Designation and Institution / Organisation / Industry name of the Resource person(s)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted"
+          ]
+        },
+        "Key Outputs / Deliverables": {
           "canonical_tag": "custom",
           "type": "textarea",
           "required": false,
           "description": "",
           "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Events / Programs",
-            "Infrastructure / Laboratory Development",
-            "Other Significant Initiatives"
+            "Events / Programs Conducted"
+          ]
+        },
+        "Measurable Impact / Success Indicators": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted"
           ]
         },
         "Sustainability / Continuation Plan": {
@@ -2503,101 +2646,25 @@
           "required": false,
           "description": "",
           "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Events / Programs",
-            "MoU / Industry Collaboration / Partnerships",
-            "Other Significant Initiatives",
-            "Student Development / Outreach / Social Initiatives"
+            "Events / Programs Conducted"
           ]
         },
-        "Research / Innovation Overview": {
-          "canonical_tag": "description",
+        "Related Initiatives / Previous Milestones": {
+          "canonical_tag": "custom",
           "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Events / Programs Conducted"
+          ]
+        },
+        "Official Evidence / Brochure / Attendance / Supporting Document": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
           "required": true,
           "description": "",
           "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Research Paper / Project / Patent Title": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Journal / Conference / Publisher": {
-          "canonical_tag": "organization_or_venue",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Publication Indexing (Scopus / Web of Science / SCI / Other)": {
-          "canonical_tag": "impact_or_indexing",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "DOI / Publication / Patent Number": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Authors / Principal Investigator / Collaborators": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Objectives and Research Rationale": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Key Research Outputs / Deliverables": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Measurable Research Impact": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
-          ]
-        },
-        "Related Research Initiatives": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Research / Publications / Innovation"
+            "Events / Programs Conducted"
           ]
         },
         "Infrastructure / Laboratory Upgrade Details": {
@@ -2627,6 +2694,33 @@
             "Infrastructure / Laboratory Development"
           ]
         },
+        "Budget Allocated (in Rs.) and Source of Funding": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Infrastructure / Laboratory Development"
+          ]
+        },
+        "Measurable Impact": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Infrastructure / Laboratory Development"
+          ]
+        },
+        "Challenges and Mitigation": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": false,
+          "description": "",
+          "categories": [
+            "Infrastructure / Laboratory Development"
+          ]
+        },
         "Sustainability / Maintenance Plan": {
           "canonical_tag": "custom",
           "type": "textarea",
@@ -2645,7 +2739,25 @@
             "Infrastructure / Laboratory Development"
           ]
         },
-        "Collaboration Overview and Key Highlights": {
+        "Official Evidence / Bills / Supporting Document": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Infrastructure / Laboratory Development"
+          ]
+        },
+        "Industry / Organisation Details": {
+          "canonical_tag": "organization_or_venue",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "MoU / Industry Collaboration / Partnerships"
+          ]
+        },
+        "Key Objectives of collaboration": {
           "canonical_tag": "description",
           "type": "textarea",
           "required": true,
@@ -2654,8 +2766,8 @@
             "MoU / Industry Collaboration / Partnerships"
           ]
         },
-        "Organisation / Industry / Institution Name": {
-          "canonical_tag": "organization_or_venue",
+        "Validity Period with date": {
+          "canonical_tag": "custom",
           "type": "text",
           "required": true,
           "description": "",
@@ -2663,284 +2775,222 @@
             "MoU / Industry Collaboration / Partnerships"
           ]
         },
-        "Nature of Collaboration": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "MoU / Industry Collaboration / Partnerships"
-          ]
-        },
-        "MoU Signing Date": {
+        "MoU Start Date": {
           "canonical_tag": "event_date",
           "type": "date",
-          "required": false,
+          "required": true,
           "description": "",
           "categories": [
             "MoU / Industry Collaboration / Partnerships"
           ]
         },
-        "Duration of Agreement": {
+        "MoU Expiry Date": {
           "canonical_tag": "custom",
-          "type": "text",
+          "type": "date",
           "required": false,
-          "description": "",
+          "description": "Leave empty if the agreement has no end date. The dashboard flags MoUs that expire within 90 days.",
           "categories": [
             "MoU / Industry Collaboration / Partnerships"
           ]
         },
-        "Activities Conducted Under the Collaboration": {
+        "Faculty In-charge / Co-ordinators Detail": {
           "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "MoU / Industry Collaboration / Partnerships"
-          ]
-        },
-        "Related Collaborations / Previous Milestones": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "MoU / Industry Collaboration / Partnerships"
-          ]
-        },
-        "Faculty Development Overview": {
-          "canonical_tag": "description",
           "type": "textarea",
           "required": true,
           "description": "",
           "categories": [
-            "Faculty Development / Professional Achievements"
+            "MoU / Industry Collaboration / Partnerships"
           ]
         },
-        "Faculty Name / Names": {
-          "canonical_tag": "custom",
-          "type": "text",
+        "Upload Supporting Photos": {
+          "canonical_tag": "photo_url",
+          "type": "image",
           "required": false,
           "description": "",
           "categories": [
-            "Faculty Development / Professional Achievements"
+            "MoU / Industry Collaboration / Partnerships"
           ]
         },
-        "Programme / Certification / Training Title": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Faculty Development / Professional Achievements"
-          ]
-        },
-        "Organising Institution / Agency": {
-          "canonical_tag": "organization_or_venue",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Faculty Development / Professional Achievements"
-          ]
-        },
-        "Date / Duration": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Faculty Development / Professional Achievements"
-          ]
-        },
-        "Number of Faculty Participants": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Faculty Development / Professional Achievements"
-          ]
-        },
-        "Skills / Competencies Acquired": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Faculty Development / Professional Achievements"
-          ]
-        },
-        "Initiative Overview and Key Highlights": {
-          "canonical_tag": "description",
-          "type": "textarea",
-          "required": true,
-          "description": "",
-          "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives",
-            "Other Significant Initiatives",
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Programme / Initiative Name": {
-          "canonical_tag": "title",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Date and Venue": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Organising Faculty / Coordinators": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Number of Student Participants": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Number of External Beneficiaries": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Student Development / Outreach / Social Initiatives"
-          ]
-        },
-        "Accreditation / Quality Framework (NBA / NAAC / NIRF / Other)": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives"
-          ]
-        },
-        "Compliance / Improvement Details": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives"
-          ]
-        },
-        "Approvals / Compliance / Accreditation Linkage": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": "",
-          "categories": [
-            "Accreditation / Quality Assurance / Institutional Initiatives"
-          ]
-        },
-        "Event Report / Brochure / Flyer Link": {
+        "Official Evidence / Certificate / Supporting Document": {
           "canonical_tag": "evidence_url",
           "type": "url",
           "required": false,
-          "description": ""
+          "description": "",
+          "categories": [
+            "MoU / Industry Collaboration / Partnerships"
+          ]
+        },
+        "Title of the Programme": {
+          "canonical_tag": "title",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Details of Organising Committee": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Key highlights / Objectives of the Programme": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Sponsorship Details": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Date(s) and Venue of the Programme": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Resource persons' details with designation and organisation (date wise)": {
+          "canonical_tag": "custom",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Upload all supporting photographs combined into a single file.": {
+          "canonical_tag": "custom",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Official Evidence / Brochure / Supporting Documents": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
+          ]
+        },
+        "Key objectives of the Initiative": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
+          ]
+        },
+        "Partnership / Sponsorship / Other Organisations involved": {
+          "canonical_tag": "organization_or_venue",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
+          ]
+        },
+        "Number of students participated": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
+          ]
+        },
+        "Date and Venue of the Programme": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
+          ]
+        },
+        "Official Evidence / Certificate / Attendance / Supporting Document": {
+          "canonical_tag": "evidence_url",
+          "type": "url",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
+          ]
+        },
+        "What was the nature of the institutional visit?": {
+          "canonical_tag": "custom",
+          "type": "select",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Accreditation / Quality Assurance / Institutional Initiatives"
+          ]
+        },
+        "Date of Visit": {
+          "canonical_tag": "event_date",
+          "type": "date",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Accreditation / Quality Assurance / Institutional Initiatives"
+          ]
+        },
+        "What was the outcome / status of the visit?": {
+          "canonical_tag": "custom",
+          "type": "text",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Accreditation / Quality Assurance / Institutional Initiatives"
+          ]
+        },
+        "Enter additional remarks or significant outcomes of the visit.": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Accreditation / Quality Assurance / Institutional Initiatives"
+          ]
+        },
+        "Key objectives of the Highlights": {
+          "canonical_tag": "description",
+          "type": "textarea",
+          "required": true,
+          "description": "",
+          "categories": [
+            "Other Significant Highlights"
+          ]
         },
         "Budget / Investment in Rupees (numbers only)": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
+          "required": true,
           "description": ""
         },
         "Funding Source": {
           "canonical_tag": "custom",
           "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Common section: Infrastructure / Laboratory Upgrade Details": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Approvals / Compliance / Accreditation Linkage (NBA, NAAC, NIRF)": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Common section: Challenges and Mitigation": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Sustainability / Maintenance / Continuation Plan": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Common section: Recognition / Ranking / External Validation": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Common section: Related Initiatives / Previous Milestones": {
-          "canonical_tag": "custom",
-          "type": "textarea",
-          "required": false,
-          "description": ""
-        },
-        "Key Impact Badge / Metric (Example: 1st Prize, Scopus Q1, MoU Signed, 150+ Attendees)": {
-          "canonical_tag": "badge_tag",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Photo Link (Google Drive Cloud URL)": {
-          "canonical_tag": "photo_url",
-          "type": "image",
-          "required": false,
-          "description": ""
-        },
-        "Photo Caption & Persons in Image – Names from left to right": {
-          "canonical_tag": "photo_caption",
-          "type": "text",
-          "required": false,
-          "description": ""
-        },
-        "Official Evidence / Certificate / Supporting Document Link": {
-          "canonical_tag": "evidence_url",
-          "type": "url",
-          "required": false,
-          "description": ""
-        },
-        "Is this a Landmark / Milestone Achievement?": {
-          "canonical_tag": "custom",
-          "type": "select",
-          "required": true,
-          "description": ""
-        },
-        "Permission to Publish this Submission": {
-          "canonical_tag": "custom",
-          "type": "select",
           "required": true,
           "description": ""
         },
@@ -2953,22 +3003,13 @@
       },
       "category_field_mappings": {},
       "legacy_field_mappings": {
-        "Convener / Coordinator Name": "author_or_person",
-        "Title of Event / Upgrade / Milestone": "title",
-        "Coordinators / Department Leads": "author_or_person",
-        "Dates & Duration": "event_date",
-        "Total Participants Count": "grant_or_prize_amount",
-        "Event Overview & Highlights": "description",
-        "Event Report / Flyer Link": "evidence_url",
-        "Convener / Coordinator": "author_or_person",
-        "Official Title of Event / Upgrade / Milestone": "title",
-        "Start Date / Event Date": "event_date",
-        "Key Impact Badge / Metric": "badge_tag",
-        "Photo Link (Google Drive / Cloud URL)": "photo_url",
-        "Photo Caption & Persons in Image": "photo_caption"
-      },
-      "legacy_transforms": {
-        "Convener / Coordinator": "names_only"
+        "Overview and Key Highlights of the recognition/achievement/ award": "description",
+        "Official Evidence / Brochure/ Attandance / Supporting Document": "evidence_url",
+        "Official Evidence / Bills / Supporting Document Link": "evidence_url",
+        "Industry/Organisation Details": "organization_or_venue",
+        "Official Evidence / Brochure/ Supporting Documents": "evidence_url",
+        "Partnership/Sponsorship/Other Organisations involved": "organization_or_venue",
+        "Official Evidence / Certificate/Attandence / Supporting Document": "evidence_url"
       }
     }
   }

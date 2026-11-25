@@ -22,13 +22,13 @@ from fastapi import HTTPException
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SPEC_FILE = os.path.join(ROOT, "config", "master_forms.json")
 SECTIONS_FILE = os.path.join(ROOT, "config", "section_categories.json")
-FORM_IDS = ["form_student", "form_research", "form_faculty", "form_departmental", "form_industry"]
+FORM_IDS = ["form_research", "form_faculty", "form_departmental", "form_industry", "form_student"]      # the order everyone sees them in
 PLACEMENT = "placement"
 SECTIONS = "_sections"
 ALL_IDS = FORM_IDS + [PLACEMENT, SECTIONS]
 
 # What a field can be (what the entry screen draws) and what a field can mean to the newsletter
-FIELD_TYPES = {"text": "Short text", "para": "Long text", "number": "Number", "date": "Date", "choice": "Pick one (buttons)", "list": "Pick one (drop-down)", "url": "Link",
+FIELD_TYPES = {"text": "Short text", "para": "Long text", "number": "Number", "date": "Date", "choice": "Pick one (buttons)", "list": "Pick one (drop-down)", "multi": "Tick several", "url": "Link", "file": "Document upload (PDF or picture)",
                "faculty": "Faculty member", "roster_roll": "Students (roll numbers)", "roster_any": "People (ID - name per line)", "photo": "Photo"}
 NEWSLETTER_ROLES = {"title": "Heading", "author_or_person": "Byline (people)", "organization_or_venue": "Venue / organisation", "event_date": "Date",
                     "impact_or_indexing": "Tag line", "grant_or_prize_amount": "Highlight line", "description": "Description", "badge_tag": "Badge"}
@@ -107,13 +107,38 @@ def invalidate_after_commit() -> None:
     after_commit(invalidate)
 
 
+def _take_new_shipped(conn) -> None:
+    """When the application ships new forms, a form the Admin has never edited takes them over (as a new version, so the old one stays in
+    its history). A form the Admin has published or is editing is left alone."""
+    shipped = _read_file(SPEC_FILE)
+    version = str(shipped.get("version", ""))
+    docs = {fid: _ids(spec) for fid, spec in shipped["forms"].items()}
+    docs[PLACEMENT] = shipped["placement"]
+    changed = False
+    for form_id, spec in docs.items():
+        rows = conn.execute("SELECT version, status, created_by, note, spec_json FROM form_definitions WHERE form_id = ? ORDER BY version", (form_id,)).fetchall()
+        if not rows or any(r["status"] == "draft" or r["created_by"] != "system" for r in rows):
+            continue
+        spec = {**spec, "shipped_version": version}
+        pub = next((r for r in rows if r["status"] == "published"), None)
+        if pub and json.loads(pub["spec_json"]).get("shipped_version", "") >= version:
+            continue
+        conn.execute("UPDATE form_definitions SET status = 'archived' WHERE form_id = ? AND status = 'published'", (form_id,))
+        conn.execute("INSERT INTO form_definitions (form_id, version, status, spec_json, note, created_by, published_at) VALUES (?, ?, 'published', ?, ?, 'system', CURRENT_TIMESTAMP)",
+                     (form_id, rows[-1]["version"] + 1, json.dumps(spec, ensure_ascii=False), f"Shipped definition {version}"))
+        changed = True
+    if changed:
+        invalidate_after_commit()
+
+
 def ensure_seeded(conn) -> None:
     """A database with no definitions yet starts from the shipped ones (version 1, published)."""
     if conn.execute("SELECT 1 FROM form_definitions LIMIT 1").fetchone():
+        _take_new_shipped(conn)
         return
     shipped = _read_file(SPEC_FILE)
-    docs = {fid: _ids(spec) for fid, spec in shipped["forms"].items()}
-    docs[PLACEMENT] = shipped["placement"]
+    docs = {fid: {**_ids(spec), "shipped_version": str(shipped.get("version", ""))} for fid, spec in shipped["forms"].items()}
+    docs[PLACEMENT] = {**shipped["placement"], "shipped_version": str(shipped.get("version", ""))}
     docs[SECTIONS] = _read_file(SECTIONS_FILE) if os.path.exists(SECTIONS_FILE) else {"sections": []}
     for form_id, spec in docs.items():
         conn.execute("INSERT INTO form_definitions (form_id, version, status, spec_json, note, created_by, published_at) VALUES (?, 1, 'published', ?, 'Shipped definition', 'system', CURRENT_TIMESTAMP)",
@@ -196,7 +221,7 @@ def _check_label(spec, label: str, cats: Optional[List[str]], skip=None):
 
 
 def _clean_choices(kind: str, choices) -> Optional[List[str]]:
-    if kind not in ("choice", "list"):
+    if kind not in ("choice", "list", "multi"):
         return None
     items = [str(c).strip() for c in (choices or []) if str(c).strip()]
     if len(set(i.lower() for i in items)) < 2:
@@ -225,7 +250,7 @@ def add_field(spec: Dict[str, Any], label: str, kind: str = "text", categories: 
     q = {"q": label.strip(), "type": kind, "req": bool(required), "key": key, "fid": fid, "zone": "block" if cats else "common"}
     if cats:
         q["cats"] = cats
-    if choices or kind in ("choice", "list"):
+    if choices or kind in ("choice", "list", "multi"):
         q["choices"] = _clean_choices(kind, choices)
     if help:
         q["help"] = help.strip()
@@ -259,14 +284,14 @@ def update_field(spec: Dict[str, Any], fid: str, changes: Dict[str, Any]) -> Dic
         if not q["help"]:
             q.pop("help")
     if "type" in changes and changes["type"] != q["type"]:
-        simple = {"text", "para", "number", "date", "url", "choice", "list"}
+        simple = {"text", "para", "number", "date", "url", "choice", "list", "multi"}
         if changes["type"] not in FIELD_TYPES:
             raise HTTPException(400, "Unknown field type")
         if q["type"] not in simple or changes["type"] not in simple:
             raise HTTPException(400, "A field that picks people or photos cannot change into another kind. Add a new field and retire this one.")
         q["type"] = changes["type"]                    # answers already given stay as they were; the new type applies to new entries
-    if "choices" in changes or q["type"] in ("choice", "list"):
-        if q["type"] in ("choice", "list"):
+    if "choices" in changes or q["type"] in ("choice", "list", "multi"):
+        if q["type"] in ("choice", "list", "multi"):
             q["choices"] = _clean_choices(q["type"], changes.get("choices", q.get("choices")))
         else:
             q.pop("choices", None)
@@ -415,11 +440,11 @@ def move_category(spec: Dict[str, Any], name: str, direction: int) -> None:
         _cat_q(spec)["choices"] = list(cats)
 
 
-def set_category_meta(spec: Dict[str, Any], name: str, tile: Optional[str] = None, keywords: Optional[str] = None, section_id: Optional[str] = None) -> None:
+def set_category_meta(spec: Dict[str, Any], name: str, description: Optional[str] = None, keywords: Optional[str] = None, section_id: Optional[str] = None) -> None:
     if name not in spec["categories"]:
         raise HTTPException(404, "That category no longer exists")
     cfg = spec.setdefault("category_config", {}).setdefault(name, {})
-    for k, v in (("tile", tile), ("keywords", keywords), ("section_id", section_id)):
+    for k, v in (("description", description), ("keywords", keywords), ("section_id", section_id)):
         if v is not None:
             if v:
                 cfg[k] = v
@@ -497,7 +522,7 @@ def problems(spec: Dict[str, Any], form_id: str) -> List[str]:
         if not any(q.get("nl") == "title" or q.get("key") == "title" for q in qs) and not spec.get("category_config", {}).get(c, {}).get("title_from"):
             out.append(f"{c}: it needs a heading field (a field used in the newsletter as 'Heading')")
         for q in qs:
-            if q["type"] in ("choice", "list") and len(q.get("choices") or []) < 2:
+            if q["type"] in ("choice", "list", "multi") and len(q.get("choices") or []) < 2:
                 out.append(f"{c}: '{q['q']}' needs at least two choices")
     return out
 
@@ -596,7 +621,7 @@ def editor_view(conn, form_id: str) -> Dict[str, Any]:
         live = blocks.questions_for(spec, name, legacy=False)
         everything = blocks.questions_for(spec, name, legacy=True)
         shown = sorted((q for q in live if entry._shown(q)), key=lambda q: entry.ZONE_ORDER.get(q.get("zone"), 1))   # same order as the entry screen
-        cats.append({"name": name, "tile": cfg.get("tile"), "keywords": cfg.get("keywords"), "section_id": cfg.get("section_id") or spec.get("section_id"),
+        cats.append({"name": name, "description": cfg.get("description"), "keywords": cfg.get("keywords"), "section_id": cfg.get("section_id") or spec.get("section_id"),
                      "fids": [q["fid"] for q in shown], "automatic": [q["fid"] for q in live if not entry._shown(q)],
                      "retired_fids": [q["fid"] for q in everything if q.get("legacy") and entry._shown(q)]})
     return {"form_id": form_id, "title": spec["title"], "form_type": spec.get("form_type"), "section_id": spec.get("section_id"), "categories": cats, "retired_categories": spec.get("retired_categories", []),
@@ -630,7 +655,7 @@ def apply_op(conn, form_id: str, op: str, p: Dict[str, Any], actor: str) -> None
     elif op == "move_category":
         move_category(spec, p["name"], int(p.get("direction", 1)))
     elif op == "category_meta":
-        set_category_meta(spec, p["name"], p.get("tile"), p.get("keywords"), p.get("section_id"))
+        set_category_meta(spec, p["name"], p.get("description"), p.get("keywords"), p.get("section_id"))
     else:
         raise HTTPException(400, "Unknown change")
     save_draft(conn, form_id, spec, actor)

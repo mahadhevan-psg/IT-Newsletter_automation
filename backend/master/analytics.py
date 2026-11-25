@@ -80,10 +80,17 @@ def department_section(conn, ay: Optional[str]) -> Dict[str, Any]:
         "outreach_by_category": q("SELECT category, COUNT(*) FROM form_submissions fs WHERE form_type='OUTREACH'{AY} GROUP BY category ORDER BY 2 DESC"),
         "outreach_attendance": conn.execute(f"SELECT COALESCE(SUM(o.actual_count),0) FROM outreach_activities o JOIN form_submissions fs USING(submission_id) WHERE 1=1{ayc}", aya).fetchone()[0],
         "top_partners": q("SELECT g.name, COUNT(*) FROM outreach_activities o JOIN organizations g ON g.org_id = o.partner_org_id JOIN form_submissions fs USING(submission_id) WHERE 1=1{AY} GROUP BY g.org_id ORDER BY 2 DESC LIMIT 10"),
-        "mou_status": [dict(r) for r in conn.execute(
-            "SELECT g.name AS partner, o.agreement_expiry AS expiry, CASE WHEN o.agreement_expiry < date('now') THEN 'Expired' WHEN o.agreement_expiry <= date('now','+90 day') THEN 'Expiring soon' ELSE 'Active' END AS status "
-            "FROM outreach_activities o JOIN organizations g ON g.org_id = o.partner_org_id WHERE o.agreement_expiry IS NOT NULL ORDER BY o.agreement_expiry")],
+        "mou_status": _mou_status(conn),
     }
+
+
+def _mou_status(conn):
+    """Every agreement with an expiry date, soonest first: the department's MoU entries, and MoUs recorded as outreach."""
+    return [dict(r) for r in conn.execute(
+        "SELECT partner, expiry, CASE WHEN expiry < date('now') THEN 'Expired' WHEN expiry <= date('now','+90 day') THEN 'Expiring soon' ELSE 'Active' END AS status FROM ("
+        " SELECT g.name AS partner, o.agreement_expiry AS expiry FROM outreach_activities o JOIN organizations g ON g.org_id = o.partner_org_id"
+        " UNION ALL SELECT d.partner_bodies, d.agreement_expiry FROM department_highlights d"
+        ") WHERE expiry IS NOT NULL ORDER BY expiry")]
 
 
 def placement_section(conn, user: User, ay: Optional[str], class_id, programme) -> Dict[str, Any]:

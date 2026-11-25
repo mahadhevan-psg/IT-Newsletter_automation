@@ -306,7 +306,7 @@ async def api_form_upload(form_id: str, file: UploadFile = File(...), user: User
 # ================================================================ placements (uploaded by the Admin; everyone else only reads, within their scope)
 @router.get("/api/master/placements/template")
 def api_placement_template(user: User = Depends(admin_user)):
-    return _xlsx("placements_template.xlsx", placements.template_headers(), placements.EXAMPLE)
+    return _xlsx("placements_template.xlsx", placements.template_headers(), placements.example_row())
 
 
 @router.post("/api/master/placements/upload")

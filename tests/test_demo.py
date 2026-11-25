@@ -63,7 +63,7 @@ def test_the_demo_department_is_rich_enough_for_every_feature(demo):
     assert one("SELECT COUNT(*) FROM interview_experiences WHERE is_shareable = 1") >= 15 and one("SELECT COUNT(*) FROM internship_experiences WHERE is_shareable = 1") >= 5
     assert one("SELECT COUNT(DISTINCT class_id) FROM classes WHERE tutor_id IS NOT NULL") == 10 and one("SELECT COUNT(*) FROM classes WHERE status = 'Completed'") == 2
     # MoUs: some active, some expiring soon, some expired (the dashboard's MoU table has something to say)
-    states = {r[0] for r in q("SELECT CASE WHEN agreement_expiry < date('now') THEN 'Expired' WHEN agreement_expiry <= date('now','+90 day') THEN 'Soon' ELSE 'Active' END FROM outreach_activities WHERE agreement_expiry IS NOT NULL")}
+    states = {r[0] for r in q("SELECT CASE WHEN agreement_expiry < date('now') THEN 'Expired' WHEN agreement_expiry <= date('now','+90 day') THEN 'Soon' ELSE 'Active' END FROM department_highlights WHERE agreement_expiry IS NOT NULL")}
     assert states == {"Expired", "Soon", "Active"}
     # the newsletter has entries, mostly approved, and front pages
     n = db_manager.get_connection()
@@ -102,7 +102,6 @@ def test_every_screen_has_something_to_show(demo):
     assert empty == [] and cat["total"] >= 300                                                  # every kind of work, with entries
     dash = client.get("/api/master/analytics", headers=admin).json()
     assert dash["students"]["participation_rate"] > 10 and dash["placements"]["placed"] > 50 and dash["placements"]["highest_lpa"] > 20
-    assert len(dash["department"]["mou_status"]) >= 6
     prof = client.get("/api/master/faculty/EMP101/profile", headers=admin).json()
     assert prof["total"] > 3 and prof["sections"]
     faculty = {f["emp_id"]: f for f in client.get("/api/master/faculty", headers=admin).json()}

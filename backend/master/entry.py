@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 
-from backend.master import blocks, ingest, media
+from backend.master import blocks, definitions, ingest, media
 from backend.master.auth import User
 from backend.master.common import norm_header, parse_date, parse_num
 from backend.review import service as review
@@ -20,66 +20,27 @@ from backend.review import service as review
 # fields the person never types: filled in by the application
 HIDDEN_KEYS = {"category", "is_landmark", "publish_permission", "authorization_confirmed"}      # consent is not asked: the department collects this data as part of its records
 AUTO_YES = ("publish_permission", "authorization_confirmed")
-FRIENDLY = {   # (what the tile says, extra words that find it)
-    "Academic Excellence & Ranks": ("Students earned a rank or academic honour", "rank topper scholarship university"),
-    "Hackathons & Coding Competitions": ("Students won or took part in a hackathon", "hackathon coding contest competition"),
-    "Higher Education & Top Placements": ("Student got into higher studies or a top placement", "gate gre admission placement offer"),
-    "Technical Projects & Innovations": ("Students built a project or innovation", "project prototype product startup"),
-    "Sports, Cultural & Co-Curricular Accomplishments": ("Students did well in sports, culture or clubs", "sports cultural dance music club"),
-    "Journal Publications": ("I published a journal paper", "paper article journal scopus"),
-    "Conference Publications": ("I presented a conference paper", "conference paper proceedings"),
-    "Book / Book Chapters": ("I wrote a book or a chapter", "book chapter isbn"),
-    "Funded Research Projects": ("I got a funded research project", "grant funding project dst serb"),
-    "Consultancy Projects": ("I did a consultancy project", "consultancy industry client"),
-    "Patents & Intellectual Property": ("I filed or got a patent", "patent ip copyright design"),
-    "Key Research Innovations & Technical Accomplishments": ("I made a research innovation", "innovation prototype technical"),
-    "Awards & Honors Received": ("I received an award", "award honour prize recognition"),
-    "Certifications & Upskilling Completed": ("I completed a certification", "certificate nptel course"),
-    "Invited Keynote / Expert Lectures Delivered": ("I gave a keynote or expert talk", "keynote lecture talk invited"),
-    "Resource Person / Session Chair Roles": ("I was a resource person or session chair", "resource person chair moderator"),
-    "FDP / Workshops Attended": ("I attended an FDP or workshop", "fdp workshop training attended"),
-    "Professional Body & Editorial Board Roles": ("I joined a professional body or editorial board", "membership editorial reviewer ieee"),
-    "Industrial Visits & Field Tours": ("We went on an industrial visit", "industrial visit tour field"),
-    "Industry Expert Lectures & Technical Talks": ("An industry expert gave a talk", "expert talk lecture guest"),
-    "MoUs Signed & Industrial Collaborations": ("An MoU was signed", "mou collaboration partnership agreement"),
-    "Alumni Interactions & Mentorship Sessions": ("We met alumni or ran mentoring", "alumni mentor interaction"),
-    "Community & Social Outreach Initiatives": ("We did community outreach", "outreach community social camp"),
-    "Highlights": ("A department highlight", "highlight news"), "Achievements / Awards / Recognitions": ("The department won an award", "award recognition"),
-    "Events / Programs": ("We organised an event or programme", "event workshop seminar conference programme"),
-    "Research / Publications / Innovation": ("A research or publication highlight", "research publication"),
-    "Infrastructure / Laboratory Development": ("A new lab or infrastructure", "lab infrastructure equipment"),
-    "MoU / Industry Collaboration / Partnerships": ("A partnership or MoU for the department", "mou partnership collaboration"),
-    "Faculty Development / Professional Achievements": ("A faculty development programme", "fdp training development"),
-    "Student Development / Outreach / Social Initiatives": ("A student development or social initiative", "student development outreach social"),
-    "Accreditation / Quality Assurance / Institutional Initiatives": ("Accreditation or quality work", "nba naac nirf accreditation quality"),
-    "Other Significant Initiatives": ("Something else worth reporting", "other"),
-}
-
-
-FORM_LABELS = {"form_student": "Student achievements", "form_research": "Research & innovation", "form_faculty": "Faculty achievements",
-               "form_departmental": "Department highlights", "form_industry": "Industry, alumni & outreach"}
-
-
 def catalog(conn) -> List[Dict[str, Any]]:
-    """Every form with its categories as tiles: {form_id, title, categories: [{name, tile, keywords, fields}]}."""
+    """Every form with its categories as cards: {form_id, title, description, categories: [{name, description, keywords, fields}]}.
+    A card's title is the section's name in the form and its text is the section's description."""
     out = []
     specs = ingest.specs()["forms"]
-    for fid in ("form_student", "form_research", "form_faculty", "form_departmental", "form_industry"):
+    for fid in definitions.FORM_IDS:
         spec = specs.get(fid)
         if not spec:
             continue
         cats = []
         for name in spec["categories"]:
             cfg = spec.get("category_config", {}).get(name, {})
-            tile, words = FRIENDLY.get(name, (name, ""))
-            cats.append({"name": name, "tile": cfg.get("tile") or tile, "keywords": " ".join(x for x in (name, cfg.get("keywords") or words, spec["title"]) if x).lower(),
+            cats.append({"name": name, "description": cfg.get("description") or "",
+                         "keywords": " ".join(x for x in (name, cfg.get("description"), cfg.get("keywords"), spec["title"]) if x).lower(),
                          "fields": len([q for q in blocks.questions_for(spec, name, legacy=False) if _shown(q)])})
-        out.append({"form_id": fid, "title": FORM_LABELS.get(fid) or spec["title"].replace("IT Chronicles - ", "").replace(" Submission Form", ""), "categories": cats})
+        out.append({"form_id": fid, "title": spec["title"], "description": spec.get("description") or "", "categories": cats})
     return out
 
 
 def _shown(q: Dict[str, Any]) -> bool:
-    return not (q.get("key") in HIDDEN_KEYS or q.get("submitter") or q.get("derived") or q["type"] == "section")
+    return not (q.get("key") in HIDDEN_KEYS or q.get("submitter") or q.get("derived") or q.get("auto") or q["type"] == "section")
 
 
 def _widget(q: Dict[str, Any]) -> str:
@@ -92,7 +53,7 @@ def _widget(q: Dict[str, Any]) -> str:
 
 def display_label(q: Dict[str, Any]) -> str:
     """The label faculty see (the builder shows the same text)."""
-    return "Photos (optional, up to 4)" if q.get("key") == "media_url" else q["q"]
+    return f"{q['q']} (up to 4)" if q.get("key") == "media_url" else q["q"]
 
 
 ZONE_ORDER = {"common": 0, "block": 1, "closing": 2}
@@ -141,7 +102,19 @@ def _clean(q: Dict[str, Any], value: Any) -> str:
         for mid in ids:
             if not media.get(mid):
                 raise HTTPException(400, f"'{q['q']}': a photo is missing, upload it again")
-        return media.ref(ids[0]) if ids else ""
+        return media.link_ref(media.get(ids[0])) if ids else ""
+    if kind == "file":
+        if not value:
+            return ""
+        meta = media.get(media.parse_ref(value) or 0)
+        if not meta:
+            raise HTTPException(400, f"'{q['q']}': the document is missing, upload it again")
+        return media.link_ref(meta)
+    if kind == "multi":
+        chosen = [str(x).strip() for x in (value if isinstance(value, list) else str(value or "").split(", ")) if str(x).strip()]
+        if q.get("choices") and any(c not in q["choices"] for c in chosen):
+            raise HTTPException(400, f"'{q['q']}': choose from the listed options")
+        return ", ".join(chosen)
     v = ", ".join(str(x) for x in value) if isinstance(value, list) else str(value if value is not None else "").strip()
     if not v:
         return ""
@@ -160,7 +133,7 @@ def build_row(conn, user: User, form_id: str, category: str, values: Dict[str, A
     spec = ingest.specs()["forms"].get(form_id)
     if not spec or category not in spec["categories"]:
         raise HTTPException(404, "That kind of entry no longer exists")
-    me = conn.execute("SELECT emp_id, full_name, email FROM faculty WHERE emp_id = ?", (user.id,)).fetchone()
+    me = conn.execute("SELECT emp_id, full_name, email, designation FROM faculty WHERE emp_id = ?", (user.id,)).fetchone()
     if not me:
         raise HTTPException(403, "Only faculty can enter this kind of data")
     cat_q = next(q for q in spec["questions"] if q.get("key") == "category" and not q.get("legacy"))
@@ -170,6 +143,8 @@ def build_row(conn, user: User, form_id: str, category: str, values: Dict[str, A
         key = q.get("key")
         if q.get("submitter"):
             row[q["q"]] = f"{me['emp_id']} - {me['full_name']}"
+        elif q.get("auto"):                                          # known from the person's own record
+            row[q["q"]] = me[q["auto"]] or ""
         elif key in AUTO_YES:
             row[q["q"]] = "Yes"
         elif key == "is_landmark":
@@ -182,9 +157,12 @@ def build_row(conn, user: User, form_id: str, category: str, values: Dict[str, A
                 missing.append(q["q"])
     if missing:
         raise HTTPException(400, "Please fill in: " + ", ".join(missing))
+    dates = {q["key"]: (q["q"], row[q["q"]]) for q in blocks.questions_for(spec, category, legacy=False) if q.get("key") in ("agreement_effective", "agreement_expiry") and q["q"] in row}
+    if len(dates) == 2 and parse_date(dates["agreement_expiry"][1]) < parse_date(dates["agreement_effective"][1]):
+        raise HTTPException(400, f"'{dates['agreement_expiry'][0]}' is before '{dates['agreement_effective'][0]}'")
     extra = values.get("_more_photos")
     if extra:
-        refs = [media.ref(int(i)) for i in extra if media.get(int(i))]
+        refs = [media.link_ref(m) for m in (media.get(int(i)) for i in extra) if m]
         if refs:
             row["Additional photos"] = ", ".join(refs)
     return row
@@ -212,7 +190,7 @@ def list_drafts(conn, user: User) -> List[Dict[str, Any]]:
     out = []
     for r in conn.execute("SELECT draft_id, form_id, category, data_json, updated_at FROM entry_drafts WHERE owner_id = ? ORDER BY updated_at DESC", (user.id,)):
         data = json.loads(r["data_json"] or "{}")
-        title = next((str(v) for k, v in data.items() if str(v).strip() and not str(k).startswith("_")), "")
+        title = next((str(v) for k, v in data.items() if isinstance(v, str) and v.strip() and not str(k).startswith("_") and not v.startswith("media://")), "")
         out.append({"draft_id": r["draft_id"], "form_id": r["form_id"], "category": r["category"], "summary": title[:80], "updated_at": r["updated_at"]})
     return out
 
@@ -229,12 +207,16 @@ def delete_draft(conn, user: User, draft_id: str):
 
 
 # ------------------------------------------------------------------------------------------------ a student's placement record
+INTERVIEW_KEYS = ("rounds_count", "round_details", "difficulty", "questions_asked", "result", "interview_concepts", "interview_experience", "tips", "interview_photo")
+INTERNSHIP_KEYS = ("intern_duration", "intern_mode", "intern_role", "intern_concepts", "tech_stack", "work_summary", "learnings", "rating", "internship_experience", "internship_photo")
+
+
 def placement_form() -> List[Dict[str, Any]]:
     """The placement questions grouped in the steps the student sees (the first group is 'about you', the last is 'consent', those between belong to each offer)."""
     sections: List[Dict[str, Any]] = []
     for q in ingest.specs()["placement"]["questions"]:
         if q["type"] == "section":
-            sections.append({"title": q["q"], "fields": []})
+            sections.append({"title": q["q"], "description": q.get("description") or "", "fields": []})
         elif sections:
             sections[-1]["fields"].append({"key": q["key"], "q": q["q"], "type": q["type"], "req": bool(q.get("req")), "help": q.get("help"), "choices": q.get("choices")})
     return sections
@@ -284,6 +266,8 @@ def submit_placement(conn, user: User, payload: Dict[str, Any]) -> Dict[str, Any
         v = str(value if value is not None else "").strip()
         if not v:
             return ""
+        if f["type"] == "photo" and not media.get(media.parse_ref(v) or 0):
+            raise HTTPException(400, f"'{f['q']}': the photo is missing, upload it again")
         if f["type"] == "date" and not parse_date(v):
             raise HTTPException(400, f"'{f['q']}': enter a date like 2026-03-31")
         if f["type"] == "number" and parse_num(v) is None:
@@ -298,6 +282,9 @@ def submit_placement(conn, user: User, payload: Dict[str, Any]) -> Dict[str, Any
         if row.get("company"):
             if not row.get("offer_type"):
                 raise HTTPException(400, f"Choose the offer type for {row['company']}")
+            for keys, need, what in ((INTERVIEW_KEYS, "interview_concepts", "interview"), (INTERNSHIP_KEYS, "intern_concepts", "internship")):
+                if need in qs and any(row.get(k) for k in keys) and not row.get(need):
+                    raise HTTPException(400, f"{row['company']}: fill in '{qs[need]['q']}' for the {what} experience")
             offers.append(row)
     if not offers:
         raise HTTPException(400, "Add at least one offer: the company and the offer type")

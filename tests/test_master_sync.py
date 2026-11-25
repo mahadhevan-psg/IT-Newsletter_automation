@@ -11,6 +11,8 @@ from backend.master.common import names_only  # noqa: E402
 from backend.services import master_sync  # noqa: E402
 from database.master_db import db, drop_student_columns, init_master_db  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
+
 
 @pytest.fixture()
 def master(monkeypatch, tmp_path):

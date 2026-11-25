@@ -32,9 +32,9 @@
 
   function drawTiles(q) {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const groups = E.cat.forms.map(f => ({ ...f, cats: f.categories.filter(c => words.every(w => c.keywords.includes(w) || c.tile.toLowerCase().includes(w))) })).filter(f => f.cats.length);
-    $('#en-tiles').innerHTML = groups.length ? groups.map(f => `<h4 class="en-h">${esc(f.title)}</h4><div class="en-grid">${f.cats.map(c =>
-      `<button class="en-tile ${E.form && E.category === c.name ? 'on' : ''}" data-f="${f.form_id}" data-c="${esc(c.name)}"><b>${esc(c.tile)}</b><span>${esc(c.name)}</span></button>`).join('')}</div>`).join('') : '<div class="empty">Nothing matches. Try another word, or clear the search.</div>';
+    const groups = E.cat.forms.map(f => ({ ...f, cats: f.categories.filter(c => words.every(w => c.keywords.includes(w) || c.name.toLowerCase().includes(w))) })).filter(f => f.cats.length);
+    $('#en-tiles').innerHTML = groups.length ? groups.map(f => `<h4 class="en-h">${esc(f.title)}</h4>${f.description ? `<p class="en-hd">${esc(f.description)}</p>` : ''}<div class="en-grid">${f.cats.map(c =>
+      `<button class="en-tile ${E.form && E.category === c.name ? 'on' : ''}" data-f="${f.form_id}" data-c="${esc(c.name)}"><b>${esc(c.name)}</b>${c.description ? `<span>${esc(c.description)}</span>` : ''}</button>`).join('')}</div>`).join('') : '<div class="empty">Nothing matches. Try another word, or clear the search.</div>';
     $('#en-tiles').onclick = go(e => { const t = e.target.closest('.en-tile'); if (t) return openComposer(t.dataset.f, t.dataset.c); });
   }
 
@@ -59,6 +59,8 @@
     else if (f.type === 'date') c = `<input type="date" id="${id}" data-f="${esc(f.fid)}" value="${esc(v)}">`;
     else if (f.type === 'number') c = `<input id="${id}" data-f="${esc(f.fid)}" inputmode="decimal" value="${esc(v)}">`;
     else if (f.type === 'choice') c = `<div class="en-pills" data-f="${esc(f.fid)}">${(f.choices || []).map(o => `<button type="button" class="en-pill ${v === o ? 'on' : ''}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+    else if (f.type === 'multi') { const on = Array.isArray(v) ? v : String(v || '').split(', ').filter(Boolean); c = `<div class="en-pills" data-f="${esc(f.fid)}" data-multi="1">${(f.choices || []).map(o => `<button type="button" class="en-pill ${on.includes(o) ? 'on' : ''}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`; }
+    else if (f.type === 'file') c = `<div class="en-drop"><label><input type="file" accept="application/pdf,image/*" data-doc="${esc(f.fid)}" hidden><span><b>Upload document</b> · a PDF (up to 5 MB) or a picture of it</span></label></div><div class="en-doc" id="${id}-doc"></div>`;
     else if (f.type === 'list') c = `<select id="${id}" data-f="${esc(f.fid)}"><option value=""></option>${(f.choices || []).map(o => `<option ${v === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
     else if (f.type === 'confirm') return `<label class="en-confirm"><input type="checkbox" data-f="${esc(f.fid)}" ${v ? 'checked' : ''}> ${esc((f.choices || [f.q])[0])}${req}</label>`;
     else if (f.type === 'faculty') c = `<input id="${id}" data-f="${esc(f.fid)}" data-pick="faculty" list="${id}-dl" value="${esc(v)}" placeholder="Start typing a name"><datalist id="${id}-dl"></datalist>`;
@@ -67,7 +69,7 @@
     else if (f.type === 'roster_any') c = `<textarea id="${id}" data-f="${esc(f.fid)}" rows="3" placeholder="One person per line: ID - Name (EXT for someone outside)">${esc(v)}</textarea>`;
     else if (f.type === 'photo') c = `<div class="en-drop" id="${id}-drop"><label><input type="file" accept="image/*" multiple data-photo="${esc(f.fid)}" hidden><span><b>Add photos</b> · take one or choose from your phone</span></label></div><div class="en-thumbs" id="${id}-thumbs"></div>`;
     else c = `<input id="${id}" data-f="${esc(f.fid)}" value="${esc(v)}">`;
-    return `<div class="en-f ${f.type === 'para' || f.type === 'roster_roll' || f.type === 'roster_any' || f.type === 'photo' ? 'wide' : ''}" data-fid="${esc(f.fid)}"><label class="en-l" for="${id}">${esc(f.q)}${req}</label>${c}${help}</div>`;
+    return `<div class="en-f ${f.type === 'para' || f.type === 'roster_roll' || f.type === 'roster_any' || f.type === 'photo' || f.type === 'multi' || f.type === 'file' ? 'wide' : ''}" data-fid="${esc(f.fid)}"><label class="en-l" for="${id}">${esc(f.q)}${req}</label>${c}${help}</div>`;
   }
 
   function drawComposer() {
@@ -78,7 +80,7 @@
         ${more.length ? `<details class="en-more"><summary>More details <span class="muted">(${more.length} optional)</span></summary><div class="en-fields">${more.map(f => fieldHtml(f)).join('')}</div></details>` : ''}
         <div class="en-actions"><button class="btn" id="en-save">Save draft</button><button class="btn primary large" id="en-submit">Submit for approval</button><span class="muted" id="en-saved"></span></div></div></div>`;
     $('#en-composer').querySelectorAll('.en-f input:not([type=checkbox]):not([type=file]), .en-chips + input').forEach(i => i.classList.add('input'));
-    for (const f of fs) { if (f.type === 'photo') drawThumbs(f.fid); if (f.type === 'roster_roll') checkRolls(f.fid); }
+    for (const f of fs) { if (f.type === 'photo') drawThumbs(f.fid); if (f.type === 'file') drawDoc(f.fid); if (f.type === 'roster_roll') checkRolls(f.fid); }
     wire();
     $('#en-close').onclick = () => { $('#en-composer').innerHTML = ''; E.form = null; drawTiles($('#en-q').value); };
     $('#en-save').onclick = go(async () => { await saveDraft(); toast('Draft saved'); });
@@ -94,10 +96,12 @@
       setValue(fid, t.value); t.closest('.en-f')?.classList.remove('bad');
       if (t.dataset.roll) checkRolls(fid); if (t.dataset.pick) suggestFaculty(t);
     };
-    box.onchange = e => { const t = e.target; if (t.dataset.photo) uploadPhotos(t.dataset.photo, t.files).then(() => { t.value = ''; }); else if (t.tagName === 'SELECT' && t.dataset.f) setValue(t.dataset.f, t.value); };
+    box.onchange = e => { const t = e.target; if (t.dataset.doc) uploadDoc(t.dataset.doc, t.files[0]).then(() => { t.value = ''; }); else if (t.dataset.photo) uploadPhotos(t.dataset.photo, t.files).then(() => { t.value = ''; }); else if (t.tagName === 'SELECT' && t.dataset.f) setValue(t.dataset.f, t.value); };
     box.onclick = e => {
       const pill = e.target.closest('.en-pill');
-      if (pill) { const grp = pill.parentElement, fid = grp.dataset.f, cur = E.values[fid] === pill.dataset.v; E.values[fid] = cur ? '' : pill.dataset.v; grp.querySelectorAll('.en-pill').forEach(p => p.classList.toggle('on', p.dataset.v === E.values[fid])); autosave(); }
+      if (pill && pill.parentElement.dataset.multi) { const fid = pill.parentElement.dataset.f, list = Array.isArray(E.values[fid]) ? E.values[fid] : String(E.values[fid] || '').split(', ').filter(Boolean); E.values[fid] = list.includes(pill.dataset.v) ? list.filter(x => x !== pill.dataset.v) : [...list, pill.dataset.v]; pill.classList.toggle('on'); autosave(); }
+      else if (pill) { const grp = pill.parentElement, fid = grp.dataset.f, cur = E.values[fid] === pill.dataset.v; E.values[fid] = cur ? '' : pill.dataset.v; grp.querySelectorAll('.en-pill').forEach(p => p.classList.toggle('on', p.dataset.v === E.values[fid])); autosave(); }
+      const nodoc = e.target.closest('[data-nodoc]'); if (nodoc) { const fid = nodoc.dataset.nodoc; E.values[fid] = ''; drawDoc(fid); autosave(); }
       const rm = e.target.closest('[data-rm]'); if (rm) { const [fid, id] = rm.dataset.rm.split('|'); E.photos[fid] = E.photos[fid].filter(p => String(p.media_id) !== id); syncPhotos(fid); drawThumbs(fid); }
       const pick = e.target.closest('[data-add]'); if (pick) { const [fid, roll] = pick.dataset.add.split('|'), cur = String(E.values[fid] || '').split('\n').filter(Boolean); if (!cur.includes(roll)) cur.push(roll); E.values[fid] = cur.join('\n'); const ta = box.querySelector(`textarea[data-f="${CSS.escape(fid)}"]`); ta.value = E.values[fid]; checkRolls(fid); autosave(); box.querySelectorAll(`.en-find`).forEach(x => x.innerHTML = ''); }
     };
@@ -129,6 +133,19 @@
       catch (e) { toast(e.message, true); }
     }
     syncPhotos(fid); drawThumbs(fid); if ($('#en-saved')) $('#en-saved').textContent = '';
+  }
+  async function uploadDoc(fid, file) {
+    if (!file) return;
+    const t = $('#en-saved'); if (t) t.textContent = 'Uploading ' + file.name + '…';
+    const form = new FormData(); form.append('file', file);
+    try { const m = await api('/api/media?kind=document', { method: 'POST', form }); E.values[fid] = m.link_ref; (E.values._docnames = E.values._docnames || {})[fid] = m.name; autosave(); }
+    catch (e) { toast(e.message, true); }
+    drawDoc(fid); if ($('#en-saved')) $('#en-saved').textContent = '';
+  }
+  function drawDoc(fid) {
+    const el = document.getElementById('ef-' + fid.replace(/[^\w]/g, '_') + '-doc'); if (!el) return;
+    const v = String(E.values[fid] || '');
+    el.innerHTML = v ? `<a href="${esc(fileHref(v))}" target="_blank" rel="noopener">${esc((E.values._docnames || {})[fid] || 'Uploaded document')} ↗</a> <button type="button" class="btn sm" data-nodoc="${esc(fid)}">Remove</button>` : '';
   }
   function syncPhotos(fid) { const ids = E.photos[fid].map(p => p.media_id); E.values[fid] = ids; E.values._more_photos = ids.slice(1); autosave(); }
   function drawThumbs(fid) {

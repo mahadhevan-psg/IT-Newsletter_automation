@@ -17,6 +17,8 @@ from backend.review import service  # noqa: E402
 from database import db_manager  # noqa: E402
 from database.master_db import db, init_master_db  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
+
 client = TestClient(app)
 PASS = "Entry-Pass-1"
 RESEARCH, JOURNAL = "form_research", "Journal Publications"
@@ -188,12 +190,12 @@ def test_renamed_category_and_field_still_read_old_responses(world):
 # ------------------------------------------------------------------------------------------------ the entry screen and submitting
 def test_the_entry_screen_asks_only_what_a_person_should_type(world):
     cat = {c["name"]: c for f in entry.catalog(None) for c in f["categories"]}
-    assert cat[JOURNAL]["tile"] == "I published a journal paper" and "scopus" in cat[JOURNAL]["keywords"]
+    assert cat[JOURNAL]["name"] == JOURNAL and "description" in cat[JOURNAL] and JOURNAL.lower() in cat[JOURNAL]["keywords"]      # a card is titled by its category
     form = entry.form_for(RESEARCH, JOURNAL)
     labels = [f["q"] for f in form["fields"]]
     assert "Research Paper / Article Title" in labels and "Submitting Faculty (Select your name)" not in labels            # the person is known from the sign-in
     assert "Is this a Landmark / Milestone Achievement?" not in labels and "Research Subcategory" not in labels
-    assert next(f for f in form["fields"] if f["q"].startswith("Photos"))["type"] == "photo"
+    assert next(f for f in form["fields"] if f["q"].endswith("(up to 4)"))["type"] == "photo"
     assert next(f for f in form["fields"] if f["q"] == "Publication Date")["type"] == "date"
 
 
@@ -289,7 +291,7 @@ def test_bad_uploads_are_refused(world):
 def test_the_api_serves_entry_photos_and_the_admin_editor_with_the_right_access(world):
     fac, admin = token("EMP001"), token("ADMIN")
     cat = client.get("/api/entry/catalog", headers=fac).json()
-    assert [f["form_id"] for f in cat["forms"]][:2] == ["form_student", "form_research"]
+    assert [f["form_id"] for f in cat["forms"]]== ["form_research", "form_faculty", "form_departmental", "form_industry", "form_student"]
     up = client.post("/api/media", files={"file": ("p.jpg", jpeg(1000, 700), "image/jpeg")}, headers=fac)
     assert up.status_code == 200
     got = client.get(up.json()["url"])                                                          # <img> tags carry no sign-in: the address itself is the key

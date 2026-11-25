@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const B = { forms: [], formId: null, v: null, cat: null, sel: null, adding: false, after: null };
-  const NAMES = { text: 'Short text', para: 'Long text', number: 'Number', date: 'Date', choice: 'Pick one (buttons)', list: 'Pick one (drop-down)', url: 'Link', faculty: 'Faculty member', roster_roll: 'Students', roster_any: 'People', photo: 'Photo', confirm: 'Tick box' };
+  const NAMES = { text: 'Short text', para: 'Long text', number: 'Number', date: 'Date', choice: 'Pick one (buttons)', list: 'Pick one (drop-down)', multi: 'Tick several', url: 'Link', file: 'Document upload', faculty: 'Faculty member', roster_roll: 'Students', roster_any: 'People', photo: 'Photo', confirm: 'Tick box' };
 
   async function viewBuilder() {
     B.forms = await api('/api/defs/forms');
@@ -48,7 +48,7 @@
 
   function tilesHtml() {
     const secName = id => (B.v.sections.find(s => s.section_id === id) || {}).name || '';
-    return `<div class="en-grid">${B.v.categories.map(c => `<div class="bd-tilew"><button class="en-tile ${c.name === B.cat ? 'on' : ''}" data-cat="${esc(c.name)}"><b>${esc(c.tile || c.name)}</b><span>${esc(c.name)} · ${esc(secName(c.section_id))}</span></button>
+    return `<div class="en-grid">${B.v.categories.map(c => `<div class="bd-tilew"><button class="en-tile ${c.name === B.cat ? 'on' : ''}" data-cat="${esc(c.name)}"><b>${esc(c.name)}</b><span>${esc(c.description || '')}</span><span class="bd-in">Newsletter: ${esc(secName(c.section_id))}</span></button>
         <span class="bd-ctl"><button data-cup="${esc(c.name)}" title="Move earlier">↑</button><button data-cdn="${esc(c.name)}" title="Move later">↓</button><button data-cmenu="${esc(c.name)}" title="Rename, wording, section, delete">⋯</button></span></div>`).join('')}
       <button class="en-tile bd-new" id="bd-addcat"><b>+ New category</b><span>A new kind of entry</span></button></div>`;
   }
@@ -85,7 +85,7 @@
   }
   const GUESS = [[/\b(date|when|day)\b/i, 'date'], [/\b(count|number of|amount|how many)\b/i, 'number'], [/\b(link|url|website|proof|certificate)\b/i, 'url'], [/\b(description|details|summary|remarks|abstract|outcome)\b/i, 'para']];
   function fieldForm(f) {
-    const nu = !f, locked = f && f.locked, cats = B.v.categories, simple = ['text', 'para', 'number', 'date', 'url', 'choice', 'list'];
+    const nu = !f, locked = f && f.locked, cats = B.v.categories, simple = ['text', 'para', 'number', 'date', 'url', 'choice', 'list', 'multi'];
     const types = nu || simple.includes(f.type) ? Object.entries(B.v.types).filter(([k]) => nu ? true : simple.includes(k)) : [[f.type, NAMES[f.type] || f.type]];
     const shared = f && f.cats && f.cats.length > 1;
     return `<h4>${nu ? 'New field' : 'Field'}</h4>${locked ? '<p class="hint">This is a system field. The application fills or needs it, so it cannot be changed here.</p>' : ''}
@@ -103,7 +103,7 @@
         <p class="hint">Removing hides it from new entries; answers already given stay and still show. Delete removes it entirely (the answers stay stored).</p>`}</details>`}`;
   }
 
-  function showChoices() { const t = $('#fe-type'); if (t) $('#fe-choices-box').style.display = ['choice', 'list'].includes(t.value) ? 'block' : 'none'; }
+  function showChoices() { const t = $('#fe-type'); if (t) $('#fe-choices-box').style.display = ['choice', 'list', 'multi'].includes(t.value) ? 'block' : 'none'; }
 
   function wire() {
     const view = $('#view');
@@ -157,14 +157,14 @@
   function categoryMenu(name) {
     const c = B.v.categories.find(x => x.name === name);
     const o = modal('Category: ' + name, `<div class="field"><label>Name</label><input class="input" id="cm-name" value="${esc(name)}"></div>
-      <div class="field"><label>Wording on the “What happened?” tile</label><input class="input" id="cm-tile" value="${esc(c.tile || '')}" placeholder="e.g. I published a journal paper"></div>
+      <div class="field"><label>Description on the card</label><textarea class="input" id="cm-tile" rows="3">${esc(c.description || '')}</textarea></div>
       <div class="field"><label>Words that find it in the search</label><input class="input" id="cm-kw" value="${esc(c.keywords || '')}"></div>
       <div class="field"><label>Newsletter section</label><select id="cm-sec">${B.v.sections.map(s => `<option value="${s.section_id}" ${s.section_id === c.section_id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
       <div><button class="btn danger" id="cm-del">Delete this category…</button></div>`,
       async o => {
         const nn = $('#cm-name', o).value.trim();
         if (nn && nn !== name) await op({ op: 'rename_category', name, new_name: nn });
-        await op({ op: 'category_meta', name: nn || name, tile: $('#cm-tile', o).value, keywords: $('#cm-kw', o).value, section_id: $('#cm-sec', o).value });
+        await op({ op: 'category_meta', name: nn || name, description: $('#cm-tile', o).value, keywords: $('#cm-kw', o).value, section_id: $('#cm-sec', o).value });
       }, 'Save');
     $('#cm-del', o).onclick = go(async () => {
       if (!confirm(`Delete “${name}”?\n\nEntries already saved in it stay, with all their answers. New entries can no longer be made in it. Fields only this category used are retired.`)) return;

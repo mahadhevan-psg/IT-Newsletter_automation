@@ -30,11 +30,15 @@
         },
         {
           "category_id": "cat_patents",
-          "name": "Patents & Intellectual Property"
+          "name": "Patents & Intellectual Property Rights (IPR)"
         },
         {
           "category_id": "cat_innovations",
           "name": "Key Research Innovations & Technical Accomplishments"
+        },
+        {
+          "category_id": "cat_research_research_seminar",
+          "name": "Research Seminar"
         }
       ]
     },
@@ -58,16 +62,16 @@
           "name": "Invited Keynote / Expert Lectures Delivered"
         },
         {
-          "category_id": "cat_fac_session_chairs",
-          "name": "Resource Person / Session Chair Roles"
-        },
-        {
           "category_id": "cat_fac_fdp_attended",
           "name": "FDP / Workshops Attended"
         },
         {
           "category_id": "cat_fac_memberships",
-          "name": "Professional Body & Editorial Board Roles"
+          "name": "Membership in Professional Body & Editorial Board Roles"
+        },
+        {
+          "category_id": "cat_faculty_resource_person_session_chai",
+          "name": "Resource Person / Session Chair Roles"
         }
       ]
     },
@@ -79,24 +83,8 @@
       "template_file": "templates/student_section_template.docx",
       "subcategories": [
         {
-          "category_id": "cat_stu_academic",
-          "name": "Academic Excellence & Ranks"
-        },
-        {
           "category_id": "cat_stu_hackathons",
-          "name": "Hackathons & Coding Competitions"
-        },
-        {
-          "category_id": "cat_stu_placements",
-          "name": "Higher Education & Top Placements"
-        },
-        {
-          "category_id": "cat_stu_projects",
-          "name": "Technical Projects & Innovations"
-        },
-        {
-          "category_id": "cat_stu_extracurricular",
-          "name": "Sports, Cultural & Co-Curricular Accomplishments"
+          "name": "Hackathons / Coding Competitions"
         },
         {
           "category_id": "cat_hack_nat",
@@ -105,6 +93,62 @@
         {
           "category_id": "cat_hack_int",
           "name": "Internal Sprint"
+        },
+        {
+          "category_id": "cat_student_technical_competitions",
+          "name": "Technical Competitions"
+        },
+        {
+          "category_id": "cat_student_paper_presentations",
+          "name": "Paper Presentations"
+        },
+        {
+          "category_id": "cat_student_project_presentations_exhibi",
+          "name": "Project Presentations / Exhibitions"
+        },
+        {
+          "category_id": "cat_student_technical_symposiums",
+          "name": "Technical Symposiums"
+        },
+        {
+          "category_id": "cat_student_innovation_startup_competiti",
+          "name": "Innovation / Startup Competitions"
+        },
+        {
+          "category_id": "cat_student_research_publications_patent",
+          "name": "Research Publications / Patents"
+        },
+        {
+          "category_id": "cat_student_professional_certifications",
+          "name": "Professional Certifications"
+        },
+        {
+          "category_id": "cat_student_internships_industrial_train",
+          "name": "Internships / Industrial Training"
+        },
+        {
+          "category_id": "cat_student_workshops_technical_training",
+          "name": "Workshops / Technical Training"
+        },
+        {
+          "category_id": "cat_student_sports_achievements",
+          "name": "Sports Achievements"
+        },
+        {
+          "category_id": "cat_student_cultural_activities",
+          "name": "Cultural Activities"
+        },
+        {
+          "category_id": "cat_student_nss_ncc_social_service",
+          "name": "NSS / NCC / Social Service"
+        },
+        {
+          "category_id": "cat_student_leadership_student_associati",
+          "name": "Leadership / Student Association Activities"
+        },
+        {
+          "category_id": "cat_student_others",
+          "name": "Others"
         }
       ]
     },
@@ -124,16 +168,16 @@
           "name": "Industry Expert Lectures & Technical Talks"
         },
         {
-          "category_id": "cat_ind_mous",
-          "name": "MoUs Signed & Industrial Collaborations"
-        },
-        {
           "category_id": "cat_ind_alumni",
           "name": "Alumni Interactions & Mentorship Sessions"
         },
         {
           "category_id": "cat_ind_outreach",
           "name": "Community & Social Outreach Initiatives"
+        },
+        {
+          "category_id": "cat_outreach_mous_signed_industrial_colla",
+          "name": "MoUs Signed & Industrial Collaborations"
         }
       ]
     },
@@ -165,20 +209,12 @@
           "name": "Department Statistics & Major Milestones"
         },
         {
-          "category_id": "cat_dept_highlights",
-          "name": "Highlights"
-        },
-        {
           "category_id": "cat_dept_awards",
-          "name": "Achievements / Awards / Recognitions"
+          "name": "Departmental Achievements / Awards / Recognitions"
         },
         {
           "category_id": "cat_dept_events",
-          "name": "Events / Programs"
-        },
-        {
-          "category_id": "cat_dept_research",
-          "name": "Research / Publications / Innovation"
+          "name": "Events / Programs Conducted"
         },
         {
           "category_id": "cat_dept_infra_dev",
@@ -190,11 +226,11 @@
         },
         {
           "category_id": "cat_dept_fdp",
-          "name": "Faculty Development / Professional Achievements"
+          "name": "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised"
         },
         {
           "category_id": "cat_dept_student_dev",
-          "name": "Student Development / Outreach / Social Initiatives"
+          "name": "Student Development, Outreach, and Social Initiatives Undertaken by the Department"
         },
         {
           "category_id": "cat_dept_accreditation",
@@ -202,7 +238,7 @@
         },
         {
           "category_id": "cat_dept_other",
-          "name": "Other Significant Initiatives"
+          "name": "Other Significant Highlights"
         }
       ]
     }

@@ -24,8 +24,8 @@ from backend.master.common import norm_header
 from database.master_db import audit, ay_for, ensure_ay
 
 PLACEMENT = "placement"
-LABELS = {"form_student": "Student achievement", "form_research": "Research & innovation", "form_faculty": "Faculty achievement",
-          "form_departmental": "Department highlights", "form_industry": "Industry & outreach", PLACEMENT: "Placement"}
+LABELS = {"form_research": "Research Contributions & Innovations", "form_faculty": "Faculty Participation and Achievements", "form_departmental": "Department Milestones & Achievements",
+          "form_industry": "Industry, Alumni & Outreach", "form_student": "Student Participation and Achievements", PLACEMENT: "Student Placement Diary"}
 
 
 # ---------------------------------------------------------------- small helpers

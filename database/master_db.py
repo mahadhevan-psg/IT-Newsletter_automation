@@ -130,6 +130,23 @@ def add_tours_seen(conn):
         conn.execute("ALTER TABLE users ADD COLUMN tours_seen TEXT NOT NULL DEFAULT ''")
 
 
+def add_placement_columns(conn):
+    """The placement diary of November 2026 asks for the concepts assessed / applied and allows a supporting photo."""
+    for table, cols in (("placement_offers", ("photo",)), ("interview_experiences", ("concepts", "photo")), ("internship_experiences", ("concepts", "photo"))):
+        have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for col in cols:
+            if have and col not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} TEXT")
+
+
+def add_department_mou_dates(conn):
+    """The department's MoU entries carry a start and an expiry date, so expiry can be tracked."""
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(department_highlights)")}
+    for col in ("agreement_effective", "agreement_expiry"):
+        if have and col not in have:
+            conn.execute(f"ALTER TABLE department_highlights ADD COLUMN {col} DATE")
+
+
 def init_master_db():
     """Create tables, the 10 fixed classes and the first admin account (idempotent)."""
     from backend.master.auth import hash_password
@@ -145,6 +162,8 @@ def init_master_db():
         repair_class_years(conn)
         add_entry_kind(conn)
         add_tours_seen(conn)
+        add_placement_columns(conn)
+        add_department_mou_dates(conn)
         repair_publish_permission(conn)
         cur_ay = ensure_ay(conn, ay_for(date.today()))
         conn.execute("UPDATE academic_years SET is_current = (ay_id = ?)", (cur_ay,))

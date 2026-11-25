@@ -251,6 +251,8 @@ def test_faculty_list_carries_activity_counts_for_the_filters(world):
 import csv as _csv  # noqa: E402
 import io as _io  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
+
 
 def read_csv(data: bytes):
     assert data.startswith(b"\xef\xbb\xbf")                                   # BOM so Excel reads ₹ and Tamil names correctly

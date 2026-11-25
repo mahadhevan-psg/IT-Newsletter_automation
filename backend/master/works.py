@@ -239,7 +239,7 @@ COLUMNS: Dict[str, List[Dict[str, str]]] = {
         _col("d", "funding_source", "funding_source", "Funding source"), _col("d", "overview", "overview", "Overview"), _col("d", "objectives", "objectives", "Objectives"), _col("d", "outputs", "outputs", "Key outputs"),
         _col("d", "success_indicators", "success", "Success indicators"), _col("d", "infra_upgrade", "infra", "Infrastructure upgrade details"), _col("d", "accreditation_link", "accreditation", "Accreditation linkage"),
         _col("d", "challenges", "challenges", "Challenges and mitigation"), _col("d", "sustainability", "sustainability", "Sustainability plan"), _col("d", "recognition", "recognition", "Recognition / external validation"),
-        _col("d", "related_initiatives", "related", "Related initiatives"), _col("d", "report_url", "report_url", "Event report link", "Links"),
+        _col("d", "related_initiatives", "related", "Related initiatives"), _col("d", "agreement_effective", "mou_from", "MoU start date"), _col("d", "agreement_expiry", "mou_to", "MoU expiry date"), _col("d", "report_url", "report_url", "Event report link", "Links"),
     ],
     "OUTREACH": _COMMON + [
         _c("lead", "Lead coordinator", "lf.full_name", "People"), _col("o", "lead_emp_id", "lead_id", "Lead employee ID", "People"), _c("involved", "Other faculty involved", _INVOLVED_NAMES, "People"),

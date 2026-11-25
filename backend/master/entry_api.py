@@ -93,9 +93,10 @@ def api_pref_save(payload: Dict[str, Any] = Body(...), user: User = Depends(staf
 
 # ================================================================ photos
 @router.post("/api/media")
-async def api_upload(file: UploadFile = File(...), user: User = Depends(current_user)):
+async def api_upload(file: UploadFile = File(...), kind: str = "photo", user: User = Depends(current_user)):
     content = await file.read(media.MAX_UPLOAD + 1)
-    return media.save_upload(user.id, file.filename or "photo", content)
+    save = media.save_document if kind == "document" else media.save_upload
+    return save(user.id, file.filename or kind, content)
 
 
 @router.get("/api/media/{media_id}/{token}")
@@ -106,7 +107,11 @@ def api_media(media_id: int, token: str, thumb: int = 0):
     data = media.read(media_id, thumb=bool(thumb))
     if not data:
         raise HTTPException(404, "The file is not available")
-    return Response(content=data, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+    pdf = data[:5] == b"%PDF-"
+    headers = {"Cache-Control": "public, max-age=86400", "X-Content-Type-Options": "nosniff"}
+    if pdf:
+        headers["Content-Disposition"] = f'inline; filename="document-{media_id}.pdf"'
+    return Response(content=data, media_type="application/pdf" if pdf else "image/jpeg", headers=headers)
 
 
 # ================================================================ the Admin's form editor
@@ -116,7 +121,7 @@ def api_defs_forms(user: User = Depends(admin_user)):
         out = []
         for fid in definitions.FORM_IDS + [definitions.PLACEMENT]:
             v = definitions.editor_view(conn, fid)
-            out.append({"form_id": fid, "title": entry.FORM_LABELS.get(fid) or "Student placement", "categories": len(v.get("categories", [])),
+            out.append({"form_id": fid, "title": v.get("title") or "Student Placement Diary", "categories": len(v.get("categories", [])),
                         "fields": len([f for f in v["fields"] if not f.get("retired") and not f.get("section")]), "has_draft": v["has_draft"], "version": v["version"]})
         return out
 

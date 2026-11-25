@@ -18,7 +18,7 @@
   const chip = (text, tone) => `<span class="pill ${tone || ''}">${esc(text)}</span>`;
   const statusChip = s => chip(STATUS[s][0], STATUS[s][1]);
   const isUrl = v => /^https?:\/\/\S+$/i.test(v || '');
-  const linkify = v => isUrl(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">${esc(v)}</a>` : esc(v);
+  const linkify = v => String(v || '').startsWith('media://') ? String(v).split(', ').map((r, n) => `<a href="${esc(fileHref(r))}" target="_blank" rel="noopener noreferrer">Open uploaded file${n ? ' ' + (n + 1) : ''} ↗</a>`).join(' ') : isUrl(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">${esc(v)}</a>` : esc(v);
   // a date as the date-picker needs it: 2026-09-20 (sheets may hold 20/09/2026 or 9/20/2026)
   const toIso = v => { const t = String(v || '').trim(); let m;
     if ((m = t.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
@@ -71,7 +71,7 @@
     if (selectFirst || (RV.sel && !RV.items.some(i => i.item_id === RV.sel))) { if (RV.items.length) await openItem(RV.items[0].item_id); else { RV.sel = null; RV.detail = null; drawDetail(); } }
   }
   function drawFilters() {
-    const forms = [['form_student', 'Student'], ['form_research', 'Research'], ['form_faculty', 'Faculty'], ['form_departmental', 'Department'], ['form_industry', 'Outreach'], ['placement', 'Placement']];
+    const forms = [['form_research', 'Research'], ['form_faculty', 'Faculty'], ['form_departmental', 'Departmental'], ['form_industry', 'Industry'], ['form_student', 'Student'], ['placement', 'Placements']];
     const bulk = RV.scope === 'review' && RV.items.some(i => i.can_decide);
     const clean = RV.items.filter(i => i.can_decide && !i.warnings.length && !i.blockers.length).length;
     const box = document.activeElement && document.activeElement.id === 'rv-q' ? document.activeElement : null;      // keep typing where you were

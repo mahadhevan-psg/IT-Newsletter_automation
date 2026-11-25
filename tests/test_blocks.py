@@ -17,6 +17,8 @@ from backend.master.common import base_title, norm_header, uniquify_headers  # n
 from backend.review import service, sheets  # noqa: E402
 from database.master_db import db, init_master_db  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
+
 HEADERS = json.load(open(os.path.join(os.path.dirname(__file__), "fixtures", "sheet_headers.json"), encoding="utf-8"))
 FORMS = ["form_student", "form_research", "form_faculty", "form_industry", "form_departmental"]
 YES = "Yes - Submit"

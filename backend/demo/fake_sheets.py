@@ -46,10 +46,10 @@ def _stamp(i: int) -> str:
 
 def _raw(form_id: str, i: int, email: str, **keys) -> Dict[str, str]:
     from backend.demo.seed import _heads
-    heads = _heads(form_id)
+    heads = _heads(form_id, keys.get("category"))
     raw = {"Timestamp": _stamp(i), "Email Address": email}
     for k, v in keys.items():
-        if v not in (None, ""):
+        if v not in (None, "") and k in heads:
             raw[heads[k]] = str(v)
     return raw
 
@@ -60,7 +60,6 @@ def _build(form_id: str) -> List[Dict[str, str]]:
     r = random.Random(f"sheet-{form_id}")
     rolls, fac = _people()
     cats = _categories(form_id) if form_id != "placement" else []
-    perm = "Yes - may be published in the IT Chronicles newsletter"
     out: List[Dict[str, str]] = []
     for i in range(TOTAL):
         when = date.today() - timedelta(days=r.randint(3, 40))
@@ -70,49 +69,41 @@ def _build(form_id: str) -> List[Dict[str, str]]:
                 team[-1] = "99ITZ99"                                   # a roll number that does not exist: the approver sees it flagged
             mentor = r.choice(fac)
             ev, org = r.choice(D.HACKATHONS)
-            k = dict(entry_kind=_choice(form_id, "entry_kind", "Achievement"), _participants="\n".join(team), _lead_roll=team[0], is_team="Team" if len(team) > 1 else "Individual",
-                     category=cats[1], title=f"{ev} {when.year}", organizer=org, level=r.choice(["College", "State", "National"]), position=r.choice(D.POSITIONS_WIN),
-                     result_date=when.isoformat(), domain=_choice(form_id, "domain", "AI"), mentor_emp_id=mentor, abstract="The team built a working prototype in under 48 hours.",
-                     previously_reported="No", is_landmark=_choice("form_student", "is_landmark", "No"), publish_permission=perm)
+            k = dict(entry_kind=_choice(form_id, "entry_kind", "Achievement"), _participants="\n".join(team), category="Hackathons / Coding Competitions",
+                     title=f"{ev} {when.year}", organizer=org, level=_choice(form_id, "level", r.choice(["State", "National"])), position=r.choice(D.POSITIONS_WIN),
+                     result_date=when.isoformat(), mentor_emp_id=mentor, abstract="The team built a working prototype in under 48 hours.")
             out.append(_raw(form_id, i, _fac_email(mentor), **k))
         elif form_id == "form_research":
             lead = r.choice(fac)
             v, idx = r.choice(D.JOURNALS)
-            k = dict(_submitter=lead, category=cats[0], title=f"{r.choice(D.APPROACHES)} Model for {r.choice(D.APPLICATIONS).title()}", _contributors="\n".join([lead] + r.sample(fac, 1)),
-                     output_date=when.isoformat(), is_landmark=_choice(form_id, "is_landmark", "No"), publish_permission=perm, current_status="Published", venue_publisher=v, indexing=idx,
-                     quartile="Q2" if idx != "UGC-CARE" else "Not applicable", impact_factor=round(r.uniform(1.5, 7), 1), review_status="Peer reviewed",
-                     identifier=f"10.{r.randint(1000, 1109)}/{v.split()[0].lower()}.{when.year}.{r.randint(100000, 999999)}", funding_status="Not funded",
-                     abstract="A study with measurable gains over strong baselines.", key_findings="Better accuracy at lower cost.", impact="Ready for a pilot.")
+            k = dict(_submitter=lead, category=cats[0], title=f"{r.choice(D.APPROACHES)} Model for {r.choice(D.APPLICATIONS).title()}", _contributors="\n".join(r.sample(fac, 1)),
+                     output_date=when.isoformat(), venue_publisher=v, indexing=_choice(form_id, "indexing", idx.split()[0], cats[0]), quartile="Q2", impact_factor=round(r.uniform(1.5, 7), 1),
+                     identifier=f"10.{r.randint(1000, 1109)}/{v.split()[0].lower()}.{when.year}.{r.randint(100000, 999999)}")
             if i % 5 == 1:
                 k["identifier"] = ""                                    # something missing worth a look
             out.append(_raw(form_id, i, _fac_email(lead), **k))
         elif form_id == "form_faculty":
             emp = r.choice(fac)
-            k = dict(emp_id=emp, category=cats[0], title=r.choice(D.AWARDS), recognition_type="Award", host_org=r.choice(D.AWARD_BODIES), level=r.choice(["State", "National"]),
-                     start_date=when.isoformat(), end_date=when.isoformat(), city_venue="Coimbatore", description="Recognised for contributions to teaching and research.",
-                     outcome_impact="Shared with colleagues.", is_team="Individual", is_landmark=_choice(form_id, "is_landmark", "No"), publish_permission=perm)
+            k = dict(emp_id=emp, category=cats[0], title=r.choice(D.AWARDS), host_org=r.choice(D.AWARD_BODIES), level=r.choice(["State", "National"]),
+                     city_venue=f"{when.strftime('%d %B %Y')}, Coimbatore", description="Recognised for contributions to teaching and research.")
             out.append(_raw(form_id, i, _fac_email(emp), **k))
         elif form_id == "form_departmental":
             conv = r.choice(fac)
-            k = dict(_submitter=conv, convener_emp_id=conv, _faculty_involved="\n".join(r.sample([f for f in fac if f != conv], 2)), category=cats[0], title=r.choice(D.WORKSHOPS),
-                     highlight_type="Event", start_date=when.isoformat(), end_date=when.isoformat(), impl_status="Completed", venue="IT Department Seminar Hall",
-                     target_audience="Students and faculty", participant_count=r.choice([40, 65, 90]), overview="A hands-on programme with practical sessions.",
-                     is_landmark=_choice(form_id, "is_landmark", "No"), publish_permission=perm)
+            k = dict(_submitter=conv, category=cats[1], title=r.choice(D.WORKSHOPS), venue=f"{when.strftime('%d %B %Y')}, IT Department Seminar Hall",
+                     participant_count=r.choice([40, 65, 90]), overview="A hands-on programme with practical sessions.", budget_amount=20000, funding_source="Department fund")
             out.append(_raw(form_id, i, _fac_email(conv), **k))
         elif form_id == "form_industry":
             lead = r.choice(fac)
-            partner, ptype = r.choice(D.PARTNERS[:-1])
-            k = dict(_submitter=lead, lead_emp_id=lead, _faculty_involved=r.choice([f for f in fac if f != lead]), category=cats[0], _partner=partner, partner_type=ptype,
-                     start_date=when.isoformat(), venue="Partner campus", target_audience="Second and third year students", expected_count=60, actual_count=r.choice([48, 55, 70]),
-                     _event_participants="\n".join(r.sample(rolls, 15)), is_landmark=_choice(form_id, "is_landmark", "No"), publish_permission=perm,
-                     title=f"Industrial visit to {partner}", activity_format="Industrial visit", summary_outcomes="Students toured the facility and met the engineering teams.")
+            partner = r.choice(D.PARTNERS[:-1])[0]
+            k = dict(_submitter=lead, category=cats[0], _partner=partner, start_date=when.isoformat(), venue="Partner campus", target_audience="Second and third year students",
+                     actual_count=r.choice([48, 55, 70]), title=f"Industrial visit to {partner}", objective="Students toured the facility and met the engineering teams.")
             out.append(_raw(form_id, i, _fac_email(lead), **k))
         else:                                                           # placement: one student's diary row, in the Excel template's column order
             from backend.master import placements
             company, _sector, (lo, hi), _w, roles, _stipend = D.COMPANIES[i % len(D.COMPANIES)]
             cohort = _pool["tutor_rolls"]                                           # the demo tutor's class
             roll = cohort[(i * 5) % len(cohort)]
-            vals = list(placements.EXAMPLE)
+            vals = placements.example_row()
             heads = placements.template_headers()
             row = dict(zip(heads, vals))
             row[heads[0]] = roll

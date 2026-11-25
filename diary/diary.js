@@ -7,6 +7,7 @@ function toast(msg, bad) { const t = document.createElement('div'); t.className 
 async function api(path, o = {}) {
   const init = { method: o.method || 'GET', headers: token ? { Authorization: 'Bearer ' + token } : {} };
   if (o.body !== undefined) { init.body = JSON.stringify(o.body); init.headers['Content-Type'] = 'application/json'; }
+  if (o.form) init.body = o.form;                            // a photo upload
   const r = await fetch(path, init);
   if (r.status === 401 && token) { logout(); throw new Error('Please sign in again'); }
   if (!r.ok) { let d = r.statusText; try { d = (await r.json()).detail; } catch (e) { } throw new Error(d); }
@@ -73,9 +74,10 @@ async function company(id) {
         <h4 style="margin-top:14px">Offer types</h4>${c.offer_types.map(r => `<span class="pill" style="margin:2px">${esc(r.label)} × ${r.value}</span>`).join('') || '<p class="empty">–</p>'}</div></div>
     ${exp('Interview experiences', c.interviews, i => `<div class="exp"><b>${esc(i.ay_id)}</b> ${i.difficulty ? `<span class="pill ${i.difficulty === 'Hard' ? 'bad' : i.difficulty === 'Medium' ? 'warn' : 'ok'}">${esc(i.difficulty)}</span>` : ''} ${i.result ? `<span class="pill">${esc(i.result)}</span>` : ''}
       ${i.rounds_count ? `<p class="muted">${i.rounds_count} rounds${i.round_details ? ': ' + esc(i.round_details) : ''}</p>` : (i.round_details ? `<p class="muted">${esc(i.round_details)}</p>` : '')}
+      ${i.concepts ? `<p><b>Concepts and skills assessed:</b> ${esc(i.concepts)}</p>` : ''}
       ${i.questions_asked ? `<p><b>Questions asked:</b> ${esc(i.questions_asked)}</p>` : ''}${i.experience ? `<p>${esc(i.experience)}</p>` : ''}${i.tips ? `<p><b>Tips:</b> ${esc(i.tips)}</p>` : ''}</div>`)}
     ${exp('Internship experiences', c.internships, i => `<div class="exp"><b>${esc(i.ay_id)}</b> ${i.role ? '· ' + esc(i.role) : ''} ${i.duration ? '· ' + esc(i.duration) : ''} ${i.mode ? `<span class="pill">${esc(i.mode)}</span>` : ''} <span style="color:var(--warn)">${stars(i.rating)}</span>
-      ${i.tech_stack ? `<p class="muted">Tech: ${esc(i.tech_stack)}</p>` : ''}${i.work_summary ? `<p><b>Work:</b> ${esc(i.work_summary)}</p>` : ''}${i.learnings ? `<p><b>Learnings:</b> ${esc(i.learnings)}</p>` : ''}${i.experience ? `<p>${esc(i.experience)}</p>` : ''}</div>`)}`;
+      ${i.tech_stack ? `<p class="muted">Tech: ${esc(i.tech_stack)}</p>` : ''}${i.concepts ? `<p><b>Concepts and skills applied:</b> ${esc(i.concepts)}</p>` : ''}${i.work_summary ? `<p><b>Work:</b> ${esc(i.work_summary)}</p>` : ''}${i.learnings ? `<p><b>Learnings:</b> ${esc(i.learnings)}</p>` : ''}${i.experience ? `<p>${esc(i.experience)}</p>` : ''}</div>`)}`;
   window.scrollTo(0, 0);
 }
 start();

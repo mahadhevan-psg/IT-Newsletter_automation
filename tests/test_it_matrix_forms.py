@@ -1,4 +1,4 @@
-"""The forms the application ships now (the IT Matrix Google Forms of 25 November 2026): cards, questions, sheet layout, uploads, placement."""
+"""The forms the application ships now (the IT Matrix Google Forms of 25 November 2026): cards, questions, uploads, placement."""
 import io
 import json
 import os
@@ -12,9 +12,8 @@ from PIL import Image
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from backend.app import app  # noqa: E402
-from backend.master import blocks, definitions as D, entry, ingest, media  # noqa: E402
+from backend.master import definitions as D, entry, ingest, media  # noqa: E402
 from backend.master.auth import load_user, set_staff_password  # noqa: E402
-from backend.master.common import uniquify_headers  # noqa: E402
 from backend.review import service  # noqa: E402
 from database import db_manager  # noqa: E402
 from database.master_db import db, init_master_db  # noqa: E402
@@ -139,50 +138,14 @@ def test_a_pdf_is_stored_as_it_is_and_served_as_a_pdf(world):
         media.save_upload("EMP001", "c.pdf", PDF)                                                      # a photo question does not take a PDF
 
 
-# ------------------------------------------------------------------------------------------------ the Google Forms as a second channel
-def sheet_row(form_id, common, answers, closing=None):
-    """A response row laid out as the sheet of the form: common columns, then 'which category?' + section columns for every section."""
-    lay = ingest.specs()["forms"][form_id]["layout"]
-    cells = [(t, common.get(t, "")) for t in lay["common"]]
-    for b in lay["blocks"]:
-        mine = answers.get(b["category"])
-        cells.append((b["gate"], b["category"] if mine is not None else ""))
-        cells += [(t, (mine or {}).get(t, "")) for t in b["fields"]]
-    cells += [(t, (closing or {}).get(t, "")) for t in lay["closing"]]
-    return dict(zip(uniquify_headers([h for h, _ in cells]), [v for _, v in cells]))
-
-
-def test_the_research_sheet_starts_like_the_printed_form(world):
-    heads = blocks.sheet_headers("form_research")
-    assert heads[:7] == ["Timestamp", "Email Address", "Faculty Name", "Which research category would you like to fill first?", "Title of the Research Paper",
-                         "Name of the Journal", "Type of Journal"]
-    assert heads.count("Which remaining research category would you like to fill next?") == 7 and heads[-1] == "Accuracy and Authorization Confirmation"
-    assert "Volume Number and Isue number" in heads                                  # the sheet column keeps the printed spelling
-
-
-def test_a_response_with_two_sections_becomes_two_entries(world):
-    row = sheet_row("form_research", {"Timestamp": "2026-11-25 10:00:00", "Email Address": "emp001@x.edu", "Faculty Name": "Dr. Asha Rao"}, {
-        "Journal Publications": {"Title of the Research Paper": "Deep Triage", "Name of the Journal": "IEEE Access", "Volume Number and Isue number": "12(3)",
-                                 "Month and Year of Publication": "2026-09-01"},
-        "Conference Publications": {"Title of the Research Paper": "Edge Vision", "Name of the Conference": "ICAI"}})
-    flat = blocks.expand("form_research", row)
-    assert [f["Research Category"] for f in flat] == ["Journal Publications", "Conference Publications"]
+def test_a_department_category_without_a_title_question_gets_one(world):
+    me, category = user(), "MoU / Industry Collaboration / Partnerships"
+    form, values = filled("form_departmental", category)
+    by = {f["q"]: f["fid"] for f in form["fields"]}
+    values[by["Industry / Organisation Details"]] = "Acme Labs"
     with db() as c:
-        assert [ingest.ingest_row(c, "form_research", f)["status"] for f in flat] == ["inserted", "inserted"]
-        rows = [tuple(r) for r in c.execute("SELECT s.title, r.venue_publisher, s.submitter_emp_id FROM form_submissions s JOIN research_outputs r USING (submission_id) ORDER BY s.submission_id")]
-    assert rows == [("Deep Triage", "IEEE Access", "EMP001"), ("Edge Vision", "ICAI", "EMP001")]
-    assert ingest.answer_values("form_research", flat[0])["x_volume_issue"] == "12(3)"           # read from the column with the printed spelling
-
-
-def test_a_department_section_without_a_title_question_gets_one(world):
-    row = sheet_row("form_departmental", {"Timestamp": "2026-11-25 10:00:00", "Faculty Name": "Dr. Asha Rao", "Faculty Email": "emp001@x.edu"},
-                    {"MoU / Industry Collaboration / Partnerships": {"Industry/Organisation Details": "Acme Labs", "Key Objectives of collaboration": "Internships"}},
-                    {"Budget / Investment in Rupees (numbers only)": "5000", "Funding Source": "Department"})
-    (flat,) = blocks.expand("form_departmental", row)
-    with db() as c:
-        assert ingest.ingest_row(c, "form_departmental", flat)["status"] == "inserted"
-        got = tuple(c.execute("SELECT s.title, d.budget_amount, d.funding_source FROM form_submissions s JOIN department_highlights d USING (submission_id)").fetchone())
-    assert got == ("Collaboration with Acme Labs", 5000.0, "Department")
+        sent = entry.submit(c, me, "form_departmental", category, values)
+    assert sent["title"] == "Collaboration with Acme Labs"
 
 
 # ------------------------------------------------------------------------------------------------ a new edition of the forms
@@ -234,7 +197,6 @@ def test_department_mous_keep_their_dates_and_expiry_is_tracked(world):
     form, values = filled("form_departmental", MOU)
     by = {f["q"]: f for f in form["fields"]}
     assert by["MoU Start Date"]["req"] and not by["MoU Expiry Date"]["req"]
-    assert "MoU Start Date" not in blocks.sheet_headers("form_departmental")                 # the Google Form has no such column: the import is not shifted
     soon = (date.today() + timedelta(days=30)).isoformat()
     values.update({by["Industry / Organisation Details"]["fid"]: "Acme Labs", by["MoU Start Date"]["fid"]: "2025-01-10"})
     with db() as c, pytest.raises(HTTPException) as e:
@@ -248,12 +210,8 @@ def test_department_mous_keep_their_dates_and_expiry_is_tracked(world):
         assert analytics._mou_status(c) == [{"partner": "Acme Labs", "expiry": soon, "status": "Expiring soon"}]
 
 
-def test_sections_the_google_form_does_not_have_stay_out_of_its_sheet_and_industry_mous_are_tracked(world):
+def test_industry_mous_are_tracked(world):
     from backend.master import analytics
-    assert "MoU Start Date" not in blocks.sheet_headers("form_industry") and "Title of the Session / Event" not in blocks.sheet_headers("form_faculty")
-    row = sheet_row("form_faculty", {"Timestamp": "2026-11-25 10:00:00", "Email Address": "emp001@x.edu"},
-                    {"FDP / Workshops Attended": {"Title of the FDP / Workshop / Training Programme": "Cloud FDP"}})
-    assert [f["Achievement Category"] for f in blocks.expand("form_faculty", row)] == ["FDP / Workshops Attended"]          # the columns still line up
     me, category = user(), "MoUs Signed & Industrial Collaborations"
     form, values = filled("form_industry", category)
     by = {f["q"]: f["fid"] for f in form["fields"]}
@@ -263,3 +221,164 @@ def test_sections_the_google_form_does_not_have_stay_out_of_its_sheet_and_indust
         service.approve(c, load_user(c, "ADMIN", "STAFF"), sent["item_id"])
         assert tuple(c.execute("SELECT s.event_date, o.start_date, o.agreement_expiry FROM form_submissions s JOIN outreach_activities o USING (submission_id)").fetchone()) == ("2025-01-10", "2025-01-10", "2035-01-10")
         assert analytics._mou_status(c) == [{"partner": "Acme Labs", "expiry": "2035-01-10", "status": "Active"}]
+
+
+def test_a_class_tutor_uploads_placements_in_bulk_for_their_own_class_only(world):
+    import openpyxl
+    from backend.master import placements
+    with db() as c:
+        c.execute("INSERT INTO faculty (emp_id, full_name, email, designation) VALUES ('EMP002', 'Dr. Plain', 'emp002@x.edu', 'Professor')")
+        set_staff_password(c, "EMP002", PASS)
+        c.execute("INSERT INTO students (roll_no, full_name, programme, class_id) VALUES ('21IT101', 'Other Class', 'UG', 2)")
+        c.execute("UPDATE classes SET tutor_id = 'EMP001' WHERE class_id = 1")
+    auth = lambda uid: {"Authorization": "Bearer " + client.post("/api/auth/login", json={"id": uid, "password": PASS}).json()["token"]}
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    heads = placements.template_headers()
+    ws.append(heads)
+    for roll in ("21IT001", "21IT101"):
+        row = placements.example_row()
+        row[0] = roll
+        ws.append(row)
+    buf = io.BytesIO()
+    wb.save(buf)
+    send = lambda h: client.post("/api/master/placements/upload", files={"file": ("p.xlsx", buf.getvalue())}, headers=h)
+    tutor = auth("EMP001")
+    assert client.get("/api/master/placements/template", headers=tutor).status_code == 200
+    res = send(tutor).json()
+    assert res["students"] == 1 and [e["roll_no"] for e in res["errors"]] == ["21IT101"] and "not in your class" in res["errors"][0]["message"]
+    with db() as c:
+        assert [r[0] for r in c.execute("SELECT roll_no FROM placement_offers")] == ["21IT001"]
+        assert c.execute("SELECT COUNT(*) FROM placement_profiles WHERE roll_no = '21IT101'").fetchone()[0] == 0
+    plain = auth("EMP002")
+    assert send(plain).status_code == 403 and client.get("/api/master/placements/template", headers=plain).status_code == 403
+
+
+# ------------------------------------------------------------------------------------------------ Submissions, Reports, My activities
+def _approved(form_id, category, change=None):
+    me = user()
+    form, values = filled(form_id, category)
+    by = {f["q"]: f["fid"] for f in form["fields"]}
+    values.update({by[k]: v for k, v in (change or {}).items()})
+    with db() as c:
+        sent = entry.submit(c, me, form_id, category, values)
+        service.approve(c, load_user(c, "ADMIN", "STAFF"), sent["item_id"])
+    return form
+
+
+def test_the_three_tabs_show_entries_under_the_current_data_entry_fields(world):
+    import csv
+    from backend.master import profiles, submissions, works
+    form = _approved("form_research", "Journal Publications", {"Title of the Research Paper": "Deep Triage", "Name of the Journal": "IEEE Access"})
+    with db() as c:
+        admin = load_user(c, "ADMIN", "STAFF")
+        # My activities: the card is grouped under the category and lists the form's fields, nothing about consent
+        page = profiles.faculty_profile(c, admin, "EMP001")
+        research = next(s for s in page["sections"] if s["id"] == "research")
+        assert research["title"] == "Research Contributions & Innovations" and [g["title"] for g in research["groups"]] == ["Journal Publications"]
+        card = research["groups"][0]["items"][0]
+        shown = {k: v for k, v in card["facts"]}
+        assert shown["Name of the Journal"] == "IEEE Access" and shown["Indexing"] == "Scopus, Web of Science" and "Type of Journal" in shown and "Authors" in shown
+        assert [l["label"] for l in card["links"]] == ["Upload Published Research Paper / Supporting Proof"] and card["links"][0]["url"].startswith("media://")
+        assert not any("Accuracy" in k or "Permission" in k or k == "Timestamp" for k, _ in card["facts"] + card["notes"])
+        # Submissions
+        rows = submissions.list_submissions(c, admin, {})["rows"]
+        assert rows[0]["form"] == "Research Contributions & Innovations"
+        detail = submissions.get_submission(c, admin, rows[0]["submission_id"])
+        assert detail["header"]["category"] == "Journal Publications" and dict(detail["facts"])["Name of the Journal"] == "IEEE Access" and "detail" not in detail
+        # Reports: one download column for each field the forms ask, and filters on what is asked
+        cat = works.catalog(c, admin)
+        group = next(g for g in cat["groups"] if g["id"] == "RESEARCH")
+        assert group["title"] == "Research Contributions & Innovations" and "Research Seminar" in [t["category"] for t in group["types"]]
+        keys = {col["key"]: col["label"] for col in group["columns"]}
+        assert "f_x_journal_type" in keys and keys["f_x_journal_type"] == "Type of Journal" and not any("Permission" in v or "Accuracy" in v for v in keys.values())
+        out = works.export_csv(c, admin, "RESEARCH", "", {}, ["title", "f_venue_publisher", "f_indexing"]).decode("utf-8-sig")
+        assert list(csv.reader(io.StringIO(out)))[1] == ["Deep Triage", "IEEE Access", "Scopus, Web of Science"]
+        assert works.list_works(c, admin, "RESEARCH", "", {"indexing": "Web of Science"})["total"] == 1
+        assert works.list_works(c, admin, "RESEARCH", "", {"indexing": "IEEE"})["total"] == 0                  # a whole item of the list, not part of a word
+        for g in cat["groups"]:
+            works.export_csv(c, admin, g["id"], "", {}, [col["key"] for col in g["columns"]])                   # every column downloads
+
+
+def test_a_field_added_in_the_form_builder_appears_in_the_three_tabs(world):
+    from backend.master import profiles, submissions, works
+    with db() as c:
+        D.apply_op(c, "form_faculty", "add_field", {"label": "Funding for travel", "type": "text", "categories": ["Awards & Honors Received"], "required": True}, "ADMIN")
+        D.publish(c, "form_faculty", "ADMIN", "x")
+    _approved("form_faculty", "Awards & Honors Received", {"Funding for travel": "By the department"})
+    with db() as c:
+        admin = load_user(c, "ADMIN", "STAFF")
+        card = next(s for s in profiles.faculty_profile(c, admin, "EMP001")["sections"] if s["id"] == "achievements")["groups"][0]["items"][0]
+        assert ["Funding for travel", "By the department"] in card["facts"]
+        sid = submissions.list_submissions(c, admin, {})["rows"][0]["submission_id"]
+        assert ["Funding for travel", "By the department"] in submissions.get_submission(c, admin, sid)["facts"]
+        assert "Funding for travel" in [col["label"] for col in next(g for g in works.catalog(c, admin)["groups"] if g["id"] == "FACULTY")["columns"]]
+
+
+# ------------------------------------------------------------------------------------------------ the newsletter studio reads the local database
+def _studio():
+    token = client.post("/api/auth/login", json={"id": "ADMIN", "password": PASS}).json()["token"]
+    head = {"Authorization": "Bearer " + token}
+
+    def entries():
+        r = client.get("/api/entries", headers=head)
+        assert r.status_code == 200, r.text
+        return {e["title"]: e for e in r.json()}
+    return head, entries
+
+
+def test_the_studio_lists_what_the_database_holds_with_no_import_step(world):
+    head, entries = _studio()
+    assert entries() == {}
+    _approved("form_research", "Journal Publications", {"Title of the Research Paper": "Deep Triage", "Name of the Journal": "IEEE Access"})
+    _approved("form_research", "Conference Publications", {"Title of the Research Paper": "Edge Vision", "Name of the Conference": "ICAI"})
+    got = entries()                                                                       # approved a moment ago: already there
+    assert set(got) == {"Deep Triage", "Edge Vision"}
+    paper = got["Deep Triage"]
+    assert paper["organization_or_venue"] == "IEEE Access" and paper["section_id"] == "sec_research" and paper["category_id"] != "cat_gen"
+    assert paper["author_or_person"] == "Dr. Asha Rao" and paper["event_date"] == "2026-09-01" and paper["approval_status"] == "Approved"
+    assert paper["evidence_url"].startswith("media://")
+    assert [e["entry_id"] for e in entries().values()] == [e["entry_id"] for e in got.values()]          # reading again adds nothing
+
+
+def test_the_studio_follows_changes_keeps_the_editors_decision_and_drops_withdrawn_entries(world):
+    from database.db_manager import update_entry_status
+    head, entries = _studio()
+    _approved("form_research", "Journal Publications", {"Title of the Research Paper": "Deep Triage", "Name of the Journal": "IEEE Access"})
+    _approved("form_research", "Conference Publications", {"Title of the Research Paper": "Edge Vision"})
+    paper = entries()["Deep Triage"]
+    update_entry_status(paper["entry_id"], "Rejected", "not this issue", True, 7, "Editor")
+    with db() as c:                                                                       # the record is corrected in the database
+        c.execute("UPDATE form_submissions SET title = 'Deep Triage, revised' WHERE title = 'Deep Triage'")
+    after = entries()["Deep Triage, revised"]
+    assert after["entry_id"] == paper["entry_id"] and after["approval_status"] == "Rejected" and after["featured_flag"] and after["display_order"] == 7
+    with db() as c:
+        admin = load_user(c, "ADMIN", "STAFF")
+        item = c.execute("SELECT item_id FROM staged_items WHERE title = 'Edge Vision'").fetchone()[0]
+        service.revoke(c, admin, item)
+    assert set(entries()) == {"Deep Triage, revised"}
+    with db() as c:
+        c.execute("DELETE FROM form_submissions")                                         # a wrong or empty database never empties the newsletter
+    assert set(entries()) == {"Deep Triage, revised"}
+
+
+def test_which_field_fills_the_newsletter_is_set_in_the_form_builder(world):
+    head, entries = _studio()
+    _approved("form_research", "Journal Publications", {"Title of the Research Paper": "Deep Triage", "Name of the Journal": "IEEE Access", "Publisher Name": "IEEE Press"})
+    assert entries()["Deep Triage"]["organization_or_venue"] == "IEEE Access"
+    with db() as c:
+        view = D.editor_view(c, "form_research")
+        pick = lambda label: next(f["fid"] for f in view["fields"] if f["label"] == label and f["cats"] and "Journal Publications" in f["cats"])
+        D.apply_op(c, "form_research", "update_field", {"fid": pick("Name of the Journal"), "changes": {"newsletter": ""}}, "ADMIN")
+        D.apply_op(c, "form_research", "update_field", {"fid": pick("Publisher Name"), "changes": {"newsletter": "organization_or_venue"}}, "ADMIN")
+        D.publish(c, "form_research", "ADMIN", "x")
+    assert entries()["Deep Triage"]["organization_or_venue"] == "IEEE Press"
+
+
+def test_the_studios_own_form_setup_and_hand_typed_entries_are_gone(world):
+    head, _ = _studio()
+    for method, url in (("post", "/api/entries/ingest"), ("post", "/api/entries/ingest-csv"), ("post", "/api/forms"), ("put", "/api/forms/form_research")):
+        assert getattr(client, method)(url, headers=head).status_code in (404, 405), url
+    page = client.get("/newsletter/").text
+    assert 'data-tab="forms"' not in page and 'data-tab="overview"' not in page and "Add manually" not in page and "Sync from master database" not in page
+    assert all(f'data-tab="{t}"' in page for t in ("responses", "front", "layout", "publish"))

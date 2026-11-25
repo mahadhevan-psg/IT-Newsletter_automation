@@ -118,18 +118,11 @@ Click **Create Web Service**. (With Blueprints available you could use [render.d
 - Keep the real service and the demo as two services with their own addresses.
 
 
-## Google Sheet sync and approvals
+## Approvals
 
-Form responses are pulled from the Google Sheets into an **Approvals** queue; nothing is used in the application until the right person approves it
-(placements: the student's class tutor; the other five forms: Admin or HoD). The sheets are only ever read.
-
-* **Sheet links**: Admin pastes each form's responses-sheet link under *Data sync*. Either share the sheet as "Anyone with the link can view", or use a service account.
-* **Private sheets**: create a Google service account, enable the Google Sheets API, and set the environment variable `GOOGLE_SERVICE_ACCOUNT_JSON` to the key file's full contents.
-  Share each sheet with the service account's e-mail address as Viewer.
-* **Schedule**: set in the portal (every N days or weekly, time and time zone). The timer runs inside the server, so use an always-on instance
-  (a free Render service that sleeps will pull when it next wakes). *Pull now* always works.
-* **Demo**: the demo service uses pretend sheets (`demo://...`); each *Pull now* adds a few new responses.
-* The new Python dependencies (`requests`, `google-auth`, `cryptography`, `tzdata`) are in `requirements.txt`, so the Docker image picks them up on the next build.
+Entries made in the portal go into an **Approvals** queue; nothing is used in the application until the right person approves it (placement
+records: the student's class tutor; the five faculty forms: Admin or HoD). Data is entered in the portal only: there is no Google Forms or
+Google Sheets connection. Excel uploads remain for placement data (Admin, or a class tutor for their own class) and for student and faculty lists.
 
 
 ## Entering data in the portal and photos

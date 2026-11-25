@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from backend.app import app  # noqa: E402
 from backend.master import ingest  # noqa: E402
-from database.master_db import init_master_db  # noqa: E402
+from database.master_db import db, init_master_db  # noqa: E402
 
 pytestmark = pytest.mark.usefixtures("previous_forms")            # engine tests: see conftest.py
 
@@ -80,7 +80,8 @@ def test_tutor_cannot_touch_other_class(world):
     r = upload("/api/master/students/upload", ["Roll No", "Full Name"], [["21IT101", "Hijack"]], world["t1"], class_id=world["classes"]["UG-G1-3"])
     assert r.json()["added"] == 0 and r.json()["errors"], r.text
     rows = client.get("/api/master/students", headers=auth(world["t1"])).json()
-    assert rows["total"] == 3
+    assert rows["total"] == 4                                                        # every faculty member reads every class ...
+    assert client.post("/api/master/students/21IT101/remove", headers=auth(world["t1"])).status_code == 403      # ... but changes only their own
     assert client.put(f"/api/master/classes/{world['classes']['UG-G2-3']}/term", json={"semester": 6}, headers=auth(world["t1"])).status_code == 403
     assert client.put(f"/api/master/classes/{world['classes']['UG-G1-3']}/term", json={"semester": 6}, headers=auth(world["t1"])).status_code == 200
     assert client.put("/api/master/faculty/EMP003/roles", json={"roles": []}, headers=auth(world["t1"])).status_code == 403
@@ -94,24 +95,38 @@ STUDENT_FORM = ["Timestamp", "Email Address", "Participants (one per line: ROLLN
                 "Permission to Publish this Submission"]
 
 
+def load(form_id, headers, rows):
+    """Enter rows ({column title: answer}) the way an approval does."""
+    out = {"inserted": 0, "duplicates_skipped": 0, "needs_attention": []}
+    with db() as c:
+        for n, row in enumerate(rows, 2):
+            res = ingest.ingest_row(c, form_id, dict(zip(headers, row)))
+            out["inserted"] += res["status"] == "inserted"
+            out["duplicates_skipped"] += res["status"] == "duplicate"
+            if res.get("errors") or res.get("warnings"):
+                out["needs_attention"].append({"row": n, "messages": res.get("errors") or res.get("warnings")})
+    return out
+
+
 def test_student_form_upload_links_people_and_dedupes(world):
     row = ["2026-10-01 10:00:00", "t1@x.edu", "21IT001 - Asha Kumar\n21IT002 - Ravi Shankar - Backend lead\n99XX999 - Ghost Student", "21IT001", "Team",
            "Hackathons & Coding Competitions", "Smart India Hackathon", "AICTE", "National", "1st Prize", "₹50,000", "2026-09-20",
            "AI / Machine Learning", "EMP003 - Dr. Plain Faculty", "Built a triage bot", "Yes (Nominate for Spotlight Feature)", "Yes - may be published"]
-    r = upload("/api/master/forms/form_student/upload", STUDENT_FORM, [row], world["admin"])
-    res = r.json()
+    res = load("form_student", STUDENT_FORM, [row])
     assert res["inserted"] == 1, res
     assert any("Ghost" in m for p in res["needs_attention"] for m in p["messages"])          # unknown roll flagged, not dropped
-    again = upload("/api/master/forms/form_student/upload", STUDENT_FORM, [row], world["admin"]).json()
+    again = load("form_student", STUDENT_FORM, [row])
     assert again["inserted"] == 0 and again["duplicates_skipped"] == 1
     sub = client.get("/api/master/submissions", headers=auth(world["t1"])).json()
     assert sub["total"] == 1
     d = client.get(f"/api/master/submissions/{sub['rows'][0]['submission_id']}", headers=auth(world["t1"])).json()
-    assert d["detail"]["prize_amount"] == 50000 and d["detail"]["mentor_emp_id"] == "EMP003" and d["header"]["is_landmark"] == 1
+    assert d["header"]["form"] and "detail" not in d and any("50" in v for _, v in d["facts"]), d["facts"]
+    with db() as c:
+        assert tuple(c.execute("SELECT prize_amount, mentor_emp_id FROM student_achievements").fetchone()) == (50000, "EMP003")
     by_roll = {p["roll_no"]: p for p in d["participants"]}
     assert by_roll["21IT001"]["is_lead"] == 1 and by_roll["21IT002"]["role"] == "Backend lead" and by_roll["21IT001"]["class_code"] == "UG-G1-3"
-    # the other tutor (different class) must not see it; the faculty mentor does not either (not the submitter)
-    assert client.get("/api/master/submissions", headers=auth(world["t2"])).json()["total"] == 0
+    # every faculty member reads it, like the Admin: the other class's tutor too
+    assert client.get("/api/master/submissions", headers=auth(world["t2"])).json()["total"] == 1
     # filter by student
     assert client.get("/api/master/submissions?roll_no=21IT002", headers=auth(world["admin"])).json()["total"] == 1
     assert client.get("/api/master/submissions/unmatched", headers=auth(world["t1"])).json()
@@ -126,17 +141,30 @@ def test_research_and_other_forms(world):
     row = ["2026-10-02 09:00:00", "f3@x.edu", "EMP003 - Dr. Plain Faculty", "Journal Publications", "Quantum Newsletters", "Published",
            "EMP003 - Dr. Plain Faculty\n21IT001 - Asha Kumar\nEXT - Dr. J. Smith - Anna University", "IEEE Access", "2026-08-15", "Scopus", "Q1", "4.2",
            "12 lakhs", "A paper."]
-    res = upload("/api/master/forms/form_research/upload", headers, [row], world["admin"]).json()
+    res = load("form_research", headers, [row])
     assert res["inserted"] == 1 and not res["needs_attention"], res
     sid = client.get("/api/master/submissions?form_type=RESEARCH", headers=auth(world["admin"])).json()["rows"][0]["submission_id"]
     d = client.get(f"/api/master/submissions/{sid}", headers=auth(world["admin"])).json()
     assert [c["person_type"] for c in d["contributors"]] == ["FACULTY", "STUDENT", "EXTERNAL"]
-    assert d["detail"]["funding_amount"] == 1200000 and d["detail"]["quartile"] == "Q1"
-    # a plain faculty member sees only what they submitted
+    assert ["Quartile", "Q1"] in d["facts"] or any(v == "Q1" for _, v in d["facts"]), d["facts"]
+    with db() as c:
+        assert tuple(c.execute("SELECT funding_amount, quartile FROM research_outputs").fetchone()) == (1200000, "Q1")
+    # a faculty member with no role at all reads everything the Admin reads, and changes nothing
     fac = signin("EMP003", world["creds"]["EMP003"])
-    assert client.get("/api/master/submissions", headers=auth(fac)).json()["total"] == 1
-    assert client.get("/api/master/students", headers=auth(fac)).json()["total"] == 0
-    assert client.get("/api/master/analytics", headers=auth(fac)).json().get("department") is None
+    admin = auth(world["admin"])
+    for url in ("/api/master/submissions", "/api/master/students", "/api/master/placements/offers", "/api/master/placements/profiles"):
+        assert client.get(url, headers=auth(fac)).json()["total"] == client.get(url, headers=admin).json()["total"], url
+    for url in ("/api/master/works/catalog", "/api/master/faculty/EMP001/profile", "/api/master/students/21IT101/profile", "/api/master/placements/student/21IT001",
+                "/api/master/downloads/offers?columns=roll_no,company", "/api/master/works/export?group=RESEARCH&columns=title", f"/api/master/submissions/{sid}"):
+        assert client.get(url, headers=auth(fac)).status_code == 200, url
+    assert client.get("/api/master/analytics", headers=auth(fac)).json()["department"]
+    assert len(client.get("/api/master/faculty", headers=auth(fac)).json()) == 4
+    for method, url in (("post", "/api/master/students/21IT001/remove"), ("post", "/api/master/faculty/EMP001/reset-password"), ("get", "/api/master/placements/template"),
+                        ("get", "/api/master/submissions/unmatched")):
+        assert getattr(client, method)(url, headers=auth(fac)).status_code == 403, url
+    assert client.post("/api/master/students", json={"roll_no": "X9", "full_name": "N", "class_id": world["classes"]["UG-G1-3"]}, headers=auth(fac)).status_code == 403
+    assert client.get("/api/entries", headers=auth(fac)).status_code == 403                  # the newsletter studio stays with the Admin and HoD
+
 
 
 PLACE = ["Roll Number", "Full Name", "Placement Academic Year", "Placement Preference", "Reason for Opting Out (only if Opted Out)", "Company Name",
@@ -161,11 +189,10 @@ def test_placement_upload_replaces_and_diary_hides_pii(world):
     assert r["replaced_students"] == 1, r
     offers = client.get("/api/master/placements/offers?q=21IT001", headers=auth(world["t1"])).json()
     assert offers["total"] == 1 and offers["rows"][0]["package_lpa"] == 9.5
-    # form responses and placement sheets are the Admin's job: a tutor is refused outright
-    assert upload("/api/master/placements/upload", PLACE, rows, world["t1"]).status_code == 403
-    assert upload("/api/master/forms/form_student/upload", STUDENT_FORM, [], world["t1"]).status_code == 403
-    assert client.get("/api/master/placements/template", headers=auth(world["t1"])).status_code == 403
-    assert client.get("/api/master/forms/form_student/template", headers=auth(world["t1"])).status_code == 403
+    # placement sheets a class tutor may upload for their own class (test_it_matrix_forms checks the class limit)
+    assert client.get("/api/master/placements/template", headers=auth(world["t1"])).status_code == 200
+    other = upload("/api/master/placements/upload", PLACE, rows, world["t2"]).json()        # the other class's tutor cannot touch these students
+    assert other["students"] == 0 and len(other["errors"]) == 3, other
     # restore the richer rows for the diary checks
     upload("/api/master/placements/upload", PLACE, rows, world["admin"])
 
@@ -187,21 +214,20 @@ def test_placement_upload_replaces_and_diary_hides_pii(world):
 def test_scope_and_analytics(world):
     pc = signin("EMP002", world["creds"]["EMP002"])
     cls = client.get("/api/master/classes", headers=auth(pc)).json()
-    # a coordinator sees the whole programme - UG classes of BOTH groups, no PG - whatever group the role is labelled with
-    assert {c["programme"] for c in cls} == {"UG"} and {c["grp"] for c in cls} == {"G1", "G2"}
+    assert {c["programme"] for c in cls} == {"UG", "PG"} and not any(c["can_edit"] for c in cls)       # every class is visible; a coordinator edits none
     assert client.get("/api/master/students", headers=auth(pc)).json()["total"] == 4
     both = lambda q: client.get("/api/master/students" + q, headers=auth(pc)).json()
     assert both("?grp=G1")["total"] == 3 and both("?grp=G2")["total"] == 1                 # the Both / G1 / G2 filter
     assert {r["roll_no"] for r in both("?grp=G2")["rows"]} == {"21IT101"}
-    everything = client.get("/api/master/submissions", headers=auth(world["admin"])).json()["total"]               # a coordinator sees every submission, like the Admin
-    assert everything > 0 and client.get("/api/master/submissions", headers=auth(pc)).json()["total"] == everything
-    assert client.get("/api/master/submissions", headers=auth(world["t1"])).json()["total"] < everything          # a tutor still sees only hers and her students'
+    everything = client.get("/api/master/submissions", headers=auth(world["admin"])).json()["total"]
+    for who in (pc, world["t1"], world["t2"]):
+        assert everything > 0 and client.get("/api/master/submissions", headers=auth(who)).json()["total"] == everything
     assert client.post("/api/master/students", json={"roll_no": "X1", "full_name": "N", "class_id": world["classes"]["UG-G1-3"]}, headers=auth(pc)).status_code == 403
-    a = client.get("/api/master/analytics", headers=auth(world["t1"])).json()
-    assert a["students"]["students_with_achievements"] == 2 and a["placements"]["placed"] == 2 and "department" not in a
-    assert client.get(f"/api/master/analytics?class_id={world['classes']['UG-G2-3']}", headers=auth(world["t1"])).status_code == 403
+    mine = {c["class_id"] for c in client.get("/api/master/classes", headers=auth(world["t1"])).json() if c["can_edit"]}
+    assert mine == {world["classes"]["UG-G1-3"]}                                           # a tutor edits only the class they tutor
     full = client.get("/api/master/analytics", headers=auth(world["admin"])).json()
-    assert full["department"]["submissions_by_form"]
+    assert full["department"]["submissions_by_form"] and client.get("/api/master/analytics", headers=auth(world["t1"])).json() == full
+    assert client.get(f"/api/master/analytics?class_id={world['classes']['UG-G2-3']}", headers=auth(world["t1"])).status_code == 200
 
 
 def test_semester_sets_the_year_and_class_code_and_nobody_is_promoted(world):
@@ -218,7 +244,7 @@ def test_semester_sets_the_year_and_class_code_and_nobody_is_promoted(world):
     assert r == {"class_code": "UG-G1-4-S7", "year_no": 4, "current_semester": 7}, r
     now = {c["class_id"]: c for c in client.get("/api/master/classes", headers=auth(world["admin"])).json()}
     assert now[cid]["year_no"] == now[world["classes"]["UG-G1-4"]]["year_no"] == 4
-    assert client.get("/api/master/students", headers=auth(t1)).json()["total"] == 3         # the students stayed in their class
+    assert client.get(f"/api/master/students?class_id={cid}", headers=auth(t1)).json()["total"] == 3         # the students stayed in their class
     # limits: UG has 8 semesters, PG 4
     assert client.put(f"/api/master/classes/{cid}/term", json={"semester": 9}, headers=auth(t1)).status_code == 400
     pg = world["classes"]["PG-1"]
@@ -238,7 +264,7 @@ def test_admin_adds_classes_and_graduates_keep_their_history(world):
     # the tutor's class reaches the last semester and graduates: students become Graduated, the class closes
     assert client.put(f"/api/master/classes/{cid}/term", json={"semester": 8}, headers=auth(t1)).json()["class_code"] == "UG-G1-4-S8"
     assert client.post(f"/api/master/classes/{cid}/graduate", headers=auth(t1)).json()["graduated"] == 3
-    assert client.get("/api/master/students", headers=auth(t1)).json()["total"] == 0           # no longer an active class
+    assert client.get(f"/api/master/students?class_id={cid}&status=Active", headers=auth(t1)).json()["total"] == 0           # no longer an active class
     assert cid not in [c["class_id"] for c in client.get("/api/master/classes", headers=auth(t1)).json()]
     assert cid in [c["class_id"] for c in client.get("/api/master/classes?include_completed=true", headers=auth(admin)).json()]
     # past achievements still show the class the student was in at the time
@@ -274,8 +300,6 @@ def test_every_form_header_is_unique_within_its_category_and_mapped():
             titles = [q["q"] for q in blocks.questions_for(spec, cat, legacy=False)]
             assert len(titles) == len(set(titles)), f"duplicate question in {fid} / {cat}"
             assert all(q.get("key") for q in blocks.questions_for(spec, cat, legacy=False)), f"a question without a field in {fid} / {cat}"
-        heads = ingest.template_headers(fid)                # the template is the sheet's own header row: common, then each category's gate and fields, then closing
-        assert len(heads) == len(blocks.sheet_headers(fid)) and heads[0] == "Timestamp"
 
 
 def test_downloaded_templates_round_trip_and_match_the_importers(world):

@@ -1,7 +1,7 @@
 """Entering data in the application itself.
 
 A person chooses WHAT HAPPENED (a category), fills the fields the Admin has defined for it, and submits. The submission becomes an item in the
-approval queue exactly like a response pulled from a Google Sheet, so approval, editing, profiles, reports and the newsletter all work unchanged.
+approval queue; once approved it appears in profiles, reports and the newsletter.
 The fields come from the published form definitions (ingest.specs()), so a change the Admin publishes shows up here at once.
 """
 import json

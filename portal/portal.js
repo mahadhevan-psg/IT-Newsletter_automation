@@ -113,9 +113,8 @@ function bars(series, unit = '') {
   return '<div class="bars">' + series.map(s => `<div class="bar-row"><span class="lbl" title="${esc(s.label)}">${esc(s.label)}</span><div class="bar"><i style="width:${Math.round(100 * s.value / max)}%"></i></div><span class="val">${esc(s.value)}${unit}</span></div>`).join('') + '</div>';
 }
 const kpi = (n, l) => `<div class="kpi"><b>${esc(n ?? '–')}</b><span>${esc(l)}</span></div>`;
-// The Submissions tab is called what it holds: everything (Admin, HoD, coordinators), a tutor's class, or just your own
-const seesAll = () => me.roles.some(r => ['ADMIN', 'HOD', 'PC'].includes(r));
-const subsLabel = () => seesAll() ? 'All submissions' : me.tutor_class_ids.length ? 'Class submissions' : 'My submissions';
+// ...but changes stay with the Admin and the tutor of the class
+const mayEditClass = id => meta.classes.some(c => c.class_id === id && c.can_edit);
 const isEditor = () => me.roles.includes('ADMIN') || me.tutor_class_ids.length > 0;
 const hasClasses = () => me.all_access || me.class_ids.length > 0;
 const fmtMoney = n => n == null ? '' : Number(n).toLocaleString('en-IN');
@@ -161,8 +160,23 @@ function uploadCard(o) {
 // ---------------------------------------------------------------- login / shell
 async function start() {
   $('#logout').onclick = logout;
-  if (token) { try { await boot(); return; } catch (e) { sessionStorage.removeItem('tok'); } }
+  if (token) {
+    try { await boot(); return; }
+    catch (e) {
+      if (e.message !== 'staff only' && sessionStorage.getItem('tok')) return showLoadError(e);     // signed in, but something failed: say what
+      sessionStorage.removeItem('tok');
+    }
+  }
   location.replace('/');            // not signed in: / is the sign-in page
+}
+function showLoadError(e) {
+  console.error(e);
+  document.body.innerHTML = `<div style="max-width:520px;margin:15vh auto;padding:0 16px;font-family:system-ui,sans-serif;text-align:center">
+    <h3>The portal could not load</h3><p>You are signed in, but something went wrong: <b>${esc(e.message || e)}</b></p>
+    <p>Reload the page with <b>Ctrl + F5</b>. If it happens again, send this message to the administrator.</p>
+    <p><button id="le-retry">Try again</button> <button id="le-out">Sign out</button></p></div>`;
+  document.getElementById('le-retry').onclick = () => location.reload();
+  document.getElementById('le-out').onclick = logout;
 }
 function logout() { sessionStorage.removeItem('tok'); location.replace('/'); }
 async function boot() {
@@ -172,9 +186,9 @@ async function boot() {
   $('#who').textContent = `${me.name} · ${me.roles.filter(r => r !== 'FACULTY').join(', ') || 'Faculty'}`;
   if (me.roles.includes('ADMIN') || me.roles.includes('HOD')) $('#who').insertAdjacentHTML('beforeend', ' <a class="btn sm" href="/newsletter/">Newsletter studio</a>');
   const tabs = [
-    ['dash', 'Dashboard', () => true], ['entry', 'Add entry', () => !me.roles.includes('ADMIN')], ['review', 'Approvals', () => true], ['builder', 'Form builder', () => me.roles.includes('ADMIN')], ['sync', 'Data sync', () => me.roles.includes('ADMIN') || me.roles.includes('HOD') || me.tutor_class_ids.length > 0],
+    ['dash', 'Dashboard', () => true], ['entry', 'Add entry', () => !me.roles.includes('ADMIN')], ['review', 'Review & submissions', () => true], ['builder', 'Form builder', () => me.roles.includes('ADMIN')],
     ['students', 'Students', hasClasses], ['classes', 'Classes', hasClasses], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
-    ['placements', 'Placements', hasClasses], ['subs', subsLabel(), () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['works', 'Reports', seesAll], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
+    ['placements', 'Placements', hasClasses], ['records', 'Records', () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
     .filter(t => t[2]());
   $('#tabs').innerHTML = tabs.map(t => `<button class="tab" data-t="${t[0]}">${t[1]}</button>`).join('');
   $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); };
@@ -182,7 +196,8 @@ async function boot() {
   const deep = location.hash.match(/^#\/(faculty|student)\/([^/]+)$/);       // a copied link to someone's page opens it directly
   show(me.must_change ? 'account' : (location.hash === '#add' && tabs.some(t => t[0] === 'entry')) ? 'entry' : tabs[0][0]);
   if (deep && !me.must_change) go(openProfile)(deep[1], decodeURIComponent(deep[2]));
-  Tours.portal(me, token);                    // Help button; the welcome tour the first time this person opens the portal
+  try { Tours.portal(me, token); }            // Help button; the welcome tour the first time this person opens the portal
+  catch (e) { console.error('The guided tour could not start:', e); }      // help must never keep anyone out
 }
 function show(id) {
   current = id;
@@ -206,7 +221,7 @@ async function viewDash() {
         ${kpi(p.placement_percent + '%', 'Placed of opted-in')}${kpi(p.placed, 'Students placed')}${kpi(p.highest_lpa ? p.highest_lpa + ' LPA' : '–', 'Highest package')}${kpi(p.average_lpa ? p.average_lpa + ' LPA' : '–', 'Average package')}</div>
       <h2 style="margin:6px 0 12px">Student achievements</h2>
       <div class="grid-2"><div class="card"><h4>By category</h4>${bars(s.by_category)}</div><div class="card"><h4>By level</h4>${bars(s.by_level)}</div></div>
-      <div class="grid-2"><div class="card"><h4>By domain</h4>${bars(s.by_domain)}</div><div class="card"><h4>By academic year</h4>${bars(s.by_year)}</div></div>
+      <div class="grid-2"><div class="card"><h4>Achievement or participation</h4>${bars(s.by_kind)}</div><div class="card"><h4>By academic year</h4>${bars(s.by_year)}</div></div>
       <div class="grid-2"><div class="card"><h4>Class-wise participation</h4>${table([{ h: 'Class', k: 'label' }, { h: 'Students', k: 'students', num: 1 }, { h: 'Achievers', k: 'achievers', num: 1 }, { h: 'Achievements', k: 'achievements', num: 1 }], s.per_class)}</div>
         <div class="card"><h4>Top students</h4>${table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'name' }, { h: 'Class', k: 'class_code' }, { h: 'Count', k: 'achievements', num: 1 }], s.top_students)}</div></div>
       <h2 style="margin:6px 0 12px">Placements</h2>
@@ -252,7 +267,7 @@ async function viewStudents() {
     $('#st-list').innerHTML = `<p class="hint">${r.total} students${r.total > 100 ? ' (showing the first 100 - narrow the filters)' : ''}</p>` + table([
       { h: 'Roll no', html: s => `<a href="#" data-roll="${esc(s.roll_no)}">${esc(s.roll_no)}</a>` }, { h: 'Name', k: 'full_name' }, { h: 'Class', k: 'class_code' },
       { h: 'Sem', k: 'current_semester' }, { h: 'Status', k: 'status' },
-      { h: '', html: s => isEditor() && s.status === 'Active' ? `<button class="btn sm" data-tr="${esc(s.roll_no)}">Move</button> <button class="btn sm danger" data-rm="${esc(s.roll_no)}">Remove</button>` : '' }], rows);
+      { h: '', html: s => mayEditClass(s.class_id) && s.status === 'Active' ? `<button class="btn sm" data-tr="${esc(s.roll_no)}">Move</button> <button class="btn sm danger" data-rm="${esc(s.roll_no)}">Remove</button>` : '' }], rows);
     $('#st-list').onclick = go(async e => {
       const t = e.target;
       if (t.dataset.roll) { e.preventDefault(); return openProfile('student', t.dataset.roll); }
@@ -323,15 +338,12 @@ async function viewClasses() {
 // ---------------------------------------------------------------- uploads
 async function viewUploads() {
   $('#view').innerHTML = `<div class="card-head"><h2>Data upload</h2></div>
-    <p class="hint">Download each template, fill it (or export the Google Form responses sheet as .xlsx), then upload. Re-uploading the same file never creates duplicates.</p>
+    <p class="hint">Download the template, fill it, then upload it. Student and faculty lists are uploaded from the Students and Faculty pages.</p>
     ${uploadCard({ title: 'Placement data', hint: 'One row per offer. <b>A student who is already in the database is replaced</b> by the rows in this file (for that academic year).',
       template: ['/api/master/placements/template', 'placements_template.xlsx'], path: '/api/master/placements/upload',
       extra: `<select class="compact" id="pl-ay">${ayOpts(meta.current_ay, 'Academic year if the sheet has none')}</select>`,
       fields: (el, f) => { const v = $('#pl-ay', el).value; if (v) f.append('ay_id', v); } })}
-    <h3 style="margin:18px 0 10px">Form responses</h3>` +
-    meta.forms.map(f => uploadCard({ title: f.title.replace('IT Chronicles - ', ''), hint: 'Export the form\'s responses sheet as .xlsx. Roll numbers / employee IDs link each row to the right people.',
-      template: [`/api/master/forms/${f.form_id}/template`, f.form_id + '_template.xlsx'], path: `/api/master/forms/${f.form_id}/upload` })).join('') +
-    `<div class="card"><div class="card-head"><h3>Roll numbers that matched nobody</h3></div><div id="unmatched"></div></div>`;
+    <div class="card"><div class="card-head"><h3>Roll numbers that matched nobody</h3></div><div id="unmatched"></div></div>`;
   const u = await api('/api/master/submissions/unmatched');
   $('#unmatched').innerHTML = table([{ h: 'Submission', k: 'submission_id' }, { h: 'Entry as typed', k: 'raw_text' }, { h: 'Title', k: 'title' }], u);
 }
@@ -339,7 +351,7 @@ async function viewUploads() {
 // ---------------------------------------------------------------- placements
 async function viewPlacements() {
   let mode = 'offers';
-  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button>${isEditor() ? '<button class="btn sm primary" id="p-prefs" title="Record who opted in or out for the placement year">Record opt-in / opt-out</button>' : ''}<button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button>${isEditor() ? '<button class="btn sm primary" id="p-prefs" title="Record who opted in or out for the placement year">Record opt-in / opt-out</button><button class="btn sm" id="p-up" title="Upload placement data from an Excel sheet">⬆ Upload Excel</button>' : ''}<button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
     <div class="filters"><select class="compact" id="p-ay">${ayOpts('', 'All years')}</select>${classFilter('p-class', 'All Classes')}
       <span id="p-extra" class="filters" style="margin:0"></span></div><div class="card" id="p-out"></div>`;
   const placeQs = (v = null, extra = { limit: 200 }) => {
@@ -372,10 +384,20 @@ async function viewPlacements() {
   $('#p-dl').onclick = go(() => openDownload(mode, {
     title: mode === 'offers' ? 'Download placement offers' : 'Download opt-in / opt-out', file: 'placements_' + mode, listUrl: '/api/master/placements/' + mode, filters: placeQs,
     dates: { mode: 'ay', ay: $('#p-ay').value, hint: 'The filters set on the page (class, company, package …) also apply.' } }));
+  const upBtn = $('#p-up'); if (upBtn) upBtn.onclick = () => openPlacementUpload(() => draw().catch(e => toast(e.message, true)));
   const prefsBtn = $('#p-prefs'); if (prefsBtn) prefsBtn.onclick = go(() => openPreferences(classFilterValue()));
   extras(); await draw();
 }
 const classFilterValue = () => { const el = $('#p-class'); return el && el.value ? +el.value : (meta.classes.find(c => c.can_edit) || {}).class_id; };
+// Bulk upload from the Placements tab: the Admin for anyone, a class tutor for the students of their own class (the server checks every row).
+function openPlacementUpload(done) {
+  const mine = meta.classes.filter(c => c.can_edit).map(c => c.class_code).join(', ');
+  const who = me.roles.includes('ADMIN') ? 'Rows for any student are accepted.' : `Only students of your class (<b>${esc(mine)}</b>) are accepted; rows for anyone else are refused.`;
+  modal('Upload placement data', uploadCard({ title: 'Placement data', hint: `One row per offer. ${who} <b>A student's earlier placement records for that year are replaced</b> by their rows in this file, and are saved at once.`,
+    template: ['/api/master/placements/template', 'placements_template.xlsx'], path: '/api/master/placements/upload',
+    extra: `<select class="compact" id="pl-ay">${ayOpts(meta.current_ay, 'Academic year if the sheet has none')}</select>`,
+    fields: (el, f) => { const v = $('#pl-ay', el).value; if (v) f.append('ay_id', v); }, done }), null, '', true);
+}
 // The class tutor records, for the placement year, who opted in or out (and why): the student never answers this.
 async function openPreferences(classId) {
   const n = new Date(), y = n.getMonth() >= 5 ? n.getFullYear() : n.getFullYear() - 1, cur = `${y}-${String((y + 1) % 100).padStart(2, '0')}`;
@@ -398,14 +420,14 @@ async function openPreferences(classId) {
   $('#pf-allin', o).onclick = () => { o.querySelectorAll('.pf-s').forEach(s => { if (!s.value) s.value = 'Opted In'; }); };
 }
 
-// ---------------------------------------------------------------- submissions
-async function viewSubs() {
+// ---------------------------------------------------------------- Records, all forms together: one searchable table of every approved entry
+async function recordsAll(host) {
   const catOpts = [...new Set(Object.values(meta.categories).flat())];
-  $('#view').innerHTML = `<div class="card-head"><h2>${subsLabel()}</h2><button class="btn sm" id="s-dl" title="Choose columns and download as CSV">⬇ Download</button></div>
-    <div class="filters"><select class="compact" id="s-type"><option value="">All forms</option><option value="STUDENT">Student</option><option value="RESEARCH">Research</option><option value="FACULTY">Faculty</option><option value="DEPARTMENT">Department</option><option value="OUTREACH">Outreach</option></select>
+  host.innerHTML = `<div class="card-head"><p class="hint" style="margin:0">Every approved entry, from all the forms. Click a row to open it. For a form's own filters, totals and every column, pick it in the bar above.</p><button class="btn sm" id="s-dl" title="Choose columns and download as CSV">⬇ Download</button></div>
+    <div class="filters"><select class="compact" id="s-type"><option value="">All forms</option>${meta.forms.map(f => `<option value="${esc(f.form_type)}">${esc(f.title)}</option>`).join('')}</select>
       <select class="compact" id="s-ay">${ayOpts('', 'All years')}</select><select class="compact" id="s-cat">${opts(catOpts, x => x, x => x, '', 'All categories')}</select>
       ${classFilter('s-class', 'All Classes')}
-      <select class="compact" id="s-level"><option value="">Any level</option>${['Department', 'College', 'Inter-college', 'State', 'National', 'International'].map(l => `<option>${l}</option>`).join('')}</select>
+      <select class="compact" id="s-level"><option value="">Any level</option>${(meta.levels || []).map(l => `<option>${esc(l)}</option>`).join('')}</select>
       <input class="input compact" id="s-roll" placeholder="Roll no" style="width:110px"><input class="input compact" type="date" id="s-from"><input class="input compact" type="date" id="s-to">
       <input class="input compact" id="s-q" placeholder="Title contains"></div><div class="card" id="s-out"></div>`;
   let rows = [];
@@ -419,22 +441,30 @@ async function viewSubs() {
   const draw = async () => {
     const qs = subsQs();
     const r = await api('/api/master/submissions?' + qs); rows = r.rows;
-    $('#s-out').innerHTML = `<p class="hint">${r.total} submissions</p>` + table([{ h: 'Date', k: 'event_date' }, { h: 'Form', k: 'form_type' }, { h: 'Category', k: 'category' }, { h: 'Title', k: 'title' }, { h: 'Submitted by', f: x => x.submitter || x.submitter_email || '' }], rows, { click: 1 });
+    if (!$('#s-out')) return;                                   // another view was chosen while this was loading
+    $('#s-out').innerHTML = `<p class="hint">${r.total} record${r.total === 1 ? '' : 's'}</p>` + table([{ h: 'Date', k: 'event_date' }, { h: 'Form', k: 'form' }, { h: 'Category', k: 'category' }, { h: 'Title', k: 'title' }, { h: 'Entered by', f: x => x.submitter || x.submitter_email || '' }], rows, { click: 1 });
     $('#s-out').onclick = go(async e => { const tr = e.target.closest('tr.click'); if (tr) submissionDetail(rows[tr.dataset.i].submission_id); });
   };
-  document.querySelectorAll('#view .filters select, #view .filters input').forEach(el => el.onchange = el.oninput = go(draw));
+  host.querySelectorAll('.filters select, .filters input').forEach(el => el.onchange = el.oninput = go(draw));
+  $('#s-type').onchange = $('#s-type').oninput = go(() => {
+    const f = meta.forms.find(x => x.form_type === $('#s-type').value);
+    $('#s-cat').innerHTML = opts(f ? meta.categories[f.form_id] : catOpts, x => x, x => x, '', 'All categories'); return draw();
+  });
   $('#s-dl').onclick = go(() => openDownload('submissions', {
-    title: 'Download ' + subsLabel().toLowerCase(), file: 'submissions', listUrl: '/api/master/submissions', filters: subsQs,
+    title: 'Download records', file: 'records', listUrl: '/api/master/submissions', filters: subsQs,
     dates: { mode: 'full', ay: $('#s-ay').value, from: $('#s-from').value, to: $('#s-to').value, hint: 'The filters set on the page (form, category, class, level …) also apply.' } }));
   await draw();
 }
 async function submissionDetail(id) {
-  const d = await api('/api/master/submissions/' + id);
-  const kv = o => '<dl class="kv">' + Object.entries(o).filter(([, v]) => v !== null && v !== '').map(([k, v]) => `<dt>${esc(k.replace(/_/g, ' '))}</dt><dd>${esc(v)}</dd>`).join('') + '</dl>';
-  const all = (d.answers || []).length ? `<details style="margin-top:14px"><summary><b>Everything that was entered (${d.answers.length} answers)</b></summary><dl class="kv" style="margin-top:8px">${d.answers.map(a => `<dt>${esc(a.q.replace(/#\d+$/, ''))}</dt><dd>${esc(a.value)}</dd>`).join('')}</dl></details>` : '';
-  modal(d.header.title, kv(d.header) + '<h4 style="margin-top:14px">Details</h4>' + kv(d.detail) + all +
+  const d = await api('/api/master/submissions/' + id), h = d.header;
+  const list = pairs => '<dl class="kv">' + pairs.filter(([, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('') + '</dl>';
+  const head = list([['Form', h.form], ['Category', h.category], ['Date', h.event_date], ['Academic year', h.ay_id], ['Entered by', h.submitted_by], ['Entered on', h.submitted_at]]);
+  const notes = d.notes.map(([k, v]) => `<h5 style="margin:10px 0 2px">${esc(k)}</h5><p style="margin:0;white-space:pre-line">${esc(v)}</p>`).join('');
+  const links = d.links.map(l => `<a class="chip-link" href="${esc(fileHref(l.url))}" target="_blank" rel="noopener noreferrer">${esc(l.label)} ↗</a>`).join('');
+  modal(h.title, head + (d.facts.length || notes ? '<h4 style="margin-top:14px">What was entered</h4>' + list(d.facts) + notes : '') +
+    (links ? `<h4 style="margin-top:14px">Documents, photos and links</h4><div class="links">${links}</div>` : '') +
     (d.participants.length ? '<h4 style="margin-top:14px">Students</h4>' + table([{ h: 'Roll no', f: p => p.roll_no || '⚠ ' + p.raw_text }, { h: 'Name', k: 'name' }, { h: 'Role', k: 'role' }, { h: 'Class then', k: 'class_code' }, { h: 'Lead', f: p => p.is_lead ? 'Yes' : '' }], d.participants) : '') +
-    (d.contributors.length ? '<h4 style="margin-top:14px">Authors</h4>' + table([{ h: '#', k: 'author_order' }, { h: 'Type', k: 'person_type' }, { h: 'Name', k: 'name' }, { h: 'ID', f: c => c.emp_id || c.roll_no || '' }, { h: 'Affiliation', k: 'affiliation' }], d.contributors) : '') +
+    (d.contributors.length ? '<h4 style="margin-top:14px">Authors</h4>' + table([{ h: '#', f: c => c.author_order || 'Entered by' }, { h: 'Type', k: 'person_type' }, { h: 'Name', k: 'name' }, { h: 'ID', f: c => c.emp_id || c.roll_no || '' }, { h: 'Affiliation', k: 'affiliation' }], d.contributors) : '') +
     (d.faculty.length ? '<h4 style="margin-top:14px">Faculty involved</h4>' + table([{ h: 'ID', k: 'emp_id' }, { h: 'Name', k: 'full_name' }, { h: 'Role', k: 'role' }], d.faculty) : '') +
     (d.event_students.length ? '<h4 style="margin-top:14px">Student participants</h4>' + table([{ h: 'Roll no', k: 'roll_no' }, { h: 'Name', k: 'full_name' }], d.event_students) : ''), null, '', true);
 }
@@ -447,7 +477,7 @@ async function viewFaculty() {
   const desigs = [...new Set(list.map(f => f.designation).filter(Boolean))].sort();
   const count = (f, k) => (f.counts || {})[k] || 0;
   const hasRole = (f, r) => r === 'TUTOR' ? f.tutor_of.length > 0 : f.roles.some(x => x.role === r);
-  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty'}</h2>${admin ? '<div><button class="btn" id="copy-choices">Copy list for the Apps Script</button> <button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
+  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty'}</h2>${admin ? '<div><button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
     <div class="filters">
       <input class="input compact" id="ff-q" placeholder="Search name, ID or email" style="min-width:220px">
       <select class="compact" id="ff-desig">${opts(desigs, d => d, d => d, '', 'Any designation')}</select>
@@ -474,7 +504,6 @@ async function viewFaculty() {
   $('#ff-q').oninput = drawFac;
   $('#ff-clear').onclick = () => { for (const id of ['ff-q', 'ff-desig', 'ff-status', 'ff-role', 'ff-has']) $('#' + id).value = ''; drawFac(); };
   drawFac();
-  if (admin) $('#copy-choices').onclick = go(async () => { await navigator.clipboard.writeText(await api('/api/master/faculty-form-choices')); toast('Copied - paste it over FACULTY_CHOICES in the Apps Script'); });
   const facForm = (f = {}) => `<div class="grid-2">${[['emp_id', 'Employee ID'], ['full_name', 'Full name'], ['email', 'Email'], ['phone', 'Phone'], ['designation', 'Designation'], ['qualification', 'Qualification']]
     .map(([k, l]) => `<div class="field"><label>${l}</label><input class="input" data-k="${k}" value="${esc(f[k] || '')}" ${k === 'emp_id' && f.emp_id ? 'disabled' : ''}></div>`).join('')}</div>`;
   const collect = o => Object.fromEntries([...o.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value]));
@@ -496,25 +525,24 @@ async function viewFaculty() {
   });
 }
 
-// ---------------------------------------------------------------- Reports: one kind of work, within the signed-in person's scope
-async function viewWorks() {
-  const sel = { group: '', category: '' };            // what is being looked at
+// ---------------------------------------------------------------- Records: every approved entry, all together or one kind of work at a time
+async function viewRecords() {
+  const sel = { group: 'ALL', category: '' };         // what is being looked at
   const fv = { ay_id: '', date_from: '', date_to: '', q: '', has_media: false, class_id: '' };   // filters on the work
   let tv = {}, cat = null, items = [], total = 0, labels = {};
   const loadCatalog = async () => {
     cat = await api('/api/master/works/catalog' + (fv.ay_id ? '?ay_id=' + encodeURIComponent(fv.ay_id) : ''));
     labels = Object.fromEntries(cat.groups.flatMap(g => g.types.map(t => [t.category, t.label])));
-    if (!sel.group) { const first = cat.groups.find(g => g.count) || cat.groups[0]; sel.group = first.id; }
   };
   const group = () => cat.groups.find(g => g.id === sel.group);
   // One drop-down per group of work, in a bar under the main navigation. The group in use is highlighted; the others show their name.
   const drawBar = () => {
-    $('#wk-bar').innerHTML = cat.groups.map(g => `<select class="wk-sel ${sel.group === g.id ? 'on' : ''}" data-g="${g.id}" title="${esc(g.title)}">
+    $('#wk-bar').innerHTML = `<button type="button" class="wk-sel wk-all ${sel.group === 'ALL' ? 'on' : ''}" id="wk-all">All forms (${cat.total})</button>` + cat.groups.map(g => `<select class="wk-sel ${sel.group === g.id ? 'on' : ''}" data-g="${g.id}" title="${esc(g.title)}">
         <option value="" ${sel.group === g.id ? 'hidden' : ''}>${esc(g.title)} (${g.count})</option>
         <option value="${g.id}|" ${sel.group === g.id && !sel.category ? 'selected' : ''}>All ${esc(g.title.toLowerCase())} (${g.count})</option>
         ${g.types.map(t => `<option value="${g.id}|${esc(t.category)}" ${sel.group === g.id && sel.category === t.category ? 'selected' : ''}>${esc(t.label)} (${t.count})</option>`).join('')}</select>`).join('') +
       '';
-    $('#wk-hint').textContent = `${cat.total} entr${cat.total === 1 ? 'y' : 'ies'} in the department${fv.ay_id ? ' in ' + fv.ay_id : ''}. Every filter describes the work itself, not a person.`;
+    if ($('#wk-hint')) $('#wk-hint').textContent = `${cat.total} entr${cat.total === 1 ? 'y' : 'ies'} in the department${fv.ay_id ? ' in ' + fv.ay_id : ''}. Every filter describes the work itself, not a person.`;
   };
   const drawFilters = () => {
     const g = group();
@@ -545,6 +573,7 @@ async function viewWorks() {
   };
   const load = async (reset) => {
     const r = await api('/api/master/works?' + query(50, reset ? 0 : items.length));
+    if (!$('#wk-title') || sel.group === 'ALL') return;         // another view was chosen while this was loading
     items = reset ? r.items : items.concat(r.items); total = r.total;
     $('#wk-title').innerHTML = `${esc(r.title)} <span class="pill">${r.total}</span>`;
     $('#wk-stats').innerHTML = r.stats.map(x => kpi(typeof x.value === 'number' && /₹/.test(x.label) ? fmtMoney(x.value) : x.value, x.label)).join('');
@@ -554,31 +583,43 @@ async function viewWorks() {
       : '<div class="card"><div class="empty">Nothing matches these filters.</div></div>';
     const more = $('#w-more'); if (more) more.onclick = go(() => load(false));
   };
-  $('#view').innerHTML = `<div class="wk-bar" id="wk-bar"></div>
-    <div class="card"><div class="card-head"><div><h3 id="wk-title"></h3><p class="hint" id="wk-hint" style="margin:2px 0 0"></p></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>Records</h2></div><div class="wk-bar" id="wk-bar"></div><div id="rec-body"></div>`;
+  // one kind of work: its own filters, totals, cards and a download with every field of its form
+  const showWork = async () => {
+    $('#rec-body').innerHTML = `<div class="card"><div class="card-head"><div><h3 id="wk-title"></h3><p class="hint" id="wk-hint" style="margin:2px 0 0"></p></div>
       <div><button class="btn sm" id="w-open">Expand all</button> <button class="btn sm" id="w-csv">Download CSV</button></div></div>
       <div class="filters" id="wk-filters"></div><div class="kpis" id="wk-stats" style="margin:0"></div></div><div id="wk-results"></div>`;
-  await loadCatalog(); drawBar(); drawFilters(); await load(true);
+    wireWork(); drawBar(); drawFilters(); await load(true);
+  };
+  const show_ = async () => { if (sel.group === 'ALL') { drawBar(); await recordsAll($('#rec-body')); } else await showWork(); };
+  function wireWork() {
+    let open = false;
+    $('#w-open').onclick = () => { open = !open; document.querySelectorAll('#wk-results details.act').forEach(d => d.open = open); $('#w-open').textContent = open ? 'Collapse all' : 'Expand all'; };
+    // Download CSV: the shared pop-up with this kind of work's columns
+    $('#w-csv').onclick = () => {
+      const g = group(), kind = sel.category ? labels[sel.category] : g.title;
+      columnDownload({
+        title: 'Download CSV · ' + kind, columns: g.columns, defaults: g.default_columns, storeKey: 'wk-columns-' + g.id,
+        dates: { mode: 'full', ay: fv.ay_id, from: fv.date_from, to: fv.date_to, hint: 'The filters set on the page (status, level, search …) also apply.' },
+        count: async v => (await api('/api/master/works?' + exportQuery(v, 1, 0))).total,
+        run: (cols, v) => { const qs = exportQuery(v, 2000, 0); qs.delete('limit'); qs.delete('offset'); qs.set('columns', cols.join(','));
+          return download('/api/master/works/export?' + qs, `work_${sel.group.toLowerCase()}${sel.category ? '_' + sel.category.replace(/\W+/g, '_').toLowerCase() : ''}_${today()}.csv`); },
+      });
+    };
+  }
+  await loadCatalog(); await show_();
+  $('#wk-bar').onclick = go(async e => {
+    if (!e.target.closest('#wk-all') || sel.group === 'ALL') return;
+    sel.group = 'ALL'; sel.category = ''; tv = {}; fv.class_id = '';
+    await show_();
+  });
   $('#wk-bar').onchange = go(async e => {
     const el = e.target.closest('select[data-g]'); if (!el || !el.value) return;
     const [g, c] = el.value.split('|');
     if (g !== sel.group) tv = {};                          // the work-specific filters belong to one form
     sel.group = g; sel.category = c; if (g !== 'STUDENT') fv.class_id = '';
-    drawBar(); drawFilters(); await load(true);
+    await showWork();
   });
-  let open = false;
-  $('#w-open').onclick = () => { open = !open; document.querySelectorAll('#wk-results details.act').forEach(d => d.open = open); $('#w-open').textContent = open ? 'Collapse all' : 'Expand all'; };
-  // Download CSV: the shared pop-up with this kind of work's columns
-  $('#w-csv').onclick = () => {
-    const g = group(), kind = sel.category ? labels[sel.category] : g.title;
-    columnDownload({
-      title: 'Download CSV · ' + kind, columns: g.columns, parts: ['Basics', 'People', 'Details', 'Numbers', 'Submission', 'Links'], defaults: g.default_columns, storeKey: 'wk-columns-' + g.id,
-      dates: { mode: 'full', ay: fv.ay_id, from: fv.date_from, to: fv.date_to, hint: 'The filters set on the page (status, level, search …) also apply.' },
-      count: async v => (await api('/api/master/works?' + exportQuery(v, 1, 0))).total,
-      run: (cols, v) => { const qs = exportQuery(v, 2000, 0); qs.delete('limit'); qs.delete('offset'); qs.set('columns', cols.join(','));
-        return download('/api/master/works/export?' + qs, `work_${sel.group.toLowerCase()}${sel.category ? '_' + sel.category.replace(/\W+/g, '_').toLowerCase() : ''}_${today()}.csv`); },
-    });
-  };
   // the page's filters, with the pop-up's three date fields taking over from the page's own
   const exportQuery = (v, limit, offset) => {
     const qs = query(limit, offset);
@@ -674,5 +715,5 @@ document.addEventListener('click', e => {
 });
 const profileLink = (kind, id, label) => `<a href="#" data-profile="${kind}:${esc(id)}">${esc(label ?? id)}</a>`;
 
-const VIEWS = { dash: viewDash, students: viewStudents, classes: viewClasses, uploads: viewUploads, placements: viewPlacements, subs: viewSubs, faculty: viewFaculty, works: viewWorks, mine: () => openProfile('faculty', me.id, { mine: true }), account: viewAccount };
+const VIEWS = { dash: viewDash, students: viewStudents, classes: viewClasses, uploads: viewUploads, placements: viewPlacements, records: viewRecords, faculty: viewFaculty, mine: () => openProfile('faculty', me.id, { mine: true }), account: viewAccount };
 start();

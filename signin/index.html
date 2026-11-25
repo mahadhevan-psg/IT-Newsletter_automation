@@ -6,27 +6,27 @@
   <title>Sign in · IT Department Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/homepage/home.css">
+  <link rel="stylesheet" href="/home.css">
 </head>
 <body>
   <header class="ribbon">
     <div class="logos left">
-      <div class="logo-slot"><span>Logo 1</span><img src="/homepage/assets/logo-psg.jpg" alt="PSG College of Technology" onerror="this.remove()"></div>
-      <div class="logo-slot"><span>Logo 2</span><img src="/homepage/assets/logo-75years.png" alt="75 years of academic excellence and innovation" onerror="this.remove()"></div>
+      <div class="logo-slot"><span>Logo 1</span><img src="/assets/logo-psg.jpg" alt="PSG College of Technology" onerror="this.remove()"></div>
+      <div class="logo-slot"><span>Logo 2</span><img src="/assets/logo-75years.png" alt="75 years of academic excellence and innovation" onerror="this.remove()"></div>
     </div>
     <div class="ribbon-text">
       <div class="college">PSG College of Technology</div>
       <div class="dept">Department of Information Technology</div>
     </div>
     <div class="logos right">
-      <div class="logo-slot"><span>Logo 3</span><img src="/homepage/assets/logo-ita.jpg" alt="Department of Information Technology" onerror="this.remove()"></div>
+      <div class="logo-slot"><span>Logo 3</span><img src="/assets/logo-ita.jpg" alt="Department of Information Technology" onerror="this.remove()"></div>
     </div>
   </header>
 
   <main class="wrap">
     <section class="login-panel" id="login">
       <h2>Sign in</h2>
-      <p>One login for everyone. Faculty go to the forms page and the staff portal, students to the Placements Diary.</p>
+      <p>One login for everyone. Faculty go to the staff portal, students to the Placements Diary.</p>
       <form id="login-form" autocomplete="on">
         <input id="lg-id" name="username" placeholder="Employee ID or Roll number" autocomplete="username" required autofocus>
         <input id="lg-pw" name="password" type="password" placeholder="Password" autocomplete="current-password" required>
@@ -62,7 +62,7 @@
   <script>
     // Faculty (and tutors, coordinators, HoD, Admin) -> /portal/ ; students -> /diary/.
     const STAFF_HOME = '/portal/', STUDENT_HOME = '/diary/';
-    const ownPage = n => /^\/(newsletter|portal|homepage|diary)\//.test(n || '') ? n : null;    // only our own applications, never an outside address
+    const ownPage = n => /^\/(newsletter|portal|diary)\//.test(n || '') ? n : null;    // only our own applications, never an outside address
     const next = ownPage(new URLSearchParams(location.search).get('next'));
 
     // Already signed in on this browser tab? Skip the form (checked with the server, so a stale session cannot loop).

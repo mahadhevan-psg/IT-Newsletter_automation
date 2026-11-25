@@ -68,13 +68,13 @@
           "canonical_tag": "submission_timestamp",
           "type": "text",
           "required": false,
-          "description": "Added by Google Forms"
+          "description": "When the entry was made"
         },
         "Email Address": {
           "canonical_tag": "submitter_email",
           "type": "text",
           "required": false,
-          "description": "Collected by Google Forms"
+          "description": "E-mail of the person who entered it"
         },
         "Faculty Name": {
           "canonical_tag": "custom",
@@ -919,12 +919,6 @@
           "categories": [
             "Research Seminar"
           ]
-        },
-        "Accuracy and Authorization Confirmation": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": true,
-          "description": ""
         }
       },
       "category_field_mappings": {},
@@ -987,13 +981,13 @@
           "canonical_tag": "submission_timestamp",
           "type": "text",
           "required": false,
-          "description": "Added by Google Forms"
+          "description": "When the entry was made"
         },
         "Email Address": {
           "canonical_tag": "submitter_email",
           "type": "text",
           "required": false,
-          "description": "Collected by Google Forms"
+          "description": "E-mail of the person who entered it"
         },
         "Faculty Full Name": {
           "canonical_tag": "author_or_person",
@@ -1675,12 +1669,6 @@
           "categories": [
             "Membership in Professional Body & Editorial Board Roles"
           ]
-        },
-        "Accuracy and Authorization Confirmation": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": true,
-          "description": ""
         }
       },
       "category_field_mappings": {},
@@ -1729,13 +1717,13 @@
           "canonical_tag": "submission_timestamp",
           "type": "text",
           "required": false,
-          "description": "Added by Google Forms"
+          "description": "When the entry was made"
         },
         "Email Address": {
           "canonical_tag": "submitter_email",
           "type": "text",
           "required": false,
-          "description": "Collected by Google Forms"
+          "description": "E-mail of the person who entered it"
         },
         "Achievement or Participation": {
           "canonical_tag": "custom",
@@ -1917,13 +1905,13 @@
           "canonical_tag": "submission_timestamp",
           "type": "text",
           "required": false,
-          "description": "Added by Google Forms"
+          "description": "When the entry was made"
         },
         "Email Address": {
           "canonical_tag": "submitter_email",
           "type": "text",
           "required": false,
-          "description": "Collected by Google Forms"
+          "description": "E-mail of the person who entered it"
         },
         "Faculty name": {
           "canonical_tag": "author_or_person",
@@ -2364,12 +2352,6 @@
           "categories": [
             "Community & Social Outreach Initiatives"
           ]
-        },
-        "Accuracy and Authorization Confirmation": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": true,
-          "description": ""
         }
       },
       "category_field_mappings": {},
@@ -2426,13 +2408,13 @@
           "canonical_tag": "submission_timestamp",
           "type": "text",
           "required": false,
-          "description": "Added by Google Forms"
+          "description": "When the entry was made"
         },
         "Email Address": {
           "canonical_tag": "submitter_email",
           "type": "text",
           "required": false,
-          "description": "Collected by Google Forms"
+          "description": "E-mail of the person who entered it"
         },
         "Faculty Name": {
           "canonical_tag": "author_or_person",
@@ -2989,12 +2971,6 @@
           "description": ""
         },
         "Funding Source": {
-          "canonical_tag": "custom",
-          "type": "text",
-          "required": true,
-          "description": ""
-        },
-        "Accuracy and Authorization Confirmation": {
           "canonical_tag": "custom",
           "type": "text",
           "required": true,

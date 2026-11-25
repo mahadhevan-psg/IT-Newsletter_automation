@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   const STATUS = { PENDING: ['Waiting for approval', 'warn'], APPROVED: ['Approved', 'ok'], RETURNED: ['Sent back for correction', 'orange'], REJECTED: ['Rejected', 'bad'] };
-  const ACTION_TEXT = { pulled: 'Pulled from the Google Sheet', updated: 'Changed in the sheet before review', already_live: 'Already in the system', edited: 'Edited', approved: 'Approved',
+  const ACTION_TEXT = { pulled: 'Added to the approval queue', updated: 'Changed before review', already_live: 'Already in the system', edited: 'Edited', approved: 'Approved',
                         approved_edited: 'Edited and approved', returned: 'Sent back for correction', rejected: 'Rejected', resubmitted: 'Corrected and sent for approval again', revoked: 'Approval withdrawn', reopened: 'Brought back for review' };
   const QUICK_REASONS = ['Some details are unclear', 'Evidence link is missing or does not open', 'Wrong category', 'The date looks wrong', 'Looks like a duplicate entry', 'Names or roll numbers need checking'];
   const RV = { scope: '', items: [], total: 0, sel: null, detail: null, edit: false, edits: {}, checked: new Set(), form: '', q: '', flagged: false, summary: {}, showEmpty: false, timer: null, status: 'APPROVED', ticket: 0 };
@@ -19,7 +19,7 @@
   const statusChip = s => chip(STATUS[s][0], STATUS[s][1]);
   const isUrl = v => /^https?:\/\/\S+$/i.test(v || '');
   const linkify = v => String(v || '').startsWith('media://') ? String(v).split(', ').map((r, n) => `<a href="${esc(fileHref(r))}" target="_blank" rel="noopener noreferrer">Open uploaded file${n ? ' ' + (n + 1) : ''} ↗</a>`).join(' ') : isUrl(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">${esc(v)}</a>` : esc(v);
-  // a date as the date-picker needs it: 2026-09-20 (sheets may hold 20/09/2026 or 9/20/2026)
+  // a date as the date-picker needs it: 2026-09-20 (a record may hold 20/09/2026 or 9/20/2026)
   const toIso = v => { const t = String(v || '').trim(); let m;
     if ((m = t.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
     if ((m = t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/))) { const a = +m[1], b = +m[2], [d, mo] = a > 12 ? [a, b] : b > 12 ? [b, a] : [a, b]; return `${m[3]}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
@@ -30,11 +30,11 @@
     try {
       const s = await api('/api/review/summary'); RV.summary = s;
       const b = document.querySelector('.tab[data-t="review"]'); if (!b) return;
-      b.innerHTML = 'Approvals' + (s.badge ? ` <span class="tab-badge">${s.badge > 99 ? '99+' : s.badge}</span>` : '');
+      b.innerHTML = 'Review &amp; submissions' + (s.badge ? ` <span class="tab-badge">${s.badge > 99 ? '99+' : s.badge}</span>` : '');
     } catch (e) { /* the badge is a convenience */ }
   };
 
-  // ------------------------------------------------------------------ the Approvals screen
+  // ------------------------------------------------------------------ the Review & submissions screen
   function scopes() {
     const s = RV.summary, list = [];
     if (canDecide()) list.push({ id: 'review', label: 'To review', n: s.to_review });
@@ -48,7 +48,7 @@
     const first = scopes();
     RV.scope = RV.scope && first.some(x => x.id === RV.scope) ? RV.scope : (RV.summary.returned_to_me ? 'returned' : canDecide() ? 'review' : 'mine');
     RV.sel = null; RV.detail = null; RV.edit = false; RV.edits = {}; RV.checked = new Set();
-    $('#view').innerHTML = `<div class="card-head"><div><h2>Approvals</h2><p class="hint" style="margin:2px 0 0" id="rv-sub"></p></div><div id="rv-head-actions"></div></div>
+    $('#view').innerHTML = `<div class="card-head"><div><h2>Review &amp; submissions</h2><p class="hint" style="margin:2px 0 0" id="rv-sub"></p></div><div id="rv-head-actions"></div></div>
       <div class="rv-tabs" id="rv-tabs"></div><div class="rv-filters" id="rv-filters"></div>
       <div class="rv"><aside class="rv-list" id="rv-list"></aside><section class="rv-detail" id="rv-detail"></section></div>`;
     drawTabs(); await loadList(true);
@@ -56,7 +56,7 @@
   function drawTabs() {
     $('#rv-tabs').innerHTML = scopes().map(s => `<button class="rv-tab ${RV.scope === s.id ? 'on' : ''}" data-s="${s.id}">${s.label}${s.n ? ` <span class="tab-badge">${s.n}</span>` : ''}</button>`).join('');
     $('#rv-tabs').onclick = go(async e => { const b = e.target.closest('[data-s]'); if (!b) return; RV.scope = b.dataset.s; RV.sel = null; RV.detail = null; RV.checked = new Set(); RV.edit = false; drawTabs(); await loadList(true); });
-    const sub = { review: me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Responses pulled from the Google Sheets wait here. Nothing is used in the application until you approve it.' : 'Your students\' placement details wait here for your approval.',
+    const sub = { review: me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Entries waiting for your decision. Nothing is used in the application until you approve it.' : 'Your students\' placement details wait here for your approval.',
                   returned: 'Responses sent back with a reason so the faculty member can correct them.', decided: 'Everything that has been approved. Use the menu to see the rejected ones.', mine: 'Everything you submitted, and where it stands.' }[RV.scope];
     $('#rv-sub').textContent = sub;
   }
@@ -103,7 +103,7 @@
     const el = $('#rv-list');
     if (!RV.items.length) {
       el.innerHTML = `<div class="rv-empty"><div class="rv-empty-ico">${RV.scope === 'review' ? '✓' : '…'}</div><b>${RV.scope === 'review' ? 'All caught up' : 'Nothing here'}</b>
-        <p>${{ review: 'Nothing is waiting for your approval. New responses arrive when the Google Sheets are pulled.', returned: 'Nothing has been sent back.', decided: 'Nothing has been decided yet.', mine: 'You have not submitted anything yet.' }[RV.scope]}</p></div>`;
+        <p>${{ review: 'Nothing is waiting for your approval. New entries appear here as people submit them.', returned: 'Nothing has been sent back.', decided: 'Nothing has been decided yet.', mine: 'You have not submitted anything yet.' }[RV.scope]}</p></div>`;
       return;
     }
     el.innerHTML = `<div class="rv-count">${RV.total} response${RV.total === 1 ? '' : 's'}</div>` + RV.items.map(i => `
@@ -165,7 +165,7 @@
         buf += RV.edit ? inputHtml(ri, fi, f, val, edited) : readHtml(ri, fi, f, val, edited);
       });
       flush();
-      const extras = row.extras.length ? `<h5 class="rv-sec">Other columns in the sheet</h5><div class="rv-fields">${row.extras.map(x => `<div class="rv-f"><div class="rv-l">${esc(x.q)}</div><div class="rv-v">${linkify(x.value)}</div></div>`).join('')}</div>` : '';
+      const extras = row.extras.length ? `<h5 class="rv-sec">Other details in this entry</h5><div class="rv-fields">${row.extras.map(x => `<div class="rv-f"><div class="rv-l">${esc(x.q)}</div><div class="rv-v">${linkify(x.value)}</div></div>`).join('')}</div>` : '';
       return `<div class="rv-row">${many ? `<div class="rv-row-h">Entry ${ri + 1}${row.fields.find(f => f.q && /company/i.test(f.q))?.value ? ' · ' + esc(row.fields.find(f => /company/i.test(f.q)).value) : ''}</div>` : ''}${html}${extras}
         ${!RV.edit && empties ? `<button class="btn sm rv-more" data-empties="1">Show ${empties} empty field${empties === 1 ? '' : 's'}</button>` : ''}</div>`;
     }).join('');
@@ -304,63 +304,6 @@
   });
 
   // ================================================================== Data sync
-  async function viewSync() {
-    const o = await api('/api/sync/overview'), s = o.settings;
-    const tzs = ['Asia/Kolkata', 'UTC', 'Asia/Dubai', 'Asia/Singapore', 'Europe/London', 'America/New_York'];
-    const ro = o.can_configure ? '' : 'disabled';
-    const result = r => !r ? '<span class="muted">Not pulled yet</span>' : r.error ? `<span class="rv-bad">⚠ ${esc(r.error)}</span>` : `<span class="rv-ok">${r.new || 0} new</span> · ${r.unchanged || 0} unchanged${r.already_in_system ? ` · ${r.already_in_system} already in the system` : ''}${r.updated ? ` · ${r.updated} changed` : ''}`;
-    $('#view').innerHTML = `<div class="card-head"><div><h2>Data sync</h2><p class="hint" style="margin:2px 0 0">Pull the form responses from Google Sheets into the Approvals queue. The sheets are only <b>read</b>: nothing is changed or deleted in Google.</p></div></div>
-      <div class="grid-2">
-      <div class="card"><h3>Pull now</h3><p class="hint">Fetch every new response straight away.${o.can_pull_forms ? '' : ' (You can pull the placement sheet.)'}</p>
-        <button class="btn primary large" id="sy-run" ${o.can_pull_placements ? '' : 'disabled'}>⟳ Pull from Google Sheets now</button><div id="sy-out" style="margin-top:12px"></div></div>
-      <div class="card"><h3>Automatic pull</h3>
-        <label class="rv-switch"><input type="checkbox" id="sy-on" ${s.enabled ? 'checked' : ''} ${ro}> <span>Pull automatically</span></label>
-        <div class="sy-sched ${s.enabled ? '' : 'off'}" id="sy-sched">
-          <div class="filters" style="margin:10px 0 6px"><label class="rv-radio"><input type="radio" name="sy-mode" value="days" ${s.mode === 'days' ? 'checked' : ''} ${ro}> Every <input type="number" min="1" max="60" id="sy-days" class="input compact" style="width:64px" value="${s.every_days}" ${ro}> day(s)</label></div>
-          <div class="filters" style="margin:0 0 6px"><label class="rv-radio"><input type="radio" name="sy-mode" value="week" ${s.mode === 'week' ? 'checked' : ''} ${ro}> Once a week on <select id="sy-wd" class="compact" ${ro}>${s.weekdays.map((w, i) => `<option value="${i}" ${s.weekday === i ? 'selected' : ''}>${w}</option>`).join('')}</select></label></div>
-          <div class="filters" style="margin:0"><label>at <input type="time" id="sy-time" class="input compact" value="${String(s.hour).padStart(2, '0')}:${String(s.minute).padStart(2, '0')}" ${ro}></label>
-            <label>time zone <input list="sy-tz" id="sy-zone" class="input compact" value="${esc(s.timezone)}" style="width:150px" ${ro}><datalist id="sy-tz">${tzs.map(z => `<option value="${z}">`).join('')}</datalist></label></div></div>
-        <p class="sy-next" id="sy-next">${s.enabled && s.next_run_local ? `Next pull: <b>${esc(s.next_run_local)}</b>` : esc(s.describe)}</p>
-        ${o.can_configure ? '<button class="btn" id="sy-save">Save schedule</button>' : '<p class="hint">Only the Admin changes the schedule.</p>'}</div></div>
-      <div class="card"><div class="card-head"><h3>Your Google Sheets</h3></div>
-        <p class="hint">Paste the link of each form's <b>responses</b> sheet. ${o.service_account ? 'A Google service account is connected: share each sheet with its e-mail address (Viewer) and the sheets can stay private.' : 'Share each sheet as <b>Anyone with the link can view</b>, or connect a Google service account for private sheets (see below).'}</p>
-        <div class="scroll"><table class="table"><thead><tr><th>Form</th><th>Sheet link</th><th></th><th>Last pull</th><th class="num">Waiting</th></tr></thead><tbody>
-        ${o.sources.map(x => `<tr data-f="${x.form_id}"><td><b>${esc(x.title)}</b></td><td><input class="input compact sy-url" style="width:100%;min-width:260px" value="${esc(x.sheet_url)}" placeholder="https://docs.google.com/spreadsheets/d/…" ${ro}></td>
-          <td style="white-space:nowrap">${o.can_configure ? '<button class="btn sm sy-test">Test</button> <button class="btn sm sy-save1">Save</button>' : ''}<div class="sy-testout"></div></td>
-          <td>${result(x.last_result)}${x.last_pulled_at ? `<div class="muted" style="font-size:11px">${fmtTime(x.last_pulled_at)}</div>` : ''}</td><td class="num">${x.pending || ''}</td></tr>`).join('')}</tbody></table></div>
-        <details class="rv-hist" style="margin-top:12px"><summary>How to connect a private sheet (service account)</summary><ol class="sy-howto"><li>In Google Cloud, create a <b>service account</b> and a JSON key; enable the <b>Google Sheets API</b>.</li><li>Put the key's whole contents in the server setting <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> and restart.</li><li>Share each responses sheet with the service account's e-mail address as <b>Viewer</b>.</li></ol></details></div>
-      <div class="card"><h3>Recent pulls</h3>${o.runs.length ? `<div class="scroll"><table class="table"><thead><tr><th>When</th><th>How</th><th>Result</th><th class="num">New / changed</th></tr></thead><tbody>${o.runs.map(r => `<tr><td>${fmtTime(r.started_at)}</td><td>${r.trigger === 'schedule' ? 'Automatic' : 'By ' + esc(r.actor || 'someone')}</td>
-        <td>${r.status === 'done' ? chip('Done', 'ok') : r.status === 'running' ? chip('Running', 'warn') : chip('Failed', 'bad')}${r.summary && r.summary.none_configured ? ' <span class="muted">no sheets set up</span>' : ''}${r.summary && r.summary.failed && r.summary.failed.length ? ` <span class="rv-bad">${r.summary.failed.length} sheet(s) could not be read</span>` : ''}</td><td class="num">${r.summary ? r.summary.new_or_updated : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nothing has been pulled yet.</div>'}</div>`;
-    const runBtn = $('#sy-run');
-    runBtn.onclick = go(async () => {
-      runBtn.disabled = true; runBtn.textContent = '⟳ Pulling…';
-      try {
-        const r = await api('/api/sync/run', { method: 'POST', body: {} });
-        const lines = Object.entries(r.sources).map(([f, v]) => `<div><b>${esc(o.sources.find(x => x.form_id === f)?.title || f)}</b>: ${result(v)}</div>`).join('');
-        $('#sy-out').innerHTML = r.none_configured ? '<div class="rv-banner warn"><b>No sheets are set up yet.</b><p>Paste a sheet link below first.</p></div>' : `<div class="rv-banner ${r.status === 'failed' ? 'bad' : 'ok'}"><b>${r.new_or_updated ? r.new_or_updated + ' new or changed response' + (r.new_or_updated === 1 ? '' : 's') + ' are waiting in Approvals' : 'Nothing new this time'}</b>${lines}</div>`;
-        refreshReviewBadge();
-      } finally { runBtn.disabled = false; runBtn.textContent = '⟳ Pull from Google Sheets now'; }
-    });
-    if (!o.can_configure) return;
-    const toggle = () => $('#sy-sched').classList.toggle('off', !$('#sy-on').checked); $('#sy-on').onchange = toggle;
-    $('#sy-save').onclick = go(async () => {
-      const [h, m] = $('#sy-time').value.split(':').map(Number);
-      const r = await api('/api/sync/settings', { method: 'PUT', body: { enabled: $('#sy-on').checked, mode: document.querySelector('[name=sy-mode]:checked').value, every_days: +$('#sy-days').value, weekday: +$('#sy-wd').value, hour: h, minute: m, timezone: $('#sy-zone').value } });
-      $('#sy-next').innerHTML = r.enabled && r.next_run_local ? `Next pull: <b>${esc(r.next_run_local)}</b> <span class="muted">(${esc(r.describe)})</span>` : esc(r.describe); toast('Schedule saved');
-    });
-    $('#view').onclick = go(async e => {
-      const tr = e.target.closest('tr[data-f]'); if (!tr) return; const url = $('.sy-url', tr).value.trim(), out = $('.sy-testout', tr);
-      if (e.target.classList.contains('sy-save1')) { await api(`/api/sync/sources/${tr.dataset.f}`, { method: 'PUT', body: { sheet_url: url } }); toast('Saved'); }
-      if (e.target.classList.contains('sy-test')) {
-        out.innerHTML = '<span class="muted">Checking…</span>';
-        try { const r = await api('/api/sync/test', { method: 'POST', body: { form_id: tr.dataset.f, sheet_url: url } });
-          out.innerHTML = `<span class="rv-ok">✓ ${r.rows} response${r.rows === 1 ? '' : 's'} found</span>${r.missing_required.length ? `<div class="rv-bad">Missing columns: ${r.missing_required.map(esc).join(', ')}</div>` : ''}${r.rows === 0 ? '<div class="muted">No responses yet, but the column titles were read.</div>' : ''}${(r.layout_differences || []).length ? `<div class="rv-bad">The sheet does not match the form: ${r.layout_differences.map(esc).join('; ')}</div>` : ''}${r.unknown_columns.length ? `<details><summary class="muted">Columns not recognised (${r.unknown_columns.length})</summary><div class="muted">${r.unknown_columns.map(esc).join('<br>')}</div></details>` : ''}`;
-        } catch (err) { out.innerHTML = `<span class="rv-bad">⚠ ${esc(err.message)}</span>`; }
-      }
-    });
-  }
-
-  window.reviewOpen = scope => { RV.scope = scope; show('review'); };                // used by other screens: open Approvals on a given list
-  window.Review = { viewReview, viewSync };
-  VIEWS.review = viewReview; VIEWS.sync = viewSync;
+  window.Review = { viewReview };
+  VIEWS.review = viewReview;
 })();

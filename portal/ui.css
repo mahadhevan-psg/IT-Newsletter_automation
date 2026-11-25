@@ -106,6 +106,7 @@ details.act summary { list-style: none; cursor: pointer; } details.act summary::
 .wk-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .wk-sel { font: inherit; font-size: 13px; font-weight: 500; width: 176px; text-overflow: ellipsis; padding: 6px 24px 6px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--bg); color: var(--text); max-width: 100%; cursor: pointer; }
 .wk-sel:hover { border-color: var(--accent); }
+.wk-all { width: auto; padding-right: 12px; cursor: pointer; background: var(--surface); color: var(--text); }
 .wk-sel.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; } .wk-sel.on option { background: var(--surface); color: var(--text); }
 
 /* ---------- Download CSV pop-up ---------- */

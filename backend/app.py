@@ -26,7 +26,6 @@ from backend.demo.api import router as demo_router
 from backend.review.api import router as review_router
 from backend.master.entry_api import router as entry_router
 from backend.master import media as media_service
-from backend.review import schedule as sheet_schedule
 from database.master_db import init_master_db
 
 app = FastAPI(
@@ -60,7 +59,6 @@ def startup_event():
         demo_seed.start()
     else:
         init_master_db()
-    sheet_schedule.start()                             # the timer that pulls the Google Sheets (when the Admin has switched it on)
 
 app.include_router(master_router)
 app.include_router(demo_router)
@@ -85,7 +83,7 @@ def healthz():
 # --- The newsletter API is for the Admin and the HoD ---
 # Everything under /api/ that is not the portal, the diary or the sign-in has its own rules elsewhere; the rest (entries,
 # forms, layouts, front pages, generated documents) needs a signed-in Admin or HoD. Uploaded photos stay readable so <img> tags work.
-_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/", "/api/review/", "/api/sync/", "/api/entry/", "/api/media", "/api/defs/")
+_OWN_AUTH = ("/api/auth/", "/api/master/", "/api/diary/", "/api/demo/", "/api/review/", "/api/entry/", "/api/media", "/api/defs/")
 
 
 def _newsletter_denied(authorization):
@@ -105,6 +103,16 @@ def _newsletter_denied(authorization):
     if not user.roles & {"ADMIN", "HOD"}:
         return 403, "The newsletter studio is for the Admin and the HoD"
     return None
+
+
+@app.middleware("http")
+async def pages_are_always_current(request, call_next):
+    """The browser must ask before reusing a page or script (it gets a quick "not changed" when it is current). Without this it may keep
+    running an older script after an update, and pages made of old and new files break."""
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers.setdefault("Cache-Control", "no-cache")
+    return response
 
 
 @app.middleware("http")
@@ -153,73 +161,12 @@ def get_canonical_tags():
 def list_forms():
     return config_service.get_all_forms()
 
-class ScriptPayload(BaseModel):
-    script: str
-
-@app.post("/api/forms/parse-script")
-def parse_form_script_endpoint(payload: ScriptPayload):
-    """Read a Google Apps Script that creates forms and return the questions it contains (nothing is saved)."""
-    forms = config_service.analyze_script(payload.script)
-    if not forms:
-        raise HTTPException(status_code=400, detail="No form questions found. Paste the Apps Script that calls FormApp.create(...).")
-    return forms
-
 @app.get("/api/forms/{form_id}")
 def get_form_details(form_id: str):
     form = config_service.get_form(form_id)
     if not form:
         raise HTTPException(status_code=404, detail=f"Form '{form_id}' not found")
     return form
-
-@app.post("/api/forms")
-def create_new_form(payload: Dict[str, Any] = Body(...)):
-    try:
-        new_form = config_service.create_form(payload)
-        return {"success": True, "form": new_form}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.put("/api/forms/{form_id}")
-def update_form_definition(form_id: str, payload: Dict[str, Any] = Body(...)):
-    try:
-        updated_form = config_service.update_form(form_id, payload)
-        return {"success": True, "form": updated_form}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.delete("/api/forms/{form_id}")
-def remove_form(form_id: str):
-    success = config_service.delete_form(form_id)
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Form '{form_id}' not found")
-    return {"success": True, "deleted_form_id": form_id}
-
-@app.post("/api/forms/{form_id}/columns")
-def add_or_update_column_endpoint(form_id: str, payload: Dict[str, Any] = Body(...)):
-    try:
-        res = config_service.add_or_update_column(form_id, payload)
-        return {"success": True, "form": res}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.delete("/api/forms/{form_id}/columns/{column_name}")
-def delete_column_endpoint(form_id: str, column_name: str):
-    try:
-        res = config_service.delete_column(form_id, column_name)
-        return {"success": True, "form": res}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-class BulkHeadersPayload(BaseModel):
-    headers_text: str
-
-@app.post("/api/forms/{form_id}/columns/bulk")
-def bulk_import_headers(form_id: str, payload: BulkHeadersPayload):
-    try:
-        res = config_service.bulk_import_columns(form_id, payload.headers_text)
-        return {"success": True, "form": res}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 # --- Visual Template Designer Endpoints ---
 @app.get("/api/visual-templates")
@@ -316,6 +263,7 @@ def list_entries(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None
 ):
+    master_sync.sync()                                  # the newsletter reads the local database: always what it holds now
     rows = get_entries(issue_id=issue_id, section_id=section_id, approval_status=approval_status, date_from=date_from, date_to=date_to)
     for r in rows:
         r["date_iso"] = entry_date(r)          # the date in one format, so the pages can filter by range whatever way the form wrote it
@@ -356,35 +304,6 @@ def sync_from_master(req: MasterSyncRequest = Body(default_factory=MasterSyncReq
     """Pull form submissions that have not reached the newsletter yet out of the master database."""
     return master_sync.sync(issue_id=req.issue_id, ay_id=req.ay_id)
 
-# --- Form Ingestion Endpoints ---
-class SubmissionPayload(BaseModel):
-    form_id: str
-    issue_id: Optional[str] = "ISSUE_2026_V1I1"
-    raw_data: Dict[str, Any]
-
-@app.post("/api/entries/ingest")
-def ingest_form_submission(payload: SubmissionPayload):
-    result = ingestion_service.process_single_submission(
-        form_id=payload.form_id,
-        raw_data=payload.raw_data,
-        issue_id=payload.issue_id
-    )
-    return result
-
-@app.post("/api/entries/ingest-csv")
-async def ingest_csv(form_id: str = Form(...), issue_id: str = Form("ISSUE_2026_V1I1"), file: UploadFile = File(...)):
-    content = await file.read()
-    filename = (file.filename or "").lower()
-    
-    if filename.endswith(".xlsx") or filename.endswith(".xls"):
-        results = ingestion_service.process_excel_upload(form_id, content, issue_id=issue_id)
-    else:
-        csv_text = content.decode("utf-8", errors="ignore")
-        results = ingestion_service.process_csv_upload(form_id, csv_text, issue_id=issue_id)
-        
-    duplicates = sum(1 for r in results if r.get("duplicate"))
-    return {"total_ingested": len(results) - duplicates, "duplicates_skipped": duplicates, "results": results}
-
 # --- Document Generation Endpoints ---
 class SectionGenRequest(BaseModel):
     issue_id: str = "ISSUE_2026_V1I1"
@@ -403,6 +322,7 @@ def _check_range(date_from: Optional[str], date_to: Optional[str]) -> None:
 
 @app.post("/api/generate/section/{section_id}")
 def generate_section_docx_endpoint(section_id: str, req: SectionGenRequest):
+    master_sync.sync()
     _check_range(req.date_from, req.date_to)
     sections = get_sections_and_categories()
     sec_info = next((s for s in sections if s["section_id"] == section_id), None)
@@ -455,6 +375,7 @@ class MasterGenRequest(BaseModel):
 
 @app.post("/api/generate/master")
 def generate_master_newsletter(req: MasterGenRequest):
+    master_sync.sync()
     _check_range(req.date_from, req.date_to)
     res = newsletter_builder.assemble_newsletter(
         issue_id=req.issue_id,
@@ -487,11 +408,18 @@ def old_login_address(request: Request):
     return RedirectResponse("/" + (f"?{request.url.query}" if request.url.query else ""))
 
 
+# The old Google Forms page is gone: its address (bookmarks) leads to the portal.
+@app.get("/homepage", include_in_schema=False)
+@app.get("/homepage/", include_in_schema=False)
+def old_forms_page():
+    return RedirectResponse("/portal/")
+
+
 # One address per application. / is the sign-in page (the first thing anyone sees); after signing in, faculty go to
-# /homepage/ (the form links, then /portal/) and students to /diary/. /newsletter/ is the studio for Admin and HoD.
+# /portal/ and students to /diary/. /newsletter/ is the studio for Admin and HoD.
 # The sign-in page is mounted last because it matches everything else.
 _root = os.path.join(os.path.dirname(__file__), "..")
-for _url, _folder in (("/portal", "portal"), ("/diary", "diary"), ("/newsletter", "frontend"), ("/homepage", "homepage"), ("/", "signin")):
+for _url, _folder in (("/portal", "portal"), ("/diary", "diary"), ("/newsletter", "frontend"), ("/", "signin")):
     _dir = os.path.join(_root, _folder)
     if os.path.exists(_dir):
         app.mount(_url, StaticFiles(directory=_dir, html=True), name=_folder)

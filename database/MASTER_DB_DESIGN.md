@@ -9,7 +9,7 @@ Schema: [master_schema.sql](master_schema.sql) · opened by [master_db.py](maste
 | Classes | A class is a **cohort known by its tutor and its semester**. Two semesters make a year (UG 8 semesters, PG 4); the tutor sets the semester and the **year and class code follow automatically** (UG-G1-2, PG-2; a second class in the same year gets the semester added, e.g. UG-G1-2-S4). Students stay in their class as it moves up, nobody is promoted. The Admin adds classes and changes tutors; a class in its last semester can be marked graduated. |
 | Roles | One person can hold several. Tutor comes from `classes.tutor_id`; Admin / HoD / Programme Coordinator from `role_assignments`. |
 | Verification of submissions | None - every upload counts immediately. |
-| Form responses and placement data | Uploaded by the **Admin only** (the Google Forms response sheets as Excel). Uploading a student's placement rows again **replaces** that student's rows for the academic year. |
+| Form responses and placement data | Uploaded by the **Admin only** (placement sheets as Excel; form entries are made in the portal). Uploading a student's placement rows again **replaces** that student's rows for the academic year. |
 | Database engine | **SQLite in WAL mode.** See below. |
 
 ### Why SQLite is the right engine here
@@ -75,7 +75,6 @@ pip install -r requirements.txt
 python run_server.py                     # http://127.0.0.1:8000
 ```
 - Newsletter studio: `/`  ·  Staff portal: `/portal/`  ·  Student Placements Diary: `/diary/`
-- Demo data: `python seed_master_demo.py <admin-password>` (never on real data)
 - Tests: `python -m pytest tests/test_master.py`
 
 Not yet protected: the newsletter studio (`/`) and its `/api/*` endpoints keep their previous open behaviour; put it behind the same login or a network boundary before exposing the server beyond the department.

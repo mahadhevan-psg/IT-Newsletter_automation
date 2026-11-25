@@ -3,7 +3,7 @@
   "sections": [
     {
       "section_id": "sec_research",
-      "name": "Research & Innovation",
+      "name": "Research Contributions & Innovations",
       "display_order": 1,
       "enabled": true,
       "template_file": "templates/research_section_template.docx",
@@ -44,7 +44,7 @@
     },
     {
       "section_id": "sec_faculty",
-      "name": "Faculty Achievements",
+      "name": "Faculty Participation and Achievements",
       "display_order": 2,
       "enabled": true,
       "template_file": "templates/faculty_section_template.docx",
@@ -77,7 +77,7 @@
     },
     {
       "section_id": "sec_student",
-      "name": "Student Achievements",
+      "name": "Student Participation and Achievements",
       "display_order": 3,
       "enabled": true,
       "template_file": "templates/student_section_template.docx",
@@ -183,7 +183,7 @@
     },
     {
       "section_id": "sec_departmental",
-      "name": "Departmental Highlights",
+      "name": "Department Milestones & Achievements",
       "display_order": 5,
       "enabled": true,
       "template_file": "templates/departmental_section_template.docx",

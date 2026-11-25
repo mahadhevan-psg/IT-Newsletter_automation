@@ -1,4 +1,7 @@
 {
+  "cover": {
+    "photo": ""
+  },
   "hod": {
     "name": "Dr. B. Vinoth Kumar",
     "designation": "Head of the Department",
@@ -20,29 +23,29 @@
     "point"
   ],
   "advisor": {
-    "name": "Dr. D. Dhaarini",
+    "name": "Dr. D. Dharani",
     "designation": "Faculty Advisor",
     "photo": ""
   },
   "students": [
     {
       "name": "S Mahadhevan",
-      "year": "IV",
+      "year": "4th Year",
       "photo": ""
     },
     {
       "name": "Sankar",
-      "year": "III",
+      "year": "3rd Year",
       "photo": ""
     },
     {
       "name": "Jitheash",
-      "year": "II",
+      "year": "2nd Year",
       "photo": ""
     },
     {
       "name": "Monijaa",
-      "year": "II",
+      "year": "2nd Year",
       "photo": ""
     }
   ]

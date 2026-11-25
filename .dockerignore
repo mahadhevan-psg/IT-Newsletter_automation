@@ -33,7 +33,7 @@ requirements-dev.txt
 seed_*.py
 make_excel_templates.py
 excel_templates/
-gform_scripts/
+form_scripts/
 run_server.py
 Newsletter_Automation_System_5_Phase_Plan.docx
 plan_readable.md

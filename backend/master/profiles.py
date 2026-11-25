@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 
 from backend.master.auth import User
+from backend.master import answers
 from backend.master.ingest import specs
 
 
@@ -57,7 +58,7 @@ def item(sid, cat, title, date, ay, role=None, badges=(), facts=(), notes=(), li
         "badges": [b for b in badges if b],
         "facts": [[k, v] for k, v in facts if v not in (None, "")],
         "notes": [[k, v] for k, v in notes if v not in (None, "")],
-        "links": [{"label": k, "url": v} for k, v in links if v and str(v).startswith(("http://", "https://"))],
+        "links": [{"label": k, "url": v} for k, v in links if v and str(v).startswith(("http://", "https://", "media://"))],
     }
 
 
@@ -65,28 +66,29 @@ def _categories(form_id: str) -> List[str]:
     return next((q["choices"] for q in specs()["forms"][form_id]["questions"] if q.get("key") == "category"), [])
 
 
-LABELS = {  # shorter headings than the form's wording; anything not listed keeps the form's own wording
-    "Journal Publications": "Journal papers", "Conference Publications": "Conference papers", "Book / Book Chapters": "Books & chapters",
-    "Patents & Intellectual Property": "Patents & IP", "Funded Research Projects": "Funded projects", "Consultancy Projects": "Consultancy projects",
-    "Key Research Innovations & Technical Accomplishments": "Innovations & accomplishments",
-    "Awards & Honors Received": "Awards & honours", "Certifications & Upskilling Completed": "Certifications",
-    "Invited Keynote / Expert Lectures Delivered": "Invited talks & keynotes", "Resource Person / Session Chair Roles": "Resource person & session chair",
-    "FDP / Workshops Attended": "FDPs & workshops attended", "Professional Body & Editorial Board Roles": "Professional bodies & editorial boards",
-    "Workshops & FDPs Organized": "Workshops & FDPs organised", "Conferences & Symposia Organized": "Conferences & symposia organised",
-    "Infrastructure & Lab Upgrades": "Infrastructure & lab upgrades", "Student Club & Society Activities": "Club & society activities",
-    "Department Statistics & Major Milestones": "Department milestones",
-    "Patents & Intellectual Property Rights (IPR)": "Patents & IP", "Research Seminar": "Research seminars",
-    "Membership in Professional Body & Editorial Board Roles": "Professional bodies & editorial boards",
-    "Departmental Achievements / Awards / Recognitions": "Department awards", "Events / Programs Conducted": "Events & programmes",
-    "Faculty Development Programmes (FDPs), Conferences, and Other Long-Term Programmes Organised": "FDPs, conferences & long-term programmes",
-    "Student Development, Outreach, and Social Initiatives Undertaken by the Department": "Student development & outreach",
-    "Industrial Visits & Field Tours": "Industrial visits", "Industry Expert Lectures & Technical Talks": "Industry expert talks",
-    "MoUs Signed & Industrial Collaborations": "MoUs & collaborations", "Alumni Interactions & Mentorship Sessions": "Alumni interactions",
-    "Community & Social Outreach Initiatives": "Community outreach",
-    "Academic Excellence & Ranks": "Academic excellence & ranks", "Hackathons & Coding Competitions": "Hackathons & coding competitions",
-    "Higher Education & Top Placements": "Higher education & placements", "Technical Projects & Innovations": "Technical projects & innovations",
-    "Sports, Cultural & Co-Curricular Accomplishments": "Sports, cultural & co-curricular",
-}
+# the people on an entry (looked up in the records); everything else on a card is the entry's own data entry fields
+PEOPLE_FACTS = {"Authors", "Team", "Students", "Mentor", "Faculty", "Convener", "Faculty involved", "Lead"}
+
+
+def _with_answers(conn, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Fill each card with what was entered, under the labels of the current forms."""
+    stored = answers.raw_of(conn, [i["id"] for i in items if i["id"]])
+    for i in items:
+        if i["id"] not in stored:
+            continue
+        form_type, category, raw = stored[i["id"]]
+        shown = answers.display(form_type, category, raw)
+        people = [f for f in i["facts"] if f[0] in PEOPLE_FACTS]
+        if shown["facts"] or shown["notes"] or shown["links"]:
+            have = {label for label, _ in people}
+            i["facts"] = people + [f for f in shown["facts"] if f[0] not in have]
+            i["notes"], i["links"] = shown["notes"], shown["links"]
+    return items
+
+
+def form_title(form_id: str) -> str:
+    title = specs()["forms"].get(form_id, {}).get("title", form_id)
+    return title.replace("IT Chronicles - ", "").replace(" Submission Form", "")
 
 
 def _section(sid: str, title: str, items: List[Dict[str, Any]], order: List[str], note: str = "") -> Dict[str, Any]:
@@ -96,7 +98,7 @@ def _section(sid: str, title: str, items: List[Dict[str, Any]], order: List[str]
     for c in cats:
         mine = [i for i in items if i["category"] == c]
         if mine:
-            groups.append({"title": LABELS.get(c, c or "Other"), "count": len(mine), "items": mine})
+            groups.append({"title": c or "Other", "count": len(mine), "items": mine})
     return {"id": sid, "title": title, "note": note, "count": len(items), "groups": groups}
 
 
@@ -146,7 +148,7 @@ def _research_items(conn, where: str, args: list, who: Dict[str, Any]) -> List[D
             [("Identifier link", ident if ident.startswith(("http://", "https://")) else None), ("Venue website", r["venue_url"]), ("Dataset / code", r["dataset_url"]),
              ("Evidence", r["evidence_url"]), ("Photo", r["media_url"])], r["is_landmark"]))
         out[-1]["amount"] = r["funding_amount"]
-    return out
+    return _with_answers(conn, out)
 
 
 def _outcome_badges(row) -> list:
@@ -166,12 +168,23 @@ def _student_rows(conn, where: str, args: list, roll: Optional[str] = None) -> L
     team = _names(conn, [r["submission_id"] for r in rows],
                   "SELECT p.submission_id, COALESCE(s.full_name, p.name, p.raw_text) || ' (' || COALESCE(p.roll_no, '?') || ')' FROM student_achievement_participants p "
                   "LEFT JOIN students s ON s.roll_no = p.roll_no WHERE p.submission_id IN ({IDS}) ORDER BY p.line_no")
+    stored = answers.raw_of(conn, [r["submission_id"] for r in rows])
     for r in rows:
         r["team"] = team.get(r["submission_id"], [])
+        r["answers"] = answers.display(*stored[r["submission_id"]]) if r["submission_id"] in stored else None
     return rows
 
 
 def _student_item(r, show_team_as="Team", role=None) -> Dict[str, Any]:
+    card = _student_card(r, show_team_as, role)
+    shown = r.get("answers")
+    if shown and (shown["facts"] or shown["notes"] or shown["links"]):
+        people = [f for f in card["facts"] if f[0] in PEOPLE_FACTS]
+        card["facts"], card["notes"], card["links"] = people + shown["facts"], shown["notes"], shown["links"]
+    return card
+
+
+def _student_card(r, show_team_as, role) -> Dict[str, Any]:
     return item(
         r["submission_id"], r["category"], r["title"], r["event_date"], r["ay_id"], role, _outcome_badges(r),
         [(show_team_as, ", ".join(r["team"]) if (r["is_team"] or len(r["team"]) > 1) else None), ("Organiser", r["organizer"]), ("Domain", r["domain"]),
@@ -199,7 +212,7 @@ def _faculty_ach_items(conn, where: str, args: list, people: bool = False) -> Li
                          ("Place", r["city_venue"]), ("Credential no.", r["credential_no"]), ("Other contributors", r["other_contributors"] if r["is_team"] else None)],
                         [("Description", r["description"]), ("Your role", r["role_contribution"]), ("Selection criteria", r["selection_criteria"]), ("Outcome & impact", r["outcome_impact"])],
                         [("Organiser website", r["organizer_url"]), ("Evidence", r["evidence_url"]), ("Photo", r["media_url"])], r["is_landmark"]))
-    return out
+    return _with_answers(conn, out)
 
 
 _INVOLVED = ("(SELECT group_concat(f2.full_name, ', ') FROM submission_faculty sf2 JOIN faculty f2 ON f2.emp_id = sf2.emp_id "
@@ -225,7 +238,7 @@ def _event_items(conn, where: str, args: list, emp: Optional[str] = None) -> Lis
                          ("Partners / funding bodies", r["partner_bodies"]), ("Budget", inr(r["budget_amount"])), ("Funding source", r["funding_source"]), ("Recognition", r["recognition"])],
                         [("Overview", r["overview"]), ("Objectives", r["objectives"]), ("Key outputs", r["outputs"]), ("Success indicators", r["success_indicators"])],
                         [("Event report", r["report_url"]), ("Evidence", r["evidence_url"]), ("Photo", r["media_url"])], r["is_landmark"]))
-    return out
+    return _with_answers(conn, out)
 
 
 def _outreach_items(conn, where: str, args: list, emp: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -246,7 +259,7 @@ def _outreach_items(conn, where: str, args: list, emp: Optional[str] = None) -> 
                          ("Speakers", r["speakers"]), ("Agreement", f"{r['agreement_effective'] or '?'} to {r['agreement_expiry'] or '?'}" if r["agreement_expiry"] or r["agreement_effective"] else None)],
                         [("Summary", r["summary_outcomes"]), ("Objective", r["objective"]), ("MoU scope", r["mou_scope"]), ("Measurable outcomes", r["measurable_outcomes"]), ("Follow-up", r["follow_up"])],
                         [("Report", r["report_url"]), ("Evidence", r["evidence_url"]), ("Photo", r["media_url"])], r["is_landmark"]))
-    return out
+    return _with_answers(conn, out)
 
 
 # ---------------------------------------------------------------- faculty
@@ -272,10 +285,10 @@ def faculty_profile(conn, user: User, emp_id: str, ay: Optional[str] = None) -> 
     mentored = [_student_item(r, "Students", "Mentor") for r in _student_rows(conn, "sa.mentor_emp_id = ?", [emp_id])]
 
     sections = [
-        _section("research", "Research & Innovation", research, _categories("form_research")),
-        _section("achievements", "Professional achievements", prof, _categories("form_faculty")),
-        _section("events", "Events organised", events, _categories("form_departmental")),
-        _section("outreach", "Industry, alumni & outreach", outreach, _categories("form_industry")),
+        _section("research", form_title("form_research"), research, _categories("form_research")),
+        _section("achievements", form_title("form_faculty"), prof, _categories("form_faculty")),
+        _section("events", form_title("form_departmental"), events, _categories("form_departmental")),
+        _section("outreach", form_title("form_industry"), outreach, _categories("form_industry")),
         _section("mentoring", "Students mentored", mentored, _categories("form_student"), "Student achievements and participations where this faculty member is the mentor / guide."),
     ]
     head = {"kind": "faculty", "id": emp_id, "name": f["full_name"], "subtitle": f["designation"] or "Faculty", "status": f["status"], "tags": tags,
@@ -285,7 +298,7 @@ def faculty_profile(conn, user: User, emp_id: str, ay: Optional[str] = None) -> 
     summary = [("Journal papers", count("Journal Publications")), ("Conference papers", count("Conference Publications")), ("Patents", count("Patents & Intellectual Property Rights (IPR)") + count("Patents & Intellectual Property")),
                ("Funded projects", count("Funded Research Projects")), ("Awards & honours", sum(1 for i in prof if i["category"] == "Awards & Honors Received")),
                ("Talks & sessions", sum(1 for i in prof if i["category"] in ("Invited Keynote / Expert Lectures Delivered", "Resource Person / Session Chair Roles"))),
-               ("Events organised", len(events)), ("Students mentored", len(mentored))]
+               ("Department entries", len(events)), ("Students mentored", len(mentored))]
     return _finish(head, sections, summary, ay, extra=[("Research funding", inr(fund))] if fund else [])
 
 
@@ -347,7 +360,7 @@ def student_profile(conn, user: User, roll_no: str, ay: Optional[str] = None) ->
     sections = [
         _section("achievements", "Achievements", achievements, _categories("form_student"), "Won, ranked or awarded."),
         _section("participations", "Participations", participations, _categories("form_student"), "Took part without a prize or rank."),
-        _section("research", "Research & Innovation", research, _categories("form_research")),
+        _section("research", form_title("form_research"), research, _categories("form_research")),
         _section("events", "Events attended", attended, ["Department events", "Industry & outreach"]),
         _section("placement", "Placement", placement_all, list(pl_items)),
     ]

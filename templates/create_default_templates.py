@@ -215,9 +215,9 @@ def create_master_template():
     print(f"Created Master template: {out_path}")
 
 if __name__ == "__main__":
-    create_section_template("research_section_template.docx", "Research & Innovation", "1F4E78")
-    create_section_template("faculty_section_template.docx", "Faculty Achievements", "2E75B6")
-    create_section_template("student_section_template.docx", "Student Achievements", "3B7A57")
+    create_section_template("research_section_template.docx", "Research Contributions & Innovations", "1F4E78")
+    create_section_template("faculty_section_template.docx", "Faculty Participation and Achievements", "2E75B6")
+    create_section_template("student_section_template.docx", "Student Participation and Achievements", "3B7A57")
     create_section_template("industry_section_template.docx", "Industry & Alumni Outreach", "C65911")
-    create_section_template("departmental_section_template.docx", "Departmental Highlights", "5B6770")
+    create_section_template("departmental_section_template.docx", "Department Milestones & Achievements", "5B6770")
     create_master_template()

@@ -1,7 +1,7 @@
-"""Turns one Google-Form response row (any of the 5 forms) into master-database records.
+"""Turns one entry (a flat {field title: answer} row of any of the five forms) into master-database records.
 
-The questions, their master-DB columns and special handlers come from config/master_forms.json,
-which is generated together with the Apps Scripts, so the form and the importer cannot drift apart.
+The questions, their master-DB columns and special handlers come from the published form definitions, the same ones the entry screen
+is drawn from, so the screen and the records cannot drift apart.
 """
 import hashlib
 import json
@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from backend.master import blocks, definitions
 from backend.master.common import (person_name, clean_cell, find_date, norm_header, org_key, parse_date, parse_datetime, parse_int,
-                                   parse_lines, parse_num, read_xlsx, truthy)
+                                   parse_lines, parse_num, truthy)
 from database.master_db import db, ay_for, ensure_ay
 
 SPEC_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "config", "master_forms.json")
@@ -29,14 +29,6 @@ def specs() -> Dict[str, Any]:
 
 def form_ids() -> List[str]:
     return list(specs()["forms"].keys())
-
-
-def template_headers(form_id: str) -> List[str]:
-    """The response sheet's header row. For the category-based forms it repeats titles, exactly as the Google Form's sheet does."""
-    spec = specs()["forms"][form_id]
-    if blocks.has_blocks(spec):
-        return blocks.sheet_headers(form_id)
-    return [q["q"] for q in spec["questions"] if q["type"] != "section" and not q.get("legacy")]
 
 
 def answers_for(spec: Dict[str, Any], raw: Dict[str, Any]):
@@ -315,38 +307,6 @@ def _contributors(conn, sid, text, warnings):
                 warnings.append(f"Author id not found, stored as external: '{ln['raw']}'")
         conn.execute("INSERT INTO research_contributors (submission_id, author_order, person_type, emp_id, roll_no, name, affiliation) VALUES (?,?,?,?,?,?,?)",
                      (sid, order, ptype, emp, roll, ln["name"] or ln["raw"], aff))
-
-
-# ---------------------------------------------------------------- many rows
-def ingest_rows(form_id: str, rows: List[Dict[str, Any]]) -> Dict[str, Any]:
-    inserted = duplicates = 0
-    problems: List[Dict[str, Any]] = []
-    with db() as conn:
-        for n, sheet_row in enumerate(rows, 2):    # row 1 is the header
-            entries = blocks.expand_rows(form_id, [sheet_row])        # one entry per category answered in the response
-            if not entries:
-                problems.append({"row": n, "status": "skipped", "messages": ["No category was answered YES in this response"]})
-            for raw in entries:
-                conn.execute("SAVEPOINT r")
-                try:
-                    res = ingest_row(conn, form_id, raw)
-                    conn.execute("RELEASE r")
-                except Exception as e:              # one bad row never blocks the file
-                    conn.execute("ROLLBACK TO r")
-                    conn.execute("RELEASE r")
-                    res = {"status": "error", "errors": [str(e)]}
-                if res["status"] == "inserted":
-                    inserted += 1
-                elif res["status"] == "duplicate":
-                    duplicates += 1
-                if res.get("errors") or res.get("warnings"):
-                    cat = blocks.category_of(specs()["forms"][form_id], {norm_header(k): str(v) for k, v in raw.items() if v}) if form_id in specs()["forms"] else None
-                    problems.append({"row": n, "status": res["status"], "messages": [(f"{cat}: " if cat else "") + m for m in (res.get("errors") or res.get("warnings"))]})
-    return {"rows": len(rows), "inserted": inserted, "duplicates_skipped": duplicates, "needs_attention": problems}
-
-
-def upload_excel(form_id: str, content: bytes) -> Dict[str, Any]:
-    return ingest_rows(form_id, read_xlsx(content))
 
 
 def ingest_form_row(form_id: str, raw: Dict[str, Any], newsletter_entry_id: Optional[str] = None) -> Dict[str, Any]:

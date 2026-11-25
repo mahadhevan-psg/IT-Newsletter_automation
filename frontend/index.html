@@ -13,49 +13,15 @@
   <header class="topbar">
     <div class="brand"><span class="logo">IT</span><span class="brand-name">Chronicles</span></div>
     <nav class="tabs" id="main-tabs">
-      <button class="tab active" data-tab="overview">Overview</button>
-      <button class="tab" data-tab="forms">Forms</button>
+      <button class="tab active" data-tab="responses">Entries</button>
       <button class="tab" data-tab="front">Front pages</button>
       <button class="tab" data-tab="layout">Layout</button>
-      <button class="tab" data-tab="responses">Responses</button>
       <button class="tab" data-tab="publish">Publish</button>
     </nav>
     <span id="help-host"></span>
   </header>
 
   <main class="page">
-    <!-- ============ Overview ============ -->
-    <section id="tab-overview" class="view active">
-      <div class="stats">
-        <button class="stat" onclick="openResponses('')"><span class="stat-num" id="stat-total">0</span><span class="stat-lbl">Responses</span></button>
-        <button class="stat ok" onclick="openResponses('Approved')"><span class="stat-num" id="stat-approved">0</span><span class="stat-lbl">In the newsletter</span></button>
-        <button class="stat warn" onclick="openResponses('Rejected')"><span class="stat-num" id="stat-rejected">0</span><span class="stat-lbl">Rejected</span></button>
-        <button class="stat" onclick="openResponses('featured')"><span class="stat-num" id="stat-featured">0</span><span class="stat-lbl">Featured</span></button>
-      </div>
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head"><h3>Sections</h3></div>
-          <table class="table" id="overview-sections"><thead><tr><th>Section</th><th class="num">Responses</th><th class="num">Approved</th></tr></thead><tbody></tbody></table>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>Recent activity</h3></div>
-          <div class="log" id="activity-log"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ Forms ============ -->
-    <section id="tab-forms" class="view">
-      <div class="forms-layout">
-        <aside class="forms-side">
-          <button class="btn primary block" onclick="openNewForm()">+ New form</button>
-          <button class="btn block" style="margin-top:8px" onclick="openScriptImport()">Import from Apps Script</button>
-          <div id="forms-list" class="forms-list"></div>
-        </aside>
-        <div id="form-editor" class="form-editor"></div>
-      </div>
-    </section>
-
     <!-- ============ Front pages: HOD's Desk, vision / mission, editorial board ============ -->
     <section id="tab-front" class="view">
       <div class="front-bar">
@@ -104,8 +70,8 @@
       </div>
     </section>
 
-    <!-- ============ Responses ============ -->
-    <section id="tab-responses" class="view">
+    <!-- ============ Entries (read from the department database) ============ -->
+    <section id="tab-responses" class="view active">
       <div class="toolbar">
         <div class="pills" id="status-pills"></div>
         <span class="spacer"></span>
@@ -115,11 +81,9 @@
           <button class="btn ghost sm" id="resp-clear" onclick="clearRange('resp')" hidden>Clear dates</button>
         </div>
         <select id="filter-section" class="input compact" onchange="renderResponses()"></select>
-        <button class="btn primary" id="btn-sync" onclick="syncMaster(this)" title="Bring in every submission from the master database that is not in the newsletter yet">Sync from master database</button>
-        <button class="btn ghost" onclick="openAddResponses('csv')">Import CSV</button>
-        <button class="btn ghost" onclick="openAddResponses('single')">+ Add manually</button>
+        <button class="btn" id="btn-refresh" onclick="refreshEntries(this)" title="Read the department database again">Refresh</button>
       </div>
-      <p class="muted range-note">Every response is in the newsletter unless you reject it. Reject the ones that should stay out; you can approve them again at any time.</p>
+      <p class="muted range-note">These are the approved entries of the department database, read live. Each one is in the newsletter unless you reject it; you can approve it again at any time. To change what an entry says, or which fields feed the newsletter, use the portal (Review &amp; submissions and Form builder).</p>
       <div id="responses-list" class="responses"></div>
     </section>
 
@@ -149,67 +113,6 @@
   </main>
 
   <!-- ============ Dialogs ============ -->
-  <div id="dlg-new-form" class="overlay hidden">
-    <div class="dialog">
-      <div class="dialog-head"><h3>New form</h3><button class="x" onclick="closeDlg('dlg-new-form')">×</button></div>
-      <div class="dialog-body">
-        <div class="field"><label>Form name</label><input id="nf-name" class="input" placeholder="e.g. Hackathons &amp; Competitions"></div>
-        <div class="field"><label>Newsletter section</label><select id="nf-section" class="input"></select></div>
-        <div class="field">
-          <label>Questions <span class="muted">(optional)</span></label>
-          <textarea id="nf-headers" class="input" rows="5" placeholder="Paste the header row of your Google Form responses sheet. We detect what each column means.&#10;Leave empty to start with the standard questions."></textarea>
-        </div>
-      </div>
-      <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-new-form')">Cancel</button><button class="btn primary" onclick="createForm()">Create form</button></div>
-    </div>
-  </div>
-
-  <div id="dlg-script" class="overlay hidden">
-    <div class="dialog wide">
-      <div class="dialog-head"><h3>Import from Apps Script</h3><button class="x" onclick="closeDlg('dlg-script')">×</button></div>
-      <div class="dialog-body">
-        <p class="hint" style="margin-top:0">Paste the Google Apps Script you used to create the form (it can build several). We read every question, work out what each one is, and pick up the sub-section choices.</p>
-        <div class="field"><textarea id="script-text" class="input mono" rows="8" placeholder="function createResearchForm() {&#10;  const form = FormApp.create(&quot;…&quot;);&#10;  form.addTextItem().setTitle(&quot;…&quot;);"></textarea></div>
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px">
-          <button class="btn primary" onclick="detectScript()">Detect questions</button>
-          <label class="btn">Open .gs / .js file<input type="file" id="script-file" accept=".gs,.js,.txt" style="display:none" onchange="onScriptFile()"></label>
-        </div>
-        <div id="script-results"></div>
-      </div>
-      <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-script')">Cancel</button><button class="btn primary" id="script-go" onclick="importScriptForms()" disabled>Import selected</button></div>
-    </div>
-  </div>
-
-  <div id="dlg-add" class="overlay hidden">
-    <div class="dialog wide">
-      <div class="dialog-head"><h3>Add responses</h3><button class="x" onclick="closeDlg('dlg-add')">×</button></div>
-      <div class="dialog-body">
-        <div class="seg" id="add-mode">
-          <button data-mode="csv" class="on" onclick="setAddMode('csv')">Import file</button>
-          <button data-mode="single" onclick="setAddMode('single')">Type one in</button>
-        </div>
-
-        <div id="add-csv">
-          <label class="drop" id="csv-drop">
-            <input type="file" id="csv-file" accept=".csv,.xlsx,.xls" onchange="onCsvPicked()">
-            <strong id="csv-file-label">Choose a CSV or Excel file</strong>
-            <span class="muted">Exported from your Google Form responses sheet</span>
-          </label>
-          <div class="field" id="csv-form-row">
-            <label>Import into <span class="muted" id="csv-detect-note"></span></label>
-            <select id="csv-form" class="input"></select>
-          </div>
-        </div>
-
-        <div id="add-single" class="hidden">
-          <div class="field"><label>Form</label><select id="single-form" class="input" onchange="renderSingleFields()"></select></div>
-          <div id="single-fields"></div>
-        </div>
-      </div>
-      <div class="dialog-foot"><button class="btn ghost" onclick="closeDlg('dlg-add')">Cancel</button><button class="btn primary" id="add-submit" onclick="submitAdd()">Import</button></div>
-    </div>
-  </div>
-
   <script src="/portal/tour.js"></script>
   <script src="/portal/tours.js"></script>
   <script src="sample_data.js?v=4"></script>

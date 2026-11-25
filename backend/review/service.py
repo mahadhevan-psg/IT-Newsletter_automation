@@ -1,4 +1,4 @@
-"""Review: responses pulled from the Google Sheets wait here until an authority approves them.
+"""Review: entries made in the portal and placement records wait here until an authority approves them.
 
   PENDING --approve / edit & approve--> APPROVED   (only now is anything written to the live tables)
   PENDING --reject with reason--------> RETURNED   (sent to a faculty member the approver picks; form items only)
@@ -83,14 +83,14 @@ def _clean_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     return [{k: ("" if v is None else str(v).strip()) for k, v in r.items() if k} for r in rows]
 
 
-# ---------------------------------------------------------------- staging: what a sheet pull does with the rows it reads
+# ---------------------------------------------------------------- staging: putting entries into the approval queue
 def stage_rows(conn, form_id: str, rows: List[Dict[str, Any]]) -> Dict[str, int]:
-    """Put the sheet's rows into the review queue. A response seen before is not added again; one that is already live
-    (uploaded earlier from Excel) is recorded as approved without bothering anyone."""
+    """Put flat entry rows ({field title: answer}) into the approval queue. An entry seen before is not added again; one that is already
+    live is recorded as approved without bothering anyone."""
     rows = [r for r in _clean_rows(rows) if any(r.values())]
     if form_id == PLACEMENT:
         return _stage_placements(conn, rows)
-    return _stage_forms(conn, form_id, blocks.expand_rows(form_id, rows))      # a response with several categories becomes one entry per category
+    return _stage_forms(conn, form_id, rows)
 
 
 def _stage_forms(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str, int]:
@@ -98,16 +98,17 @@ def _stage_forms(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str, in
     for row in rows:
         n = {norm_header(k): v for k, v in row.items()}
         ts, email = n.get("timestamp", ""), n.get("email address", "").lower()
-        key = blocks.response_key(form_id, row) if (ts or email) else "hash:" + ingest.row_hash(form_id, row)
+        cat = n.get(norm_header(blocks.category_title(ingest.specs()["forms"][form_id])), "")
+        key = f"{ts}|{email}|{cat}" if (ts or email) else "hash:" + ingest.row_hash(form_id, row)
         digest = _hash_rows([row])
         have = conn.execute("SELECT item_id, status, content_hash FROM staged_items WHERE form_id = ? AND source_key = ?", (form_id, key)).fetchone()
         pv = ingest.preview_row(conn, form_id, row)
         info = ingest.summarize(form_id, row)
         if have:
-            if have["status"] == "PENDING" and have["content_hash"] != digest:       # changed in the sheet before anyone reviewed it
+            if have["status"] == "PENDING" and have["content_hash"] != digest:       # changed before anyone reviewed it
                 conn.execute("UPDATE staged_items SET answers_json = ?, content_hash = ?, title = ?, category = ?, event_date = ?, warnings_json = ?, blockers_json = ?, "
                              "updated_at = CURRENT_TIMESTAMP WHERE item_id = ?", (_j([row]), digest, info["title"], info["category"], info["event_date"], _j(pv["warnings"]), _j(pv["errors"]), have["item_id"]))
-                event(conn, have["item_id"], "updated", "sheet", "The response was changed in the Google Sheet before it was reviewed")
+                event(conn, have["item_id"], "updated", "sheet", "The entry was changed before it was reviewed")
                 counts["updated"] += 1
             else:
                 counts["unchanged"] += 1
@@ -118,20 +119,20 @@ def _stage_forms(conn, form_id: str, rows: List[Dict[str, str]]) -> Dict[str, in
             "warnings_json, blockers_json) VALUES ('FORM',?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (form_id, key, digest, _j([row]), _j([row]), "PENDING", info["title"], info["category"], info["event_date"], n.get("email address") or None, submitter, _j(pv["warnings"]), _j(pv["errors"])))
         item_id = cur.lastrowid
-        if pv["already_live"]:                                                       # same response was uploaded from Excel earlier: nothing to review
+        if pv["already_live"]:                                                       # the same entry is already in the records: nothing to review
             live = conn.execute("SELECT submission_id FROM form_submissions WHERE source_row_hash = ?", (ingest.row_hash(form_id, row),)).fetchone()
             conn.execute("UPDATE staged_items SET status = 'APPROVED', submission_id = ?, warnings_json = '[]', blockers_json = '[]', decided_by = 'system', decided_at = ? WHERE item_id = ?",
                          (live[0] if live else None, _now(), item_id))
-            event(conn, item_id, "already_live", "sheet", "Already in the system from an earlier upload; recorded as approved")
+            event(conn, item_id, "already_live", "sheet", "Already in the records; recorded as approved")
             counts["already_in_system"] += 1
         else:
-            event(conn, item_id, "pulled", "sheet", "Pulled from the Google Sheet")
+            event(conn, item_id, "pulled", "sheet", "Added to the approval queue")
             counts["new"] += 1
     return counts
 
 
 def stage_app_entry(conn, form_id: str, row: Dict[str, str], user: User) -> int:
-    """An entry typed in the portal joins the approval queue like a response pulled from a sheet (it is already a flat, single-category row)."""
+    """An entry typed in the portal joins the approval queue (it is a flat, single-category row)."""
     n = {norm_header(k): v for k, v in row.items()}
     pv = ingest.preview_row(conn, form_id, row)
     info = ingest.summarize(form_id, row)
@@ -170,13 +171,13 @@ def _stage_placements(conn, rows: List[Dict[str, str]]) -> Dict[str, int]:
             conn.execute("UPDATE staged_items SET answers_json = ?, content_hash = ?, status = 'PENDING', title = ?, class_id = ?, warnings_json = ?, blockers_json = ?, "
                          "reason = NULL, assigned_emp_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE item_id = ?",
                          (_j(grp), digest, title, pv["class_id"], _j(warnings), _j(pv["blockers"]), have["item_id"]))
-            event(conn, have["item_id"], "updated", "sheet", "New or changed rows in the Google Sheet: needs approval again" if have["status"] != "PENDING" else "Rows changed in the Google Sheet before review")
+            event(conn, have["item_id"], "updated", "sheet", "The record changed: it needs approval again" if have["status"] != "PENDING" else "The record changed before review")
             counts["updated"] += 1
         else:
             item_id = conn.execute(
                 "INSERT INTO staged_items (kind, form_id, source_key, content_hash, answers_json, original_json, status, title, category, roll_no, ay_id, class_id, warnings_json, blockers_json) "
                 "VALUES ('PLACEMENT',?,?,?,?,?,'PENDING',?,?,?,?,?,?,?)", (PLACEMENT, key, digest, _j(grp), _j(grp), title, "; ".join(pv["summary"])[:300], roll, ay, pv["class_id"], _j(warnings), _j(pv["blockers"]))).lastrowid
-            event(conn, item_id, "pulled", "sheet", "Pulled from the Google Sheet")
+            event(conn, item_id, "pulled", "sheet", "Added to the approval queue")
             counts["new"] += 1
     return counts
 
@@ -206,7 +207,7 @@ def can_resubmit(user: User, it: Dict[str, Any]) -> bool:
 
 
 def can_view(conn, user: User, it: Dict[str, Any]) -> bool:
-    return (user.all_access or can_decide(conn, user, it) or can_resubmit(user, it) or it["submitter_emp_id"] == user.id
+    return (bool(user.roles & {"ADMIN", "HOD"}) or can_decide(conn, user, it) or can_resubmit(user, it) or it["submitter_emp_id"] == user.id
             or (it["kind"] == "PLACEMENT" and it["class_id"] in user.class_ids and it["class_id"] is not None))
 
 

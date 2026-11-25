@@ -1,5 +1,5 @@
 """Approval workflow: responses wait in a staging area, only approved ones become live; who decides what; the four decisions;
-return-to-faculty and resubmission; the Google Sheet pull and its schedule."""
+return-to-faculty and resubmission."""
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from backend.app import app  # noqa: E402
 from backend.master import blocks, ingest, placements  # noqa: E402
 from backend.master.auth import set_staff_password  # noqa: E402
-from backend.review import schedule, service, sheets  # noqa: E402
+from backend.review import service  # noqa: E402
 from database import db_manager  # noqa: E402
 from database.master_db import db, init_master_db  # noqa: E402
 
@@ -96,7 +96,7 @@ def as_user(uid, kind="STAFF"):
 
 
 # ---------------------------------------------------------------- 1. nothing is live until approved
-def test_pulled_responses_wait_and_are_never_live_before_approval(world):
+def test_waiting_entries_are_never_live_before_approval(world):
     res = stage("form_research", [research("Paper One"), research("Paper Two", _ts="2025-10-02 09:00:00")])
     assert res["new"] == 2
     assert live("SELECT COUNT(*) FROM form_submissions")[0][0] == 0                       # staged, not live
@@ -107,10 +107,10 @@ def test_pulled_responses_wait_and_are_never_live_before_approval(world):
     it = client.get("/api/review/items?scope=review", headers=admin).json()
     assert it["total"] == 2 and it["items"][0]["status"] == "PENDING" and it["items"][0]["submitter"] == "Dr. Plain Faculty"
     again = stage("form_research", [research("Paper One"), research("Paper Two", _ts="2025-10-02 09:00:00")])
-    assert again == {"new": 0, "updated": 0, "already_in_system": 0, "unchanged": 2}       # pulling again adds nothing
+    assert again == {"new": 0, "updated": 0, "already_in_system": 0, "unchanged": 2}       # queuing them again adds nothing
 
 
-def test_a_response_already_uploaded_from_excel_is_recorded_as_approved_not_asked_again(world):
+def test_an_entry_already_in_the_records_is_recorded_as_approved_not_asked_again(world):
     row = research("Already There")
     with db() as c:
         assert ingest.ingest_row(c, "form_research", row)["status"] == "inserted"
@@ -329,162 +329,3 @@ def test_lists_and_badges_per_role(world):
     assert client.get(f"/api/review/items/{other}", headers=sign_in("EMP005")).status_code == 403                          # strangers cannot read it
 
 
-# ---------------------------------------------------------------- 6. the sheet pull
-def test_the_pull_reads_each_sheet_independently_and_logs_the_run(world, monkeypatch):
-    with db() as c:
-        schedule.set_source(c, as_user("ADMIN"), "form_research", "https://docs.google.com/spreadsheets/d/AAA/edit#gid=0")
-        schedule.set_source(c, as_user("ADMIN"), "form_student", "https://docs.google.com/spreadsheets/d/BBB/edit#gid=1")
-    calls = []
-
-    def fake_fetch(url):
-        calls.append(url)
-        if "BBB" in url:
-            raise sheets.SheetError("The sheet cannot be opened.")
-        return [research("From the sheet")]
-    monkeypatch.setattr(sheets, "fetch_rows", fake_fetch)
-    out = schedule.run_sync("manual", "ADMIN")
-    assert out["sources"]["form_research"]["new"] == 1 and out["sources"]["form_student"]["error"] == "The sheet cannot be opened."   # one failing sheet does not stop the other
-    assert out["status"] == "done" and len(item_ids()) == 1 and live("SELECT COUNT(*) FROM form_submissions")[0][0] == 0
-    second = schedule.run_sync("manual", "ADMIN")
-    assert second["sources"]["form_research"]["unchanged"] == 1 and second["new_or_updated"] == 0
-    with db() as c:
-        ov = schedule.overview(c)
-    assert len(ov["runs"]) == 2 and ov["runs"][0]["status"] == "done"
-    src = {s["form_id"]: s for s in ov["sources"]}
-    assert src["form_research"]["pending"] == 1 and src["form_research"]["last_result"]["unchanged"] == 1 and "error" in src["form_student"]["last_result"]
-
-
-def test_a_pull_with_nothing_configured_says_so_and_does_not_fail(world):
-    out = schedule.run_sync("manual", "ADMIN")
-    assert out["none_configured"] and out["sources"] == {}
-
-
-def test_who_may_pull_and_configure(world, monkeypatch):
-    monkeypatch.setattr(sheets, "fetch_rows", lambda url: [])
-    with db() as c:
-        schedule.set_source(c, as_user("ADMIN"), "form_research", "https://docs.google.com/spreadsheets/d/AAA/edit")
-        schedule.set_source(c, as_user("ADMIN"), service.PLACEMENT, "https://docs.google.com/spreadsheets/d/PPP/edit")
-    ov_for = lambda uid: client.get("/api/sync/overview", headers=sign_in(uid))
-    assert ov_for("EMP003").status_code == 403                                              # ordinary faculty have no business here
-    admin, hod, tutor = ov_for("ADMIN").json(), ov_for("EMP002").json(), ov_for("EMP001").json()
-    assert admin["can_configure"] and not hod["can_configure"] and not tutor["can_configure"]
-    assert {s["form_id"] for s in tutor["sources"]} == {service.PLACEMENT}                  # a tutor sees only the placement sheet
-    assert client.put("/api/sync/settings", json={"enabled": True}, headers=sign_in("EMP002")).status_code == 403
-    assert client.put("/api/sync/sources/form_research", json={"sheet_url": "x"}, headers=sign_in("EMP001")).status_code == 403
-    r = client.post("/api/sync/run", json={"only": ["form_research"]}, headers=sign_in("EMP001")).json()
-    assert list(r["sources"]) == [service.PLACEMENT]                                        # a tutor's pull is limited to placements, whatever they ask for
-    assert set(client.post("/api/sync/run", json={}, headers=sign_in("EMP002")).json()["sources"]) == {"form_research", service.PLACEMENT}
-    assert client.post("/api/sync/run", json={}, headers=sign_in("EMP003")).status_code == 403
-
-
-# ---------------------------------------------------------------- 7. the schedule
-def utc(*a):
-    return datetime(*a, tzinfo=timezone.utc)
-
-
-def S(**kw):
-    base = {"enabled": 1, "mode": "days", "every_days": 2, "weekday": 0, "hour": 2, "minute": 0, "timezone": "Asia/Kolkata"}
-    base.update(kw)
-    return base
-
-
-def test_compute_next_for_every_n_days_and_weekly():
-    now = utc(2026, 11, 4, 12, 0)                                       # 17:30 in India
-    assert schedule.compute_next(S(enabled=0), now) is None
-    assert schedule.compute_next(S(), now) == utc(2026, 11, 4, 20, 30)  # first run: tonight 02:00 India time is 20:30 UTC on the 4th -> it is already past 02:00 today, so tomorrow
-    # (02:00 IST on the 5th = 20:30 UTC on the 4th)
-    last = utc(2026, 11, 4, 20, 30)
-    assert schedule.compute_next(S(every_days=2), now, last) == utc(2026, 11, 6, 20, 30)    # two days after the last pull, same time of day
-    assert schedule.compute_next(S(every_days=2), utc(2026, 11, 20, 0, 0), last) == utc(2026, 11, 20, 0, 0)   # overdue: straight away
-    # weekly: next Monday 09:30 India = 04:00 UTC; 4 Nov 2026 is a Wednesday
-    wk = S(mode="week", weekday=0, hour=9, minute=30)
-    assert schedule.compute_next(wk, now) == utc(2026, 11, 9, 4, 0)
-    assert schedule.compute_next(S(mode="week", weekday=2, hour=23, minute=0), now) == utc(2026, 11, 4, 17, 30)   # later today (Wednesday 23:00 India)
-    assert schedule.compute_next(S(mode="week", weekday=2, hour=1, minute=0), now) == utc(2026, 11, 10, 19, 30)   # already past this Wednesday (01:00 India = 19:30 UTC the evening before): next week
-    assert schedule.compute_next(S(timezone="UTC", hour=14, minute=0), now) == utc(2026, 11, 4, 14, 0)           # the time zone is honoured
-
-
-def test_settings_are_validated_described_and_change_the_next_run(world):
-    admin = sign_in("ADMIN")
-    bad = lambda **kw: client.put("/api/sync/settings", json=kw, headers=admin).status_code
-    assert bad(mode="monthly") == 400 and bad(every_days=0) == 400 and bad(every_days=99) == 400 and bad(hour=24) == 400
-    assert bad(timezone="Mars/Olympus") == 400 and bad(every_days="soon") == 400
-    r = client.put("/api/sync/settings", json={"enabled": True, "mode": "week", "weekday": 4, "hour": 18, "minute": 15, "timezone": "Asia/Kolkata"}, headers=admin)
-    assert r.status_code == 200 and r.json()["describe"] == "Every Friday at 18:15 (Asia/Kolkata)" and r.json()["next_run_local"].startswith("Fri")
-    off = client.put("/api/sync/settings", json={"enabled": False}, headers=admin).json()
-    assert off["next_run_at"] is None and "switched off" in off["describe"]
-    two = client.put("/api/sync/settings", json={"enabled": True, "mode": "days", "every_days": 2, "hour": 2, "minute": 0}, headers=admin).json()
-    assert two["describe"] == "Every 2 days at 02:00 (Asia/Kolkata)" and two["next_run_at"]
-
-
-def test_the_timer_runs_a_due_pull_and_schedules_the_next(world, monkeypatch):
-    with db() as c:
-        schedule.set_source(c, as_user("ADMIN"), "form_research", "https://docs.google.com/spreadsheets/d/AAA/edit")
-        schedule.save_settings(c, as_user("ADMIN"), {"enabled": True, "mode": "days", "every_days": 2, "hour": 2, "minute": 0, "timezone": "UTC"})
-        c.execute("UPDATE sync_settings SET next_run_at = ? WHERE id = 1", ((datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S"),))
-    monkeypatch.setattr(sheets, "fetch_rows", lambda url: [research("By the timer")])
-    schedule._tick()
-    assert len(item_ids()) == 1                                                             # pulled on its own
-    with db() as c:
-        s = schedule.get_settings(c)
-        run = c.execute("SELECT trigger, status FROM sync_runs").fetchall()
-    assert [tuple(r) for r in run] == [("schedule", "done")] and datetime.fromisoformat(s["next_run_at"]).replace(tzinfo=timezone.utc) > datetime.now(timezone.utc) + timedelta(days=1)
-    schedule._tick()
-    assert len(item_ids()) == 1 and len(live("SELECT 1 FROM sync_runs")) == 1               # not due again: no second run
-
-
-# ---------------------------------------------------------------- 8. reading a sheet
-def test_sheet_links_and_tables():
-    assert sheets.parse_url("https://docs.google.com/spreadsheets/d/1AbC-_x/edit#gid=123") == ("1AbC-_x", "123")
-    assert sheets.parse_url("https://docs.google.com/spreadsheets/d/1AbC/edit?usp=sharing") == ("1AbC", None)
-    with pytest.raises(sheets.SheetError, match="Google Sheets link"):
-        sheets.parse_url("https://example.com/not-a-sheet")
-    rows = sheets._table([["Title", "", "Notes"], ["A", "x", "multi\nline"], ["", "", ""], ["B"]])
-    assert rows == [{"Title": "A", "Notes": "multi\nline"}, {"Title": "B"}]                 # blank rows and untitled columns dropped, short rows tolerated
-
-
-class FakeResponse:
-    def __init__(self, status=200, content=b"", ctype="text/csv"):
-        self.status_code, self.content, self.headers = status, content, {"content-type": ctype}
-        self.text = content.decode("utf-8-sig", "ignore")
-
-
-def test_reading_a_link_shared_sheet_and_explaining_a_private_one(monkeypatch):
-    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
-    seen = {}
-
-    def fake_get(url, timeout=None):
-        seen["url"] = url
-        return FakeResponse(content="﻿Timestamp,Email Address,Title\r\n2025-10-01,a@x.edu,\"Two\nlines\"\r\n".encode("utf-8"))
-    monkeypatch.setattr(sheets.requests, "get", fake_get)
-    rows = sheets.fetch_rows("https://docs.google.com/spreadsheets/d/AAA/edit#gid=77")
-    assert rows == [{"Timestamp": "2025-10-01", "Email Address": "a@x.edu", "Title": "Two\nlines"}] and seen["url"].endswith("/d/AAA/export?format=csv&gid=77")
-    monkeypatch.setattr(sheets.requests, "get", lambda url, timeout=None: FakeResponse(200, b"<!DOCTYPE html><html>Sign in</html>", "text/html"))
-    with pytest.raises(sheets.SheetError, match="Anyone with the link"):
-        sheets.fetch_rows("https://docs.google.com/spreadsheets/d/AAA/edit")
-    monkeypatch.setattr(sheets.requests, "get", lambda url, timeout=None: (_ for _ in ()).throw(sheets.requests.ConnectionError()))
-    with pytest.raises(sheets.SheetError, match="Could not reach Google"):
-        sheets.fetch_rows("https://docs.google.com/spreadsheets/d/AAA/edit")
-
-
-def test_testing_a_link_compares_its_columns_with_the_form(monkeypatch):
-    from backend.master.common import uniquify_headers
-    heads = uniquify_headers(blocks.sheet_headers("form_research"))                       # the sheet repeats titles; each column is still checked by position
-    rows = [{**{t: "x" for t in heads if t != "Funding Agency"}, "Some Extra Column": "?"}]
-    monkeypatch.setattr(sheets, "fetch_rows", lambda url: rows)
-    r = sheets.check_source("form_research", "https://docs.google.com/spreadsheets/d/AAA/edit")
-    assert r["rows"] == 1 and r["unknown_columns"] == ["Some Extra Column"] and r["missing_required"] == ["Funding Agency"]
-    assert r["layout_differences"] and "Funding Agency" in " ".join(r["layout_differences"])
-    monkeypatch.setattr(sheets, "fetch_rows", lambda url: [{t: "x" for t in heads}])
-    ok = sheets.check_source("form_research", "https://docs.google.com/spreadsheets/d/AAA/edit")
-    assert ok["missing_required"] == [] and ok["unknown_columns"] == [] and ok["layout_differences"] == []
-    monkeypatch.setattr(sheets, "fetch_rows", lambda url: (_ for _ in ()).throw(sheets.SheetError("The sheet cannot be opened.")))
-    assert client_post_test("form_research", "https://docs.google.com/spreadsheets/d/AAA/edit") == (400, "The sheet cannot be opened.")
-
-
-def client_post_test(form_id, url):
-    os.environ.setdefault("MASTER_SECRET", "s")
-    from backend.master.auth import make_token
-    tok = make_token("ADMIN", "STAFF")
-    r = client.post("/api/sync/test", json={"form_id": form_id, "sheet_url": url}, headers={"Authorization": "Bearer " + tok})
-    return r.status_code, r.json().get("detail")

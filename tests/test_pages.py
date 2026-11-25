@@ -1,4 +1,4 @@
-"""Where each address leads: / is the sign-in page, /homepage/ the faculty forms page, /portal/ and /diary/ the applications."""
+"""Where each address leads: / is the sign-in page, /portal/ and /diary/ the applications."""
 import os
 import sys
 
@@ -16,10 +16,10 @@ def test_root_is_the_sign_in_page_and_nothing_else():
     assert r.status_code == 200
     assert 'id="login-form"' in r.text and "Sign in" in r.text
     assert "Open form" not in r.text                                    # no form links before signing in
-    # staff go to the forms page, students to the diary
+    # staff go to the portal, students to the diary
     assert "STAFF_HOME = '/portal/'" in r.text and "STUDENT_HOME = '/diary/'" in r.text
-    assert "/homepage/home.css" in r.text and client.get("/homepage/home.css").status_code == 200
-    assert client.get("/homepage/assets/logo-psg.jpg").status_code in (200, 404)    # logos are optional files; the path must be the homepage folder
+    assert "/home.css" in r.text and client.get("/home.css").status_code == 200
+    assert client.get("/assets/logo-psg.jpg").status_code in (200, 404)    # logos are optional files; the path must be the sign-in folder
 
 
 def test_old_login_address_redirects_to_root_keeping_next():
@@ -28,18 +28,13 @@ def test_old_login_address_redirects_to_root_keeping_next():
         assert r.status_code in (302, 307) and r.headers["location"] == dst, (src, r.status_code, r.headers.get("location"))
 
 
-def test_forms_homepage_is_login_gated_with_two_choices_and_signout_button():
-    r = client.get("/homepage/")
-    assert r.status_code == 200
-    html = r.text
-    assert 'style="visibility:hidden"' in html and "sessionStorage.getItem('tok')" in html      # hidden until the check passes
-    assert html.count("Open form") == 6                                                          # all the form links are there for faculty
-    assert "<h1>IT Matrix</h1>" in html and "IT Chronicles" not in html
-    assert 'id="go-entry"' not in html and 'id="choose"' not in html                              # the two-card choice page is gone: staff go straight to the portal
-    assert "Go to portal" not in html and 'class="portal-btn"' not in html                        # the old button is gone
-    assert ">Sign in<" not in html                                                               # the old Sign in button is gone
-    signout = html[html.index('id="signout"') - 40: html.index("</button>", html.index('id="signout"')) + 9]
-    assert "<svg" in signout and "Sign out" in signout.split("<svg")[0]                          # an icon button: the label is only title / aria-label
+def test_the_google_forms_page_is_gone_and_its_old_address_leads_to_the_portal():
+    r = client.get("/homepage/", follow_redirects=False)
+    assert r.status_code in (302, 307) and r.headers["location"] == "/portal/"
+    page = client.get("/portal/").text
+    assert "Google Forms" not in page and "/homepage/" not in page
+    for path in ("/api/sync/overview", "/api/master/forms/form_student/template"):
+        assert client.get(path).status_code in (401, 404, 405), path             # gone (an unknown /api/ address asks for a sign-in first)
 
 
 def test_applications_still_served_and_send_signed_out_users_to_root():
@@ -50,21 +45,20 @@ def test_applications_still_served_and_send_signed_out_users_to_root():
 
 
 def test_every_application_loads_the_guided_tour_and_has_a_help_slot():
-    """Forms page, staff portal, student diary and newsletter studio each load the tour engine and the shared tour texts."""
-    for page in ("/homepage/", "/portal/", "/diary/", "/newsletter/"):
+    """Staff portal, student diary and newsletter studio each load the tour engine and the shared tour texts."""
+    for page in ("/portal/", "/diary/", "/newsletter/"):
         html = client.get(page).text
         assert 'id="help-host"' in html, page                              # where the Help button is placed
         assert "tour.css" in html and "tour.js" in html and "tours.js" in html, page
     for asset in ("/portal/tour.js", "/portal/tours.js", "/portal/tour.css"):
         assert client.get(asset).status_code == 200, asset
     tours = client.get("/portal/tours.js").text
-    for entry in ("Tours.fetchMe('tok')", "app: 'home'", "app: 'portal'", "app: 'diary'", "app: 'studio'"):
-        assert entry in tours or entry in client.get("/homepage/").text, entry
+    for entry in ("app: 'portal'", "app: 'diary'", "app: 'studio'"):
+        assert entry in tours, entry
     # each app starts its tour from its own start-up code
     assert "Tours.portal(me, token)" in client.get("/portal/portal.js").text
     assert "Tours.diary(me, token)" in client.get("/diary/diary.js").text
     assert "Tours.studio(r.me, r.token)" in client.get("/newsletter/app.js").text
-    assert "Tours.home(r.me, r.token)" in client.get("/homepage/").text
 
 
 def test_health_check_answers_without_signing_in(monkeypatch, tmp_path):
@@ -101,5 +95,5 @@ def test_demo_service_files_are_safe_and_complete():
     assert "config.default" in read("Dockerfile") and "DEMO" in read("docker-entrypoint.sh")
     html = client.get("/").text
     assert "demo-box" in html and "/api/demo/info" in html and "/portal/demo.js" in html
-    for page in ("/homepage/", "/portal/", "/diary/", "/newsletter/"):
+    for page in ("/portal/", "/diary/", "/newsletter/"):
         assert "/portal/demo.js" in client.get(page).text, page

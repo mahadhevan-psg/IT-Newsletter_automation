@@ -53,8 +53,34 @@ def init_db():
 
     # Load default configs into DB if empty
     _seed_initial_configs(conn)
+    sync_sections(conn)
     conn.close()
     print("Database initialized successfully at:", DB_PATH)
+
+def sync_sections(conn=None):
+    """The newsletter's sections and categories follow config/section_categories.json (what the Form builder publishes): names, order and
+    whether a section is included; new sections and categories are added. Nothing is deleted, so older entries keep their place."""
+    path = os.path.join(os.path.dirname(__file__), "..", "config", "section_categories.json")
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        sections = json.load(f).get("sections", [])
+    own = conn is None
+    conn = conn or get_connection()
+    try:
+        for sec in sections:
+            conn.execute("INSERT INTO sections (section_id, name, display_order, enabled, template_file) VALUES (?, ?, ?, ?, ?) "
+                         "ON CONFLICT(section_id) DO UPDATE SET name = excluded.name, display_order = excluded.display_order, enabled = excluded.enabled",
+                         (sec["section_id"], sec["name"], sec.get("display_order", 10), sec.get("enabled", True), sec.get("template_file", "")))
+            for cat in sec.get("subcategories", []):
+                conn.execute("INSERT INTO categories (category_id, section_id, name, display_order) VALUES (?, ?, ?, ?) "
+                             "ON CONFLICT(category_id) DO UPDATE SET section_id = excluded.section_id, name = excluded.name",
+                             (cat["category_id"], sec["section_id"], cat["name"], cat.get("display_order", 10)))
+        conn.commit()
+    finally:
+        if own:
+            conn.close()
+
 
 def _seed_initial_configs(conn):
     cursor = conn.cursor()

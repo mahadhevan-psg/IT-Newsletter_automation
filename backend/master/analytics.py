@@ -53,7 +53,7 @@ def student_section(conn, user: User, ay: Optional[str], class_id, programme) ->
         "participation_rate": round(100 * achievers / active, 1) if active else 0,
         "by_category": _series(conn, f"SELECT category, COUNT(DISTINCT submission_id) {base} GROUP BY category ORDER BY 2 DESC", args),
         "by_level": _series(conn, f"SELECT level, COUNT(DISTINCT submission_id) {base} GROUP BY level ORDER BY 2 DESC", args),
-        "by_domain": _series(conn, f"SELECT domain, COUNT(DISTINCT submission_id) {base} GROUP BY domain ORDER BY 2 DESC", args),
+        "by_kind": _series(conn, f"SELECT CASE (SELECT k.entry_kind FROM student_achievements k WHERE k.submission_id = v_student_achievements.submission_id) WHEN 'PARTICIPATION' THEN 'Participation' ELSE 'Achievement' END, COUNT(DISTINCT submission_id) {base} GROUP BY 1 ORDER BY 2 DESC", args),
         "by_year": _series(conn, f"SELECT ay_id, COUNT(DISTINCT submission_id) {base} GROUP BY ay_id ORDER BY 1", args),
         "per_class": per_class,
         "top_students": [dict(r) for r in conn.execute(

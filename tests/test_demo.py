@@ -84,13 +84,13 @@ def test_every_demo_login_works_and_sees_the_right_things(demo):
         assert login["user"]["must_change"] is False, role                                      # nobody is forced to change a shared password
         users[role] = login
     assert users["Admin"]["user"]["all_access"] and users["Head of Department"]["user"]["all_access"]
-    pc = client.get("/api/master/classes", headers=auth(users["Programme Coordinator (UG)"])).json()
-    assert {c["grp"] for c in pc} == {"G1", "G2"} and {c["programme"] for c in pc} == {"UG"}   # both groups, as asked
     tutor = users["Class tutor"]["user"]
     assert len(tutor["tutor_class_ids"]) == 1
-    mine = client.get("/api/master/students?limit=500", headers=auth(users["Class tutor"])).json()
-    assert 20 <= mine["total"] <= 30                                                            # exactly their own class
-    assert client.get("/api/master/students", headers=auth(users["Faculty"])).json()["total"] == 0
+    everyone = client.get("/api/master/students?limit=500", headers=auth(users["Admin"])).json()["total"]
+    for role in ("Programme Coordinator (UG)", "Class tutor", "Faculty"):                      # all faculty read what the Admin reads
+        assert client.get("/api/master/students?limit=500", headers=auth(users[role])).json()["total"] == everyone, role
+    editable = [c for c in client.get("/api/master/classes", headers=auth(users["Class tutor"])).json() if c["can_edit"]]
+    assert [c["class_id"] for c in editable] == tutor["tutor_class_ids"]                       # and change only their own class
     comps = client.get("/api/diary/companies", headers=auth(users["Student"])).json()
     assert len(comps["years"]) == 3 and len(comps["companies"]) >= 10
 
@@ -111,7 +111,7 @@ def test_every_screen_has_something_to_show(demo):
     assert sp["person"]["id"] == student
     offers = client.get("/api/master/placements/offers?limit=500", headers=admin).json()
     assert offers["total"] >= 80
-    export = client.get("/api/master/works/export?group=RESEARCH&columns=title,date,authors,quartile", headers=admin)
+    export = client.get("/api/master/works/export?group=RESEARCH&columns=title,date,authors,f_quartile", headers=admin)
     assert export.status_code == 200 and export.content.count(b"\n") > 70
 
 
@@ -176,7 +176,7 @@ def test_outside_demo_mode_nothing_demo_is_active(monkeypatch, tmp_path):
                        headers={"Authorization": "Bearer " + r.json()["token"]}).status_code == 200
 
 
-def test_demo_has_approvals_and_a_working_pretend_sheet(demo):
+def test_demo_has_entries_waiting_for_approval(demo):
     from backend.demo import data as D
     hod, tutor = sign_in(D.HOD), sign_in(D.TUTORS[2])
     s = client.get("/api/review/summary", headers=auth(hod)).json()
@@ -192,8 +192,3 @@ def test_demo_has_approvals_and_a_working_pretend_sheet(demo):
         emp = conn.execute("SELECT assigned_emp_id FROM staged_items WHERE item_id = ?", (ret["item_id"],)).fetchone()[0]
     f = sign_in(emp)
     assert client.get("/api/review/summary", headers=auth(f)).json()["returned_to_me"] >= 1
-    # Pull now brings in a few new responses
-    before = client.get("/api/review/summary", headers=auth(hod)).json()["to_review"]
-    r = client.post("/api/sync/run", json={}, headers=auth(hod))
-    assert r.status_code == 200 and r.json()["new_or_updated"] >= 5, r.text
-    assert client.get("/api/review/summary", headers=auth(hod)).json()["to_review"] > before

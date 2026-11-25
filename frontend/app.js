@@ -13,7 +13,7 @@ let issueInfo = null;
 const FRONT_PREVIEWS = [{ template_id: "front_cover", name: "Cover page" }, { template_id: "front_hod", name: "HOD's Desk" }, { template_id: "front_editorial", name: "Editorial page" }];
 let front = null;          // HOD desk, vision / mission, editorial board
 
-let currentFormId = null;          // shared by Forms + Layout
+let currentFormId = null;          // the form whose questions the Layout tab offers
 let respFilter = "";               // "", Approved, Rejected, featured
 let layout = [];                   // blocks on the canvas
 let layoutLoaded = false;
@@ -21,7 +21,6 @@ let currentLayoutId = "";          // "" = unsaved / default
 let selectedBlockId = null;
 let sample = {};
 let dragSrc = null;
-let addMode = "csv";
 
 // ---------------------------------------------------------------- tags
 const TAG_LABEL = {
@@ -99,7 +98,6 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
   if (!sessionStorage.getItem("tok")) { signInAgain(); return; }
   document.querySelectorAll("#main-tabs .tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
-  await syncMaster();     // quietly, so the Responses tab already shows what the master database holds
   try {
     [canonicalTags, sections, forms, entries, savedLayouts, auditLogs, sectionLayouts, builtinLayouts, front] = await Promise.all([
       api("GET", "/api/forms/canonical-tags"), api("GET", "/api/sections"), api("GET", "/api/forms"),
@@ -112,418 +110,29 @@ async function init() {
     const i = list[0];
     issueInfo = i || null;
   }).catch(() => {});
-  renderOverview();
-  renderFormsView();
   renderResponses();
   renderPublish();
   Tours.fetchMe('tok').then(r => { if (r) Tours.studio(r.me, r.token); });     // Help button + first-visit tour
 }
 
 async function switchTab(tab) {
-  await flushPendingSave();
   document.querySelectorAll("#main-tabs .tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "tab-" + tab));
   if (tab === "layout") initLayoutView();
   if (tab === "front") renderFront();
-  if (tab === "overview") renderOverview();
-  if (tab === "publish") renderPublish();
-}
-
-// Entries come from the master database: bring in whatever it holds that the newsletter does not have yet.
-async function syncMaster(btn) {
-  if (btn) { btn.disabled = true; btn.textContent = "Syncing…"; }
-  try {
-    const r = await api("POST", "/api/entries/sync-master", {});
-    if (btn) toast(r.created ? `${r.created} new response${r.created > 1 ? "s" : ""} from the master database` : "Already up to date with the master database");
-    if (r.failed?.length) toast(`${r.failed.length} could not be imported`, true);
-    if (r.created && btn) await reloadEntries();
-    return r;
-  } catch (e) { if (btn) toast(e.message, true); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = "Sync from master database"; } }
+  if (tab === "responses" || tab === "publish") await reloadEntries().catch(e => toast(e.message, true));     // what the database holds now
 }
 
 async function reloadEntries() {
   [entries, auditLogs] = await Promise.all([api("GET", "/api/entries"), api("GET", "/api/audit-logs")]);
-  renderOverview(); renderResponses(); renderPublish();
+  renderResponses(); renderPublish();
 }
 
-async function reloadFormsAndSections() {
-  [sections, forms] = await Promise.all([api("GET", "/api/sections"), api("GET", "/api/forms")]);
-  if (!forms.some(f => f.form_id === currentFormId)) currentFormId = forms[0]?.form_id || null;
-  renderFormsView(); renderOverview(); renderResponses(); renderPublish();
-}
-
-// ================================================================ OVERVIEW
-function renderOverview() {
-  $("stat-total").textContent = entries.length;
-  $("stat-rejected").textContent = entries.filter(e => e.approval_status === "Rejected").length;
-  $("stat-approved").textContent = entries.filter(e => e.approval_status === "Approved").length;
-  $("stat-featured").textContent = entries.filter(e => e.featured_flag).length;
-
-  $("overview-sections").querySelector("tbody").innerHTML = sections.map(s => {
-    const own = entries.filter(e => e.section_id === s.section_id);
-    return `<tr><td><strong>${esc(s.name)}</strong></td><td class="num">${own.length}</td><td class="num">${own.filter(e => e.approval_status === "Approved").length}</td></tr>`;
-  }).join("") || `<tr><td colspan="3" class="empty">No sections yet. Create a form to add one.</td></tr>`;
-
-  $("activity-log").innerHTML = auditLogs.slice(0, 20).map(l =>
-    `<div class="log-row"><b>${esc((l.action || "").replace(/_/g, " ").toLowerCase())}</b> ${esc(l.details || "")}<br><small>${esc(new Date(l.timestamp).toLocaleString())}</small></div>`
-  ).join("") || `<div class="empty">Nothing yet.</div>`;
-}
-
-function openResponses(filter) {
-  respFilter = filter;
-  switchTab("responses");
-  renderResponses();
-}
-
-// ================================================================ FORMS
-let pendingSave = false;
-const flushSave = debounce(() => { if (pendingSave) saveCurrentForm(); }, 700);
-
-function queueSave() {
-  pendingSave = true;
-  setSaveState("Saving…");
-  flushSave();
-}
-
-function setSaveState(txt, ok) {
-  const el = $("save-state");
-  if (el) { el.textContent = txt; el.classList.toggle("ok", !!ok); }
-}
-
-async function saveCurrentForm() {
-  pendingSave = false;
-  const form = curForm();
-  if (!form) return;
-  const catCol = form.columns.find(c => c.canonical_tag === "category_id");
-  form.category_field = catCol ? catCol.name : "";
-  try {
-    await api("PUT", `/api/forms/${form.form_id}`, {
-      form_name: form.form_name,
-      section_id: form.section_id,
-      category_field: form.category_field,
-      category_map: form.category_map || {},
-      columns: form.columns.filter(c => c.name.trim())
-    });
-    setSaveState("Saved", true);
-    renderFormsList();
-  } catch (e) {
-    setSaveState("Not saved");
-    toast("Could not save: " + e.message, true);
-  }
-}
-
-function renderFormsView() {
-  renderFormsList();
-  renderFormEditor();
-}
-
-function renderFormsList() {
-  $("forms-list").innerHTML = forms.map(f => `
-    <button class="form-item ${f.form_id === currentFormId ? "active" : ""}" onclick="selectForm('${f.form_id}')">
-      <span class="fi-name">${esc(f.form_name.replace(/^IT Chronicles\s*[-–]\s*/, ""))}</span>
-      <span class="fi-sub">${esc(secName(f.section_id))} · ${f.columns.length} questions</span>
-    </button>`).join("");
-}
-
-async function selectForm(id) {
-  await flushPendingSave();
-  currentFormId = id;
-  renderFormsView();
-}
-
-function tagSelectHtml(col) {
-  const known = isKnownTag(col.canonical_tag) && col.canonical_tag !== "custom";
-  const otherVal = known ? "custom" : col.canonical_tag;
-  const opt = t => `<option value="${t}" ${t === col.canonical_tag ? "selected" : ""}>${tagLabel(t)}</option>`;
-  return `
-    <optgroup label="Shown in newsletter">${SHOWN_TAGS.map(opt).join("")}</optgroup>
-    <optgroup label="Used behind the scenes">${INTERNAL_TAGS.map(opt).join("")}</optgroup>
-    <option value="${esc(otherVal)}" ${!known ? "selected" : ""}>Other (not shown)</option>`;
-}
-
-function renderFormEditor() {
-  const el = $("form-editor");
-  const form = curForm();
-  if (!form) {
-    el.innerHTML = `<div class="card empty"><p>No forms yet.</p><p style="margin-top:10px"><button class="btn primary" onclick="openNewForm()">Create your first form</button></p></div>`;
-    return;
-  }
-  const hasCat = form.columns.some(c => c.canonical_tag === "category_id");
-  el.innerHTML = `
-    <div class="editor-head">
-      <input class="title-input" id="form-title" value="${esc(form.form_name)}" oninput="onFormTitle(this.value)">
-      <span class="save-state" id="save-state"></span>
-      <button class="btn danger-ghost sm" onclick="deleteForm()">Delete form</button>
-    </div>
-    <div class="meta-row">
-      <span>Goes into section</span>
-      <select onchange="onFormSection(this.value)">
-        ${sections.map(s => `<option value="${s.section_id}" ${s.section_id === form.section_id ? "selected" : ""}>${esc(s.name)}</option>`).join("")}
-      </select>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><h3>Questions <span class="muted">(${form.columns.length})</span></h3></div>
-      <p class="hint" style="margin-top:-6px">Each question from your Google Form, and where its answer appears in the newsletter. We guess this automatically — fix only what looks wrong.</p>
-      <div id="q-list">${form.columns.map((c, i) => questionRowHtml(c, i)).join("") || `<div class="empty">No questions yet — add some below.</div>`}</div>
-      <div class="add-q">
-        <div class="row">
-          <textarea id="add-q-text" class="input" rows="2" placeholder="Type a question, paste a header row, or paste the form’s Apps Script"></textarea>
-          <button class="btn primary" onclick="addQuestions()">Add &amp; detect</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><h3>Sub-sections</h3></div>
-      <p class="hint" style="margin-top:-6px">${hasCat
-        ? "Answers to the question marked “Sub-section picker” are sorted into these groups."
-        : "Mark one question as “Sub-section picker” to sort responses into groups."}</p>
-      <div class="chips" id="subcat-chips">${subcatChipsHtml(form)}</div>
-      <div style="display:flex; gap:8px; max-width:420px">
-        <input id="subcat-input" class="input" placeholder="Add a sub-section and press Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubcat();}">
-        <button class="btn" onclick="addSubcat()">Add</button>
-      </div>
-    </div>`;
-}
-
-function questionRowHtml(c, i) {
-  const unsure = !isKnownTag(c.canonical_tag) || c.canonical_tag === "custom";
-  return `
-    <div class="q-row ${unsure ? "unsure" : ""}" id="q-${i}">
-      <input class="input" value="${esc(c.name)}" onchange="onQName(${i}, this.value)">
-      <span class="q-arrow">→</span>
-      <select class="input q-sel" onchange="onQTag(${i}, this.value)">${tagSelectHtml(c)}</select>
-      <button class="icon-x" title="Remove question" onclick="removeQ(${i})">×</button>
-      ${unsure ? `<div class="q-note">Not recognised. Pick what this question is, or leave it as Other to keep it out of the newsletter.</div>` : ""}
-    </div>`;
-}
-
-function subcatChipsHtml(form) {
-  const labels = Object.keys(form.category_map || {});
-  return labels.length
-    ? labels.map(l => `<span class="chip">${esc(l)}<button title="Remove" onclick="removeSubcat(this.dataset.l)" data-l="${esc(l)}">×</button></span>`).join("")
-    : `<span class="muted">None yet</span>`;
-}
-
-function onFormTitle(v) {
-  const form = curForm(); if (!form) return;
-  form.form_name = v;
-  queueSave();
-}
-function onFormSection(v) {
-  const form = curForm(); if (!form) return;
-  form.section_id = v;
-  queueSave();
-}
-function onQName(i, v) {
-  const form = curForm(); if (!form) return;
-  form.columns[i].name = v.trim();
-  queueSave();
-}
-function onQTag(i, tag) {
-  const form = curForm(); if (!form) return;
-  const col = form.columns[i];
-  col.canonical_tag = tag;
-  col.type = TAG_TYPE[tag] || "text";
-  if (tag === "category_id") {
-    form.columns.forEach((c, j) => { if (j !== i && c.canonical_tag === "category_id") { c.canonical_tag = "custom"; c.type = "text"; } });
-    col.required = true;
-    renderFormEditor();
-  } else {
-    $("q-" + i).outerHTML = questionRowHtml(col, i);
-  }
-  queueSave();
-}
-function removeQ(i) {
-  const form = curForm(); if (!form) return;
-  form.columns.splice(i, 1);
-  renderFormEditor();
-  queueSave();
-}
-function addSubcat() {
-  const form = curForm(); const inp = $("subcat-input");
-  const v = inp.value.trim();
-  if (!form || !v) return;
-  form.category_map = form.category_map || {};
-  if (!form.category_map[v]) form.category_map[v] = "cat_" + slug(v).slice(0, 24);
-  inp.value = "";
-  $("subcat-chips").innerHTML = subcatChipsHtml(form);
-  inp.focus();
-  queueSave();
-}
-function removeSubcat(label) {
-  const form = curForm(); if (!form) return;
-  delete form.category_map[label];
-  $("subcat-chips").innerHTML = subcatChipsHtml(form);
-  queueSave();
-}
-
-async function addQuestions() {
-  const form = curForm(); const box = $("add-q-text");
-  const text = box.value.trim();
-  if (!form || !text) return;
-  const before = form.columns.length;
-  try {
-    await flushPendingSave();
-    if (/FormApp/.test(text)) {   // the Apps Script itself was pasted: take its questions
-      const parsed = await api("POST", "/api/forms/parse-script", { script: text });
-      const src = parsed.find(p => p.existing_form_id === form.form_id) || parsed[0];
-      const have = new Set(form.columns.map(c => c.name));
-      await api("PUT", `/api/forms/${form.form_id}`, {
-        columns: form.columns.concat(src.columns.filter(c => !have.has(c.name))),
-        category_map: { ...src.category_map, ...(form.category_map || {}) },
-        category_field: form.category_field || src.category_field
-      });
-    } else {
-      await api("POST", `/api/forms/${form.form_id}/columns/bulk`, { headers_text: text });
-    }
-    await reloadFormsAndSections();
-    await autoPickCategory(currentFormId);
-    toast(`Added ${curForm().columns.length - before} question(s)`);
-  } catch (e) { toast(e.message, true); }
-}
-
-// If a pasted header was detected as the sub-section picker, make it the form's category field
-async function autoPickCategory(formId) {
-  const form = forms.find(f => f.form_id === formId);
-  const cat = form?.columns.find(c => c.canonical_tag === "category_id");
-  if (form && cat && form.category_field !== cat.name) {
-    await api("PUT", `/api/forms/${formId}`, { category_field: cat.name });
-    form.category_field = cat.name;
-  }
-}
-
-async function flushPendingSave() { if (pendingSave) await saveCurrentForm(); }
-
-async function deleteForm() {
-  const form = curForm(); if (!form) return;
-  if (!confirm(`Delete “${form.form_name}”? Responses already collected are kept.`)) return;
-  pendingSave = false;
-  try {
-    await api("DELETE", `/api/forms/${form.form_id}`);
-    currentFormId = null;
-    await reloadFormsAndSections();
-    toast("Form deleted");
-  } catch (e) { toast(e.message, true); }
-}
-
-// ---- import from a Google Apps Script (the one that builds the form)
-let scriptForms = [];
-
-function openScriptImport() {
-  $("script-text").value = "";
-  $("script-file").value = "";
-  $("script-results").innerHTML = "";
-  $("script-go").disabled = true;
-  scriptForms = [];
-  openDlg("dlg-script");
-}
-
-async function onScriptFile() {
-  const f = $("script-file").files[0];
-  if (!f) return;
-  $("script-text").value = await f.text();
-  detectScript();
-}
-
-async function detectScript() {
-  const script = $("script-text").value.trim();
-  if (!script) { toast("Paste your Apps Script first", true); return; }
-  try {
-    scriptForms = await api("POST", "/api/forms/parse-script", { script });
-  } catch (e) { $("script-results").innerHTML = `<p class="result err">${esc(e.message)}</p>`; $("script-go").disabled = true; return; }
-  const sectionOpts = `<option value="__new__">New section</option>` + sections.map(s => `<option value="${s.section_id}">${esc(s.name)}</option>`).join("");
-  $("script-results").innerHTML = scriptForms.map((f, i) => {
-    const existing = forms.find(x => x.form_id === f.existing_form_id);
-    const missing = existing ? f.columns.filter(c => !existing.columns.some(x => x.name === c.name)).length : f.columns.length;
-    return `
-      <div class="script-form">
-        <label class="sf-head"><input type="checkbox" id="sf-on-${i}" checked>
-          <span><strong>${esc(f.title.replace(/^IT Chronicles\s*[-–]\s*/, ""))}</strong>
-          <span class="muted">${f.columns.length} questions${f.category_field ? ` · sub-sections from “${esc(f.category_field)}” (${Object.keys(f.category_map).length})` : ""}</span></span></label>
-        <div class="sf-meta">${existing
-          ? `<span class="tag Approved">Already exists</span> <span class="muted">${missing ? `${missing} new question(s) will be added` : "nothing new to add"}</span>`
-          : `<span class="tag">New form</span> <select class="input compact" id="sf-sec-${i}">${sectionOpts}</select>`}</div>
-      </div>`;
-  }).join("");
-  $("script-go").disabled = false;
-}
-
-async function importScriptForms() {
-  let done = 0, last = null;
-  try {
-    for (let i = 0; i < scriptForms.length; i++) {
-      if (!$(`sf-on-${i}`).checked) continue;
-      const f = scriptForms[i];
-      const existing = forms.find(x => x.form_id === f.existing_form_id);
-      if (existing) {
-        const have = new Set(existing.columns.map(c => c.name));
-        const columns = existing.columns.concat(f.columns.filter(c => !have.has(c.name)));
-        const map = { ...f.category_map, ...(existing.category_map || {}) };
-        await api("PUT", `/api/forms/${existing.form_id}`, {
-          columns, category_map: map, category_field: existing.category_field || f.category_field
-        });
-        last = existing.form_id;
-      } else {
-        let id = "form_" + (slug(f.title.replace(/^IT Chronicles\s*[-–]\s*/, "")) || "new");
-        for (let n = 2; forms.some(x => x.form_id === id); n++) id += "_" + n;
-        const sec = $(`sf-sec-${i}`).value;
-        const payload = { form_id: id, form_name: f.title, section_name: f.title.replace(/^IT Chronicles\s*[-–]\s*/, "").replace(/\s*Submission Form$/i, ""),
-          columns: f.columns, category_field: f.category_field, category_map: f.category_map };
-        if (sec !== "__new__") payload.section_id = sec;
-        await api("POST", "/api/forms", payload);
-        last = id;
-      }
-      done++;
-    }
-    closeDlg("dlg-script");
-    if (last) currentFormId = last;
-    await reloadFormsAndSections();
-    toast(`Imported ${done} form(s) from the script`);
-  } catch (e) { toast(e.message, true); }
-}
-
-// ---- new form dialog
-const STANDARD_QUESTIONS = [
-  ["Timestamp", "submission_timestamp"], ["Email Address", "submitter_email"], ["Contributor / Full Name", "author_or_person"],
-  ["Title of Achievement / Event / Initiative", "title"], ["Host Organization / Venue / Agency", "organization_or_venue"],
-  ["Date of Occurrence", "event_date"], ["Key Impact Badge / Metric", "badge_tag"], ["Grant / Prize / Registration Number", "grant_or_prize_amount"],
-  ["Executive Summary / Description", "description"], ["Photo Cloud URL", "photo_url"], ["Photo Caption & Persons in Picture", "photo_caption"],
-  ["Evidence / Proof Document Link", "evidence_url"]
-].map(([name, tag]) => ({ name, canonical_tag: tag, type: TAG_TYPE[tag] || "text", required: ["submitter_email", "author_or_person", "title", "event_date", "description"].includes(tag) }));
-
-function openNewForm() {
-  $("nf-name").value = "";
-  $("nf-headers").value = "";
-  $("nf-section").innerHTML = `<option value="__new__">Create a new section for it</option>` +
-    sections.map(s => `<option value="${s.section_id}">${esc(s.name)}</option>`).join("");
-  openDlg("dlg-new-form");
-  $("nf-name").focus();
-}
-
-async function createForm() {
-  const name = $("nf-name").value.trim();
-  const headers = $("nf-headers").value.trim();
-  const secVal = $("nf-section").value;
-  if (!name) { toast("Give the form a name", true); return; }
-
-  let id = "form_" + (slug(name) || "new");
-  for (let n = 2; forms.some(f => f.form_id === id); n++) id = `form_${slug(name)}_${n}`;
-
-  try {
-    const payload = { form_id: id, form_name: name, section_name: name, columns: headers ? [] : STANDARD_QUESTIONS };
-    if (secVal !== "__new__") payload.section_id = secVal;
-    await api("POST", "/api/forms", payload);
-    if (headers) await api("POST", `/api/forms/${id}/columns/bulk`, { headers_text: headers });
-    currentFormId = id;
-    closeDlg("dlg-new-form");
-    await reloadFormsAndSections();
-    await autoPickCategory(id);
-    renderFormEditor();
-    toast(`“${name}” created`);
-  } catch (e) { toast(e.message, true); }
+async function refreshEntries(btn) {
+  btn.disabled = true;
+  try { await reloadEntries(); toast("Up to date with the department database"); }
+  catch (e) { toast(e.message, true); }
+  finally { btn.disabled = false; }
 }
 
 // ================================================================ LAYOUT (canvas)
@@ -656,9 +265,7 @@ function initLayoutView() {
 
 // The form supplies the column list and example content; the layout itself belongs to no form or section.
 async function onLayoutFormChange() {
-  await flushPendingSave();
   currentFormId = $("lay-form").value;
-  renderFormsList();
   renderSampleOptions();
   renderCanvas();
   renderInspector();
@@ -1134,7 +741,7 @@ function renderResponses() {
           ${e.approval_status !== "Rejected" ? `<button class="btn sm" onclick="setStatus('${esc(e.entry_id)}','Rejected')">Reject</button>` : ""}
         </div>
       </div>
-    </article>`).join("") || `<div class="card empty">${entries.length ? "Nothing matches this filter." : "No responses yet. Use Import CSV or Add response."}</div>`;
+    </article>`).join("") || `<div class="card empty">${entries.length ? "Nothing matches this filter." : "No entries yet. They appear here once they are approved in the portal."}</div>`;
 }
 
 function setRespFilter(k) { respFilter = k; renderResponses(); }
@@ -1154,103 +761,6 @@ async function toggleFeatured(id) {
     await api("POST", `/api/entries/${id}/status`, { approval_status: e.approval_status, featured_flag: !e.featured_flag });
     await reloadEntries();
   } catch (err) { toast(err.message, true); }
-}
-
-// ---- add responses dialog
-function openAddResponses(mode) {
-  const opts = forms.map(f => `<option value="${f.form_id}" ${f.form_id === currentFormId ? "selected" : ""}>${esc(f.form_name.replace(/^IT Chronicles\s*[-–]\s*/, ""))}</option>`).join("");
-  $("csv-form").innerHTML = opts;
-  $("single-form").innerHTML = opts;
-  $("csv-file").value = "";
-  $("csv-file-label").textContent = "Choose a CSV or Excel file";
-  $("csv-drop").classList.remove("has");
-  $("csv-detect-note").textContent = "";
-  setAddMode(mode);
-  openDlg("dlg-add");
-}
-
-function setAddMode(mode) {
-  addMode = mode;
-  document.querySelectorAll("#add-mode button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
-  $("add-csv").classList.toggle("hidden", mode !== "csv");
-  $("add-single").classList.toggle("hidden", mode !== "single");
-  $("add-submit").textContent = mode === "csv" ? "Import" : "Add response";
-  if (mode === "single") renderSingleFields();
-}
-
-function parseCsvLine(line) {
-  const out = []; let cur = ""; let q = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
-    else if (c === "," && !q) { out.push(cur); cur = ""; }
-    else cur += c;
-  }
-  out.push(cur);
-  return out.map(s => s.trim().replace(/^﻿/, ""));
-}
-
-// Pick the form whose questions best match the file's header row
-async function onCsvPicked() {
-  const file = $("csv-file").files[0];
-  if (!file) return;
-  $("csv-file-label").textContent = file.name;
-  $("csv-drop").classList.add("has");
-  $("csv-detect-note").textContent = "";
-  if (!/\.csv$/i.test(file.name)) return;
-  const head = (await file.slice(0, 8192).text()).split(/\r?\n/)[0];
-  const headers = new Set(parseCsvLine(head).map(h => h.toLowerCase()));
-  let best = null, bestScore = 0;
-  forms.forEach(f => {
-    const score = f.columns.filter(c => headers.has(c.name.toLowerCase())).length;
-    if (score > bestScore) { best = f; bestScore = score; }
-  });
-  if (best && bestScore >= 2) {
-    $("csv-form").value = best.form_id;
-    $("csv-detect-note").textContent = "— matched automatically";
-  }
-}
-
-function renderSingleFields() {
-  const form = forms.find(f => f.form_id === $("single-form").value);
-  const keep = form && $("single-fields").querySelector(`[data-q="${CSS.escape(form.category_field || "")}"]`)?.value;      // the chosen category survives the redraw
-  const category = keep || Object.keys(form?.category_map || {})[0];
-  // a form with several categories asks only the questions of the chosen one
-  $("single-fields").innerHTML = (form?.columns || []).filter(c => c.canonical_tag !== "submission_timestamp" && (!c.categories?.length || c.categories.includes(category))).map(c => {
-    const label = `<label>${esc(c.name)}${c.required ? " *" : ""}</label>`;
-    if (c.name === form.category_field && Object.keys(form.category_map || {}).length)
-      return `<div class="field">${label}<select class="input" data-q="${esc(c.name)}" onchange="renderSingleFields()">${Object.keys(form.category_map).map(o => `<option ${o === category ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
-    if (c.type === "textarea") return `<div class="field">${label}<textarea class="input" rows="3" data-q="${esc(c.name)}"></textarea></div>`;
-    return `<div class="field">${label}<input class="input" type="${c.type === "date" ? "date" : "text"}" data-q="${esc(c.name)}"></div>`;
-  }).join("");
-}
-
-async function submitAdd() {
-  try {
-    if (addMode === "csv") {
-      const file = $("csv-file").files[0];
-      if (!file) { toast("Choose a file first", true); return; }
-      const body = new FormData();
-      body.append("form_id", $("csv-form").value);
-      body.append("file", file);
-      const r = await api("POST", "/api/entries/ingest-csv", body);
-      toast(`Imported ${r.total_ingested} response(s)` + (r.duplicates_skipped ? `, skipped ${r.duplicates_skipped} already in the list` : ""));
-    } else {
-      const form = forms.find(f => f.form_id === $("single-form").value);
-      const raw = {};
-      let missing = false;
-      $("single-fields").querySelectorAll("[data-q]").forEach(i => {
-        raw[i.dataset.q] = i.value;
-        const col = form.columns.find(c => c.name === i.dataset.q);
-        if (col?.required && !i.value.trim()) missing = true;
-      });
-      if (missing) { toast("Please fill in the required fields (*)", true); return; }
-      await api("POST", "/api/entries/ingest", { form_id: form.form_id, raw_data: raw });
-      toast("Response added");
-    }
-    closeDlg("dlg-add");
-    await reloadEntries();
-  } catch (e) { toast(e.message, true); }
 }
 
 // ================================================================ PUBLISH
@@ -1455,7 +965,7 @@ function renderFrontPreview() {
   const adv = pick("advisor", [f.advisor.name, f.advisor.photo].some(v => String(v || "").trim()));
   const students = pick("students", f.students.some(s => s.name.trim() || s.photo)).filter(s => s.name.trim() || s.photo);
   const i = issueInfo || {};
-  const meta = [i.volume ? `Vol. ${i.volume} Issue ${i.issue}` : "", i.academic_year, i.semester, i.publication_period].filter(Boolean).join(" · ");
+  const meta = [i.issue ? `Issue ${i.issue}` : "", i.academic_year, i.semester, i.publication_period].filter(Boolean).join(" · ");
   const sub = [i.department_name, i.cover_title].filter(Boolean).join(" · ");
   const photo = (p, style = "") => fpPhoto(p) ? `<img class="fp-frame" style="${style}" src="${esc(fpPhoto(p))}" alt="" onerror="this.onerror=null; this.src=DEMO_PHOTO">` : "";
   const person = (p, name, cap, w) => `<div class="fp-person">${photo(p, `width:${w}px`)}

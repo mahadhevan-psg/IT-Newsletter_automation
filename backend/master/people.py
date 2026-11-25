@@ -420,9 +420,3 @@ def upload_faculty(conn, admin: User, content: bytes) -> Dict[str, Any]:
             conn.execute("RELEASE s")
             errors.append({"row": n, "emp_id": d["emp_id"], "message": e.detail})
     return {"added": added, "updated": updated, "errors": errors, "credentials": credentials}
-
-
-def form_choices(conn) -> str:
-    rows = conn.execute("SELECT emp_id, full_name FROM faculty WHERE status = 'Active' AND emp_id != 'ADMIN' ORDER BY full_name").fetchall()
-    body = "".join(f'  "{r["emp_id"]} - {r["full_name"]}",\n' for r in rows)
-    return f"const FACULTY_CHOICES = [\n{body}];\n"

@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from docx import Document
 from backend.services.docx_generator import DOCXGenerator, dedupe_entries, ensure_grid, compact
-from backend.services.config_service import parse_form_script
 
 ENTRY = {
     "entry_id": "E1", "category_id": "cat_x", "featured_flag": 0,
@@ -99,28 +98,6 @@ class LayoutRenderingTest(unittest.TestCase):
         self.assertEqual(len(dedupe_entries([ENTRY, dict(ENTRY, entry_id="E2")])), 1)
 
 
-class ScriptParsingTest(unittest.TestCase):
-    SCRIPT = '''
-    function a() {
-      const form = FormApp.create("My Form");
-      form.setTitle("ignored");
-      form.addTextItem().setTitle("Full Name").setRequired(true);
-      const cat = form.addMultipleChoiceItem();
-      cat.setTitle("Topic").setChoiceValues(["One", "Two", 'Three']);
-      form.addPageBreakItem().setTitle("Section 2");
-      form.addParagraphTextItem().setTitle("Abstract");
-    }
-    function b() { const form = FormApp.create("Second"); form.addDateItem().setTitle("When"); }
-    '''
-
-    def test_questions_in_order_with_choices(self):
-        forms = parse_form_script(self.SCRIPT)
-        self.assertEqual([f["title"] for f in forms], ["My Form", "Second"])
-        q = forms[0]["questions"]
-        self.assertEqual([x["name"] for x in q], ["Full Name", "Topic", "Abstract"])
-        self.assertTrue(q[0]["required"])
-        self.assertEqual(q[1]["choices"], ["One", "Two", "Three"])
-        self.assertEqual(forms[1]["questions"][0]["name"], "When")
 
 
 if __name__ == "__main__":

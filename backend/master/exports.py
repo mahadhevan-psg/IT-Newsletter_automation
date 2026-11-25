@@ -13,28 +13,26 @@ from fastapi import HTTPException
 from backend.master import placements, submissions
 from backend.master.auth import User
 from backend.master.common import EFF_CLASS
+from backend.master.ingest import DETAIL_TABLE
 from backend.master.works import EXPORT_LIMIT, _safe
-
-FORM_NAMES = "CASE fs.form_type WHEN 'STUDENT' THEN 'Student achievement' WHEN 'RESEARCH' THEN 'Research & innovation' WHEN 'FACULTY' THEN 'Faculty achievement' WHEN 'DEPARTMENT' THEN 'Departmental highlight' WHEN 'OUTREACH' THEN 'Industry, alumni & outreach' ELSE fs.form_type END"
-
 
 def _col(key, label, part, expr):
     return {"key": key, "label": label, "part": part, "expr": expr}
 
 
 SUBMISSIONS = [
-    _col("date", "Date", "Basics", "fs.event_date"), _col("form", "Form", "Basics", FORM_NAMES), _col("category", "Category", "Basics", "fs.category"),
+    _col("date", "Date", "Basics", "fs.event_date"), _col("form", "Form", "Basics", None), _col("category", "Category", "Basics", "fs.category"),
     _col("title", "Title", "Basics", "fs.title"), _col("ay", "Academic year", "Basics", "fs.ay_id"),
-    _col("submitted_by", "Submitted by (faculty)", "People", "u.full_name"), _col("submitter_emp_id", "Submitter employee ID", "People", "fs.submitter_emp_id"),
-    _col("submitter_email", "Submitter e-mail", "People", "fs.submitter_email"),
+    _col("submitted_by", "Entered by (faculty)", "People", "u.full_name"), _col("submitter_emp_id", "Their employee ID", "People", "fs.submitter_emp_id"),
+    _col("submitter_email", "Faculty e-mail", "People", "fs.submitter_email"),
     _col("students", "Students (roll numbers)", "People",
          "(SELECT GROUP_CONCAT(p.roll_no, '; ') FROM student_achievement_participants p WHERE p.submission_id = fs.submission_id AND p.roll_no IS NOT NULL)"),
     _col("event_students", "Event participants (roll numbers)", "People",
          "(SELECT GROUP_CONCAT(e.roll_no, '; ') FROM event_participants e WHERE e.submission_id = fs.submission_id)"),
     _col("faculty", "Faculty involved", "People",
          "(SELECT GROUP_CONCAT(f.full_name, '; ') FROM submission_faculty sf JOIN faculty f ON f.emp_id = sf.emp_id WHERE sf.submission_id = fs.submission_id)"),
-    _col("evidence_url", "Evidence link", "Links", "fs.evidence_url"), _col("media_url", "Photo link", "Links", "fs.media_url"),
-    _col("photo_caption", "Photo caption", "Links", "fs.photo_caption"), _col("submitted_at", "Submitted on", "Submission", "fs.submitted_at"),
+    _col("evidence_url", "Supporting document / link", "Links", "fs.evidence_url"), _col("media_url", "Photo", "Links", "fs.media_url"),
+    _col("submitted_at", "Entered on", "Submission", "fs.submitted_at"),
 ]
 OFFERS = [
     _col("roll_no", "Roll no", "Student", "s.roll_no"), _col("name", "Student name", "Student", "s.full_name"), _col("class", "Class", "Student", "c.class_code"),
@@ -68,6 +66,12 @@ def _kind(name: str) -> Dict[str, Any]:
     return KINDS[name]
 
 
+def _form_case() -> str:
+    """The forms' current titles for the Form column (titles come from the published definitions; quotes are doubled for SQL)."""
+    whens = " ".join(f"WHEN '{t}' THEN '{submissions.form_name(t).replace(chr(39), chr(39) * 2)}'" for t in DETAIL_TABLE)
+    return f"CASE fs.form_type {whens} ELSE fs.form_type END"
+
+
 def catalog(name: str) -> Dict[str, Any]:
     k = _kind(name)
     return {"columns": [{c: col[c] for c in ("key", "label", "part")} for col in k["columns"]], "default_columns": k["default"], "parts": k["parts"]}
@@ -81,7 +85,7 @@ def export_csv(conn, user: User, name: str, f: Dict[str, Any], columns: List[str
         raise HTTPException(400, "Choose at least one column" if not columns else "Unknown column: " + ", ".join(bad))
     base, args = k["base"](user, f)
     chosen = list(dict.fromkeys(columns))
-    sql = f"SELECT {', '.join(by_key[c]['expr'] for c in chosen)} {base} ORDER BY {k['order']} LIMIT {EXPORT_LIMIT}"
+    sql = f"SELECT {', '.join(by_key[c]['expr'] or _form_case() for c in chosen)} {base} ORDER BY {k['order']} LIMIT {EXPORT_LIMIT}"
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow([by_key[c]["label"] for c in chosen])

@@ -1,10 +1,17 @@
 """Browsing form submissions with the filters from the design, limited to what the caller may see."""
+import json
 from typing import Any, Dict
 
 from fastapi import HTTPException
 
+from backend.master import answers
 from backend.master.auth import User
-from backend.master.ingest import DETAIL_TABLE
+from backend.master.profiles import form_title
+
+
+def form_name(form_type: str) -> str:
+    fid = answers.form_of(form_type)
+    return form_title(fid) if fid else form_type
 
 
 def _visible(user: User, where, args):
@@ -51,8 +58,8 @@ def _base(user: User, f: Dict[str, Any]):
     if sub:
         where.append(f"fs.submission_id IN (SELECT submission_id FROM student_achievement_participants WHERE {' AND '.join(sub)})")
     if f.get("level"):
-        where.append("fs.submission_id IN (SELECT submission_id FROM student_achievements WHERE level = ?)")
-        args.append(f["level"])
+        where.append("fs.submission_id IN (SELECT submission_id FROM student_achievements WHERE level = ? UNION SELECT submission_id FROM faculty_achievements WHERE level = ?)")
+        args += [f["level"], f["level"]]
     base = f"FROM form_submissions fs LEFT JOIN faculty u ON u.emp_id = fs.submitter_emp_id WHERE {' AND '.join(where)}"
     return base, args
 
@@ -64,7 +71,13 @@ def list_submissions(conn, user: User, f: Dict[str, Any], limit: int = 100, offs
         f"SELECT fs.submission_id, fs.form_type, fs.ay_id, fs.event_date, fs.category, fs.title, fs.badge_tag, fs.is_landmark, "
         f"fs.submitter_emp_id, u.full_name AS submitter, fs.submitter_email {base} ORDER BY fs.event_date DESC, fs.submission_id DESC LIMIT ? OFFSET ?",
         args + [limit, offset]).fetchall()
-    return {"total": total, "rows": [dict(r) for r in rows]}
+    names: Dict[str, str] = {}
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["form"] = names.setdefault(d["form_type"], form_name(d["form_type"]))
+        out.append(d)
+    return {"total": total, "rows": out}
 
 
 def get_submission(conn, user: User, sid: int) -> Dict[str, Any]:
@@ -73,18 +86,20 @@ def get_submission(conn, user: User, sid: int) -> Dict[str, Any]:
     if not conn.execute(f"SELECT 1 FROM form_submissions fs WHERE {' AND '.join(where)}", args).fetchone():
         raise HTTPException(404, "Submission not found")
     head = dict(conn.execute("SELECT * FROM form_submissions WHERE submission_id = ?", (sid,)).fetchone())
-    import json as _json
     try:
-        raw = _json.loads(head.pop("raw_json", None) or "{}")
+        raw = json.loads(head.pop("raw_json", None) or "{}")
     except ValueError:
         raw = {}
-    answers = [{"q": k, "value": v} for k, v in raw.items() if str(v or "").strip() and not str(k).lower().startswith("do you want to submit")]
-    detail = conn.execute(f"SELECT * FROM {DETAIL_TABLE[head['form_type']]} WHERE submission_id = ?", (sid,)).fetchone()
+    shown = answers.display(head["form_type"], head["category"], raw)
+    entered_by = conn.execute("SELECT full_name FROM faculty WHERE emp_id = ?", (head.get("submitter_emp_id"),)).fetchone()
     q = lambda sql: [dict(r) for r in conn.execute(sql, (sid,))]
     return {
-        "header": head, "detail": dict(detail) if detail else {}, "answers": answers,
+        "header": {"submission_id": sid, "form_type": head["form_type"], "form": form_name(head["form_type"]), "category": head["category"], "title": head["title"],
+                   "event_date": head["event_date"], "ay_id": head["ay_id"], "submitted_by": entered_by[0] if entered_by else head.get("submitter_email"), "submitted_at": head["submitted_at"]},
+        **shown,
         "participants": q("SELECT p.line_no, p.roll_no, p.name, p.role, p.is_lead, p.raw_text, c.class_code, p.year_snapshot FROM student_achievement_participants p LEFT JOIN classes c ON c.class_id = p.class_id_snapshot WHERE p.submission_id = ? ORDER BY p.line_no"),
-        "contributors": q("SELECT author_order, person_type, emp_id, roll_no, name, affiliation FROM research_contributors WHERE submission_id = ? ORDER BY author_order"),
+        "contributors": q("SELECT c.author_order, c.person_type, c.emp_id, c.roll_no, COALESCE(f.full_name, s.full_name, c.name) AS name, c.affiliation FROM research_contributors c "
+                          "LEFT JOIN faculty f ON f.emp_id = c.emp_id LEFT JOIN students s ON s.roll_no = c.roll_no WHERE c.submission_id = ? ORDER BY c.author_order"),
         "faculty": q("SELECT s.emp_id, f.full_name, s.role FROM submission_faculty s JOIN faculty f ON f.emp_id = s.emp_id WHERE s.submission_id = ?"),
         "event_students": q("SELECT e.roll_no, st.full_name FROM event_participants e JOIN students st ON st.roll_no = e.roll_no WHERE e.submission_id = ?"),
     }

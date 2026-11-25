@@ -17,9 +17,6 @@ services:
       - "${HOST_PORT:-80}:10000"        # open http://localhost/ (set HOST_PORT=8080 in .env if port 80 is taken)
     volumes:
       - it-data:/data                   # both databases, the newsletter files and the studio settings live here
-      # The Google Sheets key is not part of the image: keep it next to this file and uncomment the line below,
-      # then set GOOGLE_SERVICE_ACCOUNT_JSON=/data/google-key.json in .env
-      # - ./google-key.json:/data/google-key.json:ro
 
 volumes:
   it-data:

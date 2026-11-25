@@ -438,8 +438,8 @@ LEFT JOIN classes c         ON c.class_id = p.class_id_snapshot
 WHERE p.roll_no IS NOT NULL;
 
 -- =====================================================================
--- 6. REVIEW (staging area) AND GOOGLE SHEET SYNC
--- Responses pulled from the Google Sheets land HERE first. Nothing reaches the live tables above until an authority approves it:
+-- 6. REVIEW (staging area)
+-- Entries made in the portal land HERE first. Nothing reaches the live tables above until an authority approves it:
 -- Admin or HoD for the five submission forms, the class tutor for placements. Everything else in the application only ever reads
 -- the live tables, so unapproved data cannot appear anywhere.
 -- =====================================================================
@@ -488,35 +488,6 @@ CREATE TABLE IF NOT EXISTS review_events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_item ON review_events(item_id, event_id);
 
--- Where each form's responses live (a Google Sheet) and when they were last pulled
-CREATE TABLE IF NOT EXISTS sync_sources (
-    form_id        TEXT PRIMARY KEY,
-    sheet_url      TEXT,
-    last_pulled_at TIMESTAMP,
-    last_result    TEXT                                   -- JSON of the last pull for this source (counts or the error)
-);
 
 -- One row: how often to pull. next_run_at is kept in UTC.
-CREATE TABLE IF NOT EXISTS sync_settings (
-    id          INTEGER PRIMARY KEY CHECK (id = 1),
-    enabled     INTEGER NOT NULL DEFAULT 0,
-    mode        TEXT NOT NULL DEFAULT 'days' CHECK (mode IN ('days','week')),
-    every_days  INTEGER NOT NULL DEFAULT 2,
-    weekday     INTEGER NOT NULL DEFAULT 0,               -- 0 = Monday ... 6 = Sunday (mode 'week')
-    hour        INTEGER NOT NULL DEFAULT 2,
-    minute      INTEGER NOT NULL DEFAULT 0,
-    timezone    TEXT NOT NULL DEFAULT 'Asia/Kolkata',
-    next_run_at TEXT,
-    last_run_at TEXT,
-    updated_by  TEXT
-);
 
-CREATE TABLE IF NOT EXISTS sync_runs (
-    run_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    started_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    finished_at TIMESTAMP,
-    trigger     TEXT NOT NULL,                            -- 'schedule' or 'manual'
-    actor       TEXT,
-    status      TEXT NOT NULL DEFAULT 'running',          -- running / done / failed
-    summary_json TEXT
-);

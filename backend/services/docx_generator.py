@@ -281,7 +281,7 @@ class DOCXGenerator:
         sp.set(qn("w:val"), "80")
         r._element.get_or_add_rPr().insert_element_before(sp, *_RPR_AFTER_SPACING)
         sub = " · ".join(str(x) for x in [issue.get("department_name"), issue.get("cover_title")] if x)
-        meta = " · ".join(x for x in [f"Vol. {issue['volume']} Issue {issue['issue']}" if issue.get("volume") else "",
+        meta = " · ".join(x for x in [f"Issue {issue['issue']}" if issue.get("issue") else "",
                                      issue.get("academic_year"), issue.get("semester"), issue.get("publication_period")] if x)
         lines = [l for l in (sub, meta) if l]
         for line in lines:
@@ -607,20 +607,15 @@ class DOCXGenerator:
         p = doc.add_paragraph()
         p.paragraph_format.page_break_before = page_break_before
         p.paragraph_format.space_after = Pt(16)
-        p.paragraph_format.tab_stops.add_tab_stop(Inches(CONTENT_WIDTH_IN), WD_TAB_ALIGNMENT.RIGHT)
         _p_border(p, f'<w:pBdr {nsdecls("w")}>'
                      f'<w:top w:val="single" w:sz="36" w:space="6" w:color="{NAVY}"/>'
                      f'<w:bottom w:val="single" w:sz="12" w:space="4" w:color="{NAVY}"/></w:pBdr>')
         left = "IT CHRONICLES" + (f" · {section_name.upper()}" if section_name else "")
-        right = f"VOL. {issue['volume']} · ISSUE {issue['issue']}" if issue and issue.get("volume") else ""
         r = p.add_run(left)
         r.font.size, r.font.bold, r.font.color.rgb = Pt(SIZE_SECTION), True, RGBColor.from_string(BLACK)
         sp = OxmlElement("w:spacing")
         sp.set(qn("w:val"), "30")
         r._element.get_or_add_rPr().insert_element_before(sp, *_RPR_AFTER_SPACING)
-        if right:
-            r2 = p.add_run("\t" + right)
-            r2.font.size, r2.font.bold, r2.font.color.rgb = Pt(SIZE_SUB), True, RGBColor.from_string(BLACK)
 
     def _rule(self, container, space_before: float = 6, space_after: float = 6, color: str = RULE):
         p = container.par() if isinstance(container, _Sink) else container.add_paragraph()

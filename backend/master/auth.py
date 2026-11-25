@@ -72,8 +72,8 @@ class User:
     name: str
     kind: str                                   # STAFF | STUDENT
     roles: Set[str] = field(default_factory=set)
-    all_access: bool = False                    # Admin / HoD: every student and faculty
-    class_ids: Set[int] = field(default_factory=set)   # classes this person may see (tutor + PC scope)
+    all_access: bool = False                    # READS everything: every faculty member (changes are checked separately: can_edit_class, roles)
+    class_ids: Set[int] = field(default_factory=set)   # the classes that are this person's own (tutor, or the programme they coordinate)
     tutor_class_ids: Set[int] = field(default_factory=set)
     must_change: bool = False
     tours_seen: Set[str] = field(default_factory=set)
@@ -110,7 +110,7 @@ def _load_staff(conn, emp_id: str) -> Optional[User]:
             # A coordinator sees the whole programme: every class of UG (both groups, G1 and G2) or of PG.
             # The group on the role is only a label; the Students page lets them filter Both / G1 / G2.
             u.class_ids |= {x[0] for x in conn.execute("SELECT class_id FROM classes WHERE programme = ?", (r["programme"],))}
-    u.all_access = bool(u.roles & {"ADMIN", "HOD"})
+    u.all_access = True                                  # every faculty member sees all the department's records, as the Admin does
     return u
 
 

@@ -35,10 +35,10 @@ def build_mappings(specs: Dict[str, Any], base: Dict[str, Any]) -> Dict[str, Any
     for fid, spec in specs["forms"].items():
         old = forms.get(fid, {})
         fm = {"Timestamp": "submission_timestamp", "Email Address": "submitter_email"}
-        meta = {"Timestamp": {"canonical_tag": "submission_timestamp", "type": "text", "required": False, "description": "Added by Google Forms"},
-                "Email Address": {"canonical_tag": "submitter_email", "type": "text", "required": False, "description": "Collected by Google Forms"}}
+        meta = {"Timestamp": {"canonical_tag": "submission_timestamp", "type": "text", "required": False, "description": "When the entry was made"},
+                "Email Address": {"canonical_tag": "submitter_email", "type": "text", "required": False, "description": "E-mail of the person who entered it"}}
         tfs, per_cat, category_field, tags_of = {}, {c: {} for c in spec["categories"]}, None, {}
-        live = [q for q in spec["questions"] if not q.get("legacy") and q["type"] != "section"]
+        live = [q for q in spec["questions"] if not q.get("legacy") and q["type"] not in ("section", "confirm")]          # consent boxes are not asked anywhere
         for q in live:
             tag = q.get("nl")
             if tag == "category_id":

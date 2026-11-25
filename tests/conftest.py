@@ -6,11 +6,26 @@ Forms does not mean rewriting them. The forms the application ships now are test
 """
 import gc
 import os
+import shutil
 import sys
 
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _a_copy_of_the_newsletter_database(tmp_path_factory):
+    """The studio keeps its entries in step with the master database, so no test may point it at the project's own newsletter database."""
+    from database import db_manager
+    copy = str(tmp_path_factory.mktemp("newsletter") / "newsletter.db")
+    if os.path.exists(db_manager.DB_PATH):
+        shutil.copyfile(db_manager.DB_PATH, copy)
+    before, db_manager.DB_PATH = db_manager.DB_PATH, copy
+    yield
+    db_manager.DB_PATH = before
+
 
 PREVIOUS = os.path.join(os.path.dirname(__file__), "fixtures", "previous_forms")
 

@@ -10,33 +10,6 @@
   const find = (selector, re) => () => [...document.querySelectorAll(selector)].find(e => re.test(e.textContent));
   const card = selector => () => document.querySelector(selector)?.closest('.card');
 
-  // ================================================================ forms page (/homepage/)
-  function home(me, token) {
-    const formCard = re => find('.cards .card', re);
-    const sections = () => [{
-      id: 'forms', label: 'The forms', hint: 'The six forms', steps: () => [
-        { target: '#entry .lead', title: 'Data Entry', body: '<p>The Google Forms are kept here for anyone who still prefers them. Data is now entered in the portal. <b>Back</b> returns to the portal.</p>', place: 'bottom' },
-        { target: '.cards', title: 'Six forms', body: '<p>Pick the one that matches what you want to report. Each opens in <b>Google Forms in a new tab</b>, and what you submit flows into the department database, the portal and the newsletter.</p>', place: 'top', pad: 10 },
-        { target: formCard(/Departmental/), title: 'Departmental Highlights', body: '<p>Workshops, conferences, lab upgrades, club activities and milestones. Choose the convener and the other faculty involved from the list.</p>' },
-        { target: formCard(/Faculty Achievements/), title: 'Faculty Achievements', body: '<p>Awards, certifications, invited lectures, FDPs and professional roles. <b>Select your own name</b> from the list: that is what puts it on your page.</p>' },
-        { target: formCard(/Research/), title: 'Research & Innovation', body: '<p>Papers, patents, funded projects, consultancy and innovations. List the authors by employee ID or roll number (<b>EXT</b> for people outside the department).</p>' },
-        { target: formCard(/Student Achievements/), title: 'Student Achievements', body: '<p>Competitions, hackathons, projects and higher studies, or <b>participation only</b>. Enter students by roll number, one per line.</p>' },
-        { target: formCard(/Industry/), title: 'Industry, Alumni & Outreach', body: '<p>Industry visits, expert talks, MoUs, alumni interactions and community outreach. You can add the students who attended.</p>' },
-        { target: formCard(/Placement/), title: 'Student Placement Details', body: '<p>This one is <b>for students</b>: tutors share it so each student records their offers and interview experience. One response per offer.</p>' },
-        { target: find('.foot a', /Newsletter/), optional: true, title: 'Newsletter studio', body: '<p>Only the <b>Admin and the HoD</b> can open the newsletter studio, where approved responses become the newsletter.</p>', place: 'top' },
-      ],
-    }];
-    const welcome = () => [{
-      welcome: true, title: `Welcome, ${esc(firstName(me.name))}!`,
-      body: `<p>This page keeps the older <b>Google Forms</b>. New entries are made in the portal, under <b>Add entry</b>.</p>
-        ${role('Your job', 'Submit your work (papers, awards, events, students you mentored) through the right form. It appears on your page in the portal automatically.')}
-        <p>A short tour takes about a minute. You can skip it now and replay it any time from <b>Help</b>.</p>`,
-    }];
-    const kit = TourKit.mount({ app: 'home', host: document.getElementById('help-host'), iconOnly: true, me, token, welcome, sections });
-    kit.autoStart();
-    return kit;
-  }
-
   // ================================================================ staff portal (/portal/)
   // These rely on the portal's own globals: me, current, show(), isEditor(), hasClasses()
   function portal(me, token) {
@@ -45,13 +18,13 @@
 
     const welcome = () => {
       const blocks = [];
-      if (has('ADMIN')) blocks.push(role('Admin', 'You run the system: add faculty and give them roles, choose each class\'s tutor, upload form responses and placement sheets, and see every analytic.'));
-      if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. You also <b>approve the form responses</b> pulled from Google Sheets (see <b>Approvals</b>).'));
-      if (has('PC')) blocks.push(role('Programme Coordinator', 'You see all the classes of your programme (for UG that means both G1 and G2): students, placements and statistics. Your view is read-only.'));
-      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, set the class\'s semester, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Approvals</b>).'));
+      if (has('ADMIN')) blocks.push(role('Admin', 'You run the system: add faculty and give them roles, choose each class\'s tutor, edit the forms in the Form builder, upload placement sheets, and see every analytic.'));
+      if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. You also <b>approve the entries</b> faculty submit (see <b>Review &amp; submissions</b>).'));
+      if (has('PC')) blocks.push(role('Programme Coordinator', 'You coordinate your programme. Like all faculty you can see every record in the department; your view is read-only.'));
+      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, set the class\'s semester, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Review &amp; submissions</b>).'));
       blocks.push(role('Faculty', blocks.length
-        ? 'You also have your own page of everything you have submitted through the forms (see <b>My activities</b>).'
-        : 'Your own page lists everything you have submitted through the forms, neatly sorted: papers, patents, awards, events and students you mentored.'));
+        ? 'You also have your own page of everything you have entered (see <b>My activities</b>).'
+        : 'You can see and download all the department\'s records: records, placements and everyone\'s activities. Your own page (<b>My activities</b>) lists what you have entered.'));
       return [{
         welcome: true, title: `Welcome, ${esc(firstName(me.name))}!`,
         body: `<p>This is the <b>IT Department Portal</b>: students, classes, faculty work, placements and analytics in one place. Here is what <b>your role${blocks.length > 1 ? 's' : ''}</b> can do:</p>${blocks.join('')}
@@ -71,7 +44,6 @@
     const S = [];                                                   // sections, in tab order, only the ones this person can open
     S.push({ id: 'basics', label: 'The top bar', hint: 'Tabs, Help, sign out', steps: () => [
       { before: () => { document.querySelector('#view') && window.scrollTo(0, 0); }, target: '#tabs', title: 'Your tabs', body: '<p>Each tab is a part of the portal. <b>What you see depends on your role</b>, so you only get what you can use. We will visit them one by one.</p>', place: 'bottom' },
-      { target: '.topbar .back-home', title: 'Google Forms', body: '<p>Opens the older <b>Google Forms</b>, for anyone who still prefers them. New entries are made here under <b>Add entry</b>.</p>', place: 'bottom' },
       { target: '.tour-help', title: 'Help', body: '<p>Replay this tour, or have just the page you are on explained.</p>', place: 'bottom' },
       { target: '#who', title: 'Who you are', body: '<p>Your name and role(s). If you can open the Newsletter studio, its button sits right here.</p>', place: 'bottom' },
       { target: '#logout', title: 'Sign out', body: '<p>Always sign out on a shared computer.</p>', place: 'bottom' },
@@ -94,16 +66,11 @@
       { target: '.bd-fields', title: 'Fields', body: '<p>Click a field to change its name, kind, choices or newsletter role. Retire a field to hide it from new entries while keeping old answers.</p>', place: 'top' },
       { target: '#bd-edit', title: 'Draft, then publish', body: '<p>Your changes stay in a draft. <b>Publish changes</b> makes them live for everyone and updates the newsletter. History lets you go back to an earlier version.</p>', place: 'left' },
     ] });
-    S.push({ id: 'review', label: 'Approvals', hint: 'Check, edit and approve responses', steps: () => [
-      { before: goTab('review'), target: '#rv-tabs', title: 'Where responses wait', body: `<p>${me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Responses pulled from the Google Sheets wait here until you decide. <b>Nothing is used in the application before it is approved.</b>' : me.tutor_class_ids.length ? 'The placement details of your students wait here for your approval.' : 'Responses sent back to you for correction appear here, and you can follow what you submitted.'}</p><p>The red number on the tab is how many need you.</p>`, place: 'bottom' },
-      { target: '#rv-list', title: 'The queue', body: '<p>Click a response to read it. An orange mark means something needs a look (a roll number that matches nobody, a missing link). Tick several and use <b>Approve selected</b>, or <b>Approve all clean</b> for those with no marks.</p>', place: 'right' },
-      { target: '#rv-detail', optional: true, title: 'Read, then decide', body: '<p>Answers are grouped as in the form, and the people the IDs belong to are shown, so mistakes stand out. Hover a value and click the pencil to fix it.</p>', place: 'left' },
+    S.push({ id: 'review', label: 'Review & submissions', hint: 'Check, edit and approve entries', steps: () => [
+      { before: goTab('review'), target: '#rv-tabs', title: 'Where entries wait', body: `<p>${me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Entries wait here until you decide. <b>Nothing is used in the application before it is approved.</b>' : me.tutor_class_ids.length ? 'The placement details of your students wait here for your approval.' : 'Entries sent back to you for correction appear here, and you can follow what you submitted.'}</p><p>The red number on the tab is how many need you.</p>`, place: 'bottom' },
+      { target: '#rv-list', title: 'The queue', body: '<p>Click an entry to read it. An orange mark means something needs a look (a roll number that matches nobody, a missing link). Tick several and use <b>Approve selected</b>, or <b>Approve all clean</b> for those with no marks.</p>', place: 'right' },
+      { target: '#rv-detail', optional: true, title: 'Read, then decide', body: '<p>Answers are listed as in the form, and the people the IDs belong to are shown, so mistakes stand out. Hover a value and click the pencil to fix it.</p>', place: 'left' },
       { target: '#rv-foot', optional: true, title: 'Four ways to decide', body: '<p><b>Approve</b> as it is. <b>Edit &amp; approve</b> to fix it first (both versions are kept). <b>Reject with reason</b> sends it back to a faculty member you choose, who corrects it and resubmits. <b>Reject without reason</b> sets it aside.</p>', place: 'top' },
-    ] });
-    if (has('ADMIN') || has('HOD') || me.tutor_class_ids.length) S.push({ id: 'sync', label: 'Data sync', hint: 'Pull responses from Google Sheets', steps: () => [
-      { before: goTab('sync'), target: '#sy-run', title: 'Pull now', body: '<p>Fetches new responses from the Google Sheets straight away. The sheets are only <b>read</b>; nothing in Google is changed.</p>', place: 'bottom' },
-      { target: '#sy-sched', title: 'Automatic pull', body: `<p>Every few days or once a week, at a time you choose.${has('ADMIN') ? '' : ' Only the Admin changes the schedule.'}</p>`, place: 'left' },
-      { target: () => document.querySelector('.sy-url'), optional: true, title: 'Your sheets', body: '<p>The responses sheet link of each form goes here. <b>Test</b> checks that it can be read and that its columns match the form.</p>', place: 'top' },
     ] });
     if (hasClasses()) S.push({ id: 'students', label: 'Students', hint: 'Find, add and open students', steps: () => [
       { before: goTab('students'), target: '#view .filters', title: 'Find students', body: `<p>${document.getElementById('f-grp') ? 'Choose <b>both groups, G1 or G2</b>, then a class, a status, or search by roll number or name.' : 'Pick a class, a status, or search by roll number or name.'}</p>`, place: 'bottom' },
@@ -118,33 +85,26 @@
       { target: '#add-class', optional: true, title: 'Add a class', body: '<p>For a new batch. Choose the programme, group, starting semester and tutor.</p>', place: 'bottom' },
       { target: '#view .graduate', optional: true, title: 'When a class finishes', body: '<p>In its last semester you can <b>mark it graduated</b>: its students become Graduated and the class closes. All records are kept.</p>', place: 'top' },
     ] });
-    if (has('ADMIN')) S.push({ id: 'uploads', label: 'Data upload', hint: 'Responses and placement sheets', steps: () => [
+    if (has('ADMIN')) S.push({ id: 'uploads', label: 'Data upload', hint: 'Placement sheets', steps: () => [
       { before: goTab('uploads'), target: () => document.querySelectorAll('#view > .card')[0], title: 'Placement sheets', body: '<p>Download the template, fill one row per offer, upload. <b>A student already in the system is replaced</b> by the rows in this file for that academic year.</p>', place: 'bottom' },
-      { target: () => document.querySelectorAll('#view > .card')[1], title: 'Form responses', body: '<p>One card per Google Form. Export the form\'s responses sheet as <b>.xlsx</b> and upload it. Uploading the same file twice never creates duplicates.</p>', place: 'bottom' },
-      { target: card('#unmatched'), title: 'Roll numbers that matched nobody', body: '<p>If a roll number or employee ID on a response matches nobody, it is listed here so you can fix the student list or the form. Nothing is lost.</p>', place: 'top' },
+      { target: card('#unmatched'), title: 'Roll numbers that matched nobody', body: '<p>If a roll number or employee ID on an entry matches nobody, it is listed here so you can fix the student list or the entry. Nothing is lost.</p>', place: 'top' },
     ] });
     if (hasClasses()) S.push({ id: 'placements', label: 'Placements', hint: 'Offers and opt-in / opt-out', steps: () => [
       { before: goTab('placements'), target: () => document.querySelector('#view [data-m]')?.parentElement, title: 'Two views', body: '<p><b>Offers</b> lists every offer (company, type, package). <b>Opt-in / opt-out</b> shows who chose to sit for placements, and why some did not.</p>', place: 'bottom' },
       { target: () => document.querySelector('#p-ay')?.closest('.filters'), title: 'Filters', body: '<p>Year, class, company, offer type, package range and search. Click a roll number to open the student\'s page.</p>', place: 'bottom' },
-      { target: '#p-out', title: 'The results', body: '<p>Placement sheets are uploaded by the Admin; the data then shows up here and on the Dashboard.</p>', place: 'top' },
-    ] });
-    S.push({ id: 'subs', label: subsLabel(), hint: 'Every form response', steps: () => [
-      { before: goTab('subs'), target: '#view .filters', title: 'Every form response', body: `<p>Filter by form, year, category, class, level, roll number, dates or words in the title.</p><p>${me.all_access || has('PC') ? 'You see everything.' : 'You see what you submitted' + (hasClasses() ? ', plus responses involving your students.' : '.')}</p>`, place: 'bottom' },
-      { target: '#s-out', title: 'Open a response', body: '<p><b>Click a row</b> for the full answer: people involved, every detail and the links.</p>', place: 'top' },
+      { target: '#p-out', title: 'The results', body: '<p>The Admin uploads placement sheets for anyone, and a class tutor for their own class (<b>Upload Excel</b>); the data shows up here and on the Dashboard.</p>', place: 'top' },
     ] });
     if (me.all_access) S.push({ id: 'faculty', label: has('ADMIN') ? 'Faculty & roles' : 'Faculty', hint: 'Directory, activity counts, roles', steps: () => [
       { before: goTab('faculty'), target: () => document.getElementById('ff-q')?.closest('.filters'), title: 'Find faculty', body: '<p>Search, or filter by <b>designation, status, role</b>, or by what they have entered (research, achievements, events, outreach, mentoring).</p>', place: 'bottom' },
       { target: '#fac-list', title: 'The faculty table', body: `<p>The counts show how much each person has entered. <b>Click a name</b> or <b>Activities</b> to open their page.</p>${has('ADMIN') ? '<p>As Admin you can also set <b>Roles</b>, <b>Edit</b>, <b>Reset password</b> or <b>Relieve</b> someone.</p>' : ''}`, place: 'top' },
       { target: '#add-fac', optional: true, title: 'Add faculty', body: '<p>Creates the login and shows a <b>one-time temporary password</b>. Share it privately; they must change it at first sign-in.</p>', place: 'bottom' },
-      { target: '#copy-choices', optional: true, title: 'Copy list for the Apps Script', body: '<p>Copies the faculty drop-down list to paste into the Google Forms script, so people choose their name instead of typing it.</p>', place: 'bottom' },
       { target: card('#view .drop'), optional: true, title: 'Upload faculty', body: '<p>Upload an Excel list: existing employee IDs are updated and new ones get temporary passwords (shown once).</p>', place: 'top' },
     ] });
-    if (has('ADMIN') || has('HOD') || has('PC')) S.push({ id: 'works', label: 'Reports', hint: 'One kind of work, with filters and download', steps: () => [
-      { before: goTab('works'), target: '#wk-bar', title: 'Pick a kind of work', body: `<p>Five drop-downs: <b>Research & Innovation, Faculty achievements, Departmental highlights, Industry & outreach, Student achievements</b>. Each lists its kinds (patents, journal papers, hackathons, awards &hellip;) with counts. This looks at the <b>work itself</b>, across the whole department.</p>`, place: 'bottom' },
-      { target: '#wk-filters', title: 'Filters about the work', body: '<p>Year, dates, search, and filters that depend on the kind: indexing and quartile for papers, level for awards, status for events. They describe the work, not the people.</p>', place: 'bottom' },
-      { target: '#wk-stats', title: 'Totals', body: '<p>Totals over <b>everything that matches</b> the filters, not only what is on screen (funding, participants, prize money &hellip;).</p>', place: 'bottom' },
-      { target: '#wk-results', title: 'The list', body: '<p>Each card is one piece of work. Click to open its details and evidence links; the people involved are named inside.</p>', place: 'top' },
-      { target: '#w-csv', title: 'Download CSV', body: '<p>Opens a pop-up: set the <b>dates</b> at the top, <b>tick the columns</b> you want (or Select all), then download a file for Excel.</p>', place: 'bottom' },
+    S.push({ id: 'records', label: 'Records', hint: 'Every approved entry, with filters and downloads', steps: () => [
+      { before: goTab('records'), target: '#wk-bar', title: 'All forms, or one', body: '<p><b>All forms</b> lists every approved entry together. Each drop-down opens one form (or one of its categories) with its own filters, totals and download.</p>', place: 'bottom' },
+      { target: '#rec-body .filters', title: 'Narrow it down', body: '<p>Under <b>All forms</b> filter by year, category, class, level, roll number, dates or words in the title. For one form, the filters are about that work: indexing and quartile for papers, level for awards, amounts and so on.</p>', place: 'bottom' },
+      { target: '#s-out', optional: true, title: 'Open a record', body: '<p><b>Click a row</b> for everything that was entered: the people involved, every detail, and the documents.</p>', place: 'top' },
+      { target: '#s-dl', optional: true, title: 'Download', body: '<p>Set the <b>dates</b>, <b>tick the columns</b> you want and download a file for Excel. Choosing one form first gives you a column for every field of that form.</p>', place: 'bottom' },
     ] });
     S.push({ id: 'mine', label: 'My activities', hint: 'Your own page', steps: () => profileSteps(goTab('mine')) });
     S.push({ id: 'account', label: 'Account', hint: 'Change your password', steps: () => [
@@ -210,21 +170,14 @@
     const btn = re => find('button', re);
     const welcome = () => [{
       welcome: true, title: `Welcome to the Newsletter Studio, ${esc(firstName(me.name))}!`,
-      body: `<p>The studio turns the department's approved responses into the <b>IT Chronicles newsletter</b>.</p>
-        ${role('Who uses it', 'Only the <b>Admin and the HoD</b>. Faculty submit through the forms; you review the responses, design the layout and build the document.')}
+      body: `<p>The studio turns the department's approved entries into the <b>IT Chronicles newsletter</b>.</p>
+        ${role('Who uses it', 'Only the <b>Admin and the HoD</b>. Faculty enter their work in the portal; you choose which entries go in, design the layout and build the document.')}
         <p>The tour visits every tab. Skip it now; <b>Help</b> at the top replays it, or one tab.</p>`,
     }];
     const S = [
-      { id: 'overview', label: 'Overview', hint: 'Counts and recent activity', steps: () => [
-        { before: goTab('overview'), target: '.stats', title: 'Where things stand', body: '<p>Responses received, those <b>needing review</b>, approved, and featured. Click any of them to open the matching list.</p>', place: 'bottom' },
-        { target: '#overview-sections', title: 'Section by section', body: '<p>Responses and approved entries for each newsletter section.</p>', place: 'top' },
-        { target: '#activity-log', title: 'Recent activity', body: '<p>Imports, approvals and other changes, newest first.</p>', place: 'left' },
-      ] },
-      { id: 'forms', label: 'Forms', hint: 'Questions and what they mean', steps: () => [
-        { before: goTab('forms'), target: '#forms-list', title: 'Your forms', body: '<p>One entry per Google Form. Pick one to edit how its questions feed the newsletter.</p>', place: 'right' },
-        { target: btn(/New form/), optional: true, title: 'New form', body: '<p>Add a form by pasting its response-sheet headers; the studio works out what each column means.</p>', place: 'right' },
-        { target: btn(/Import from Apps Script/), optional: true, title: 'Import from Apps Script', body: '<p>Paste the Google Apps Script that built your form and every question is read in one go.</p>', place: 'right' },
-        { target: '#form-editor', title: 'The form editor', body: '<p>Tell the newsletter what each question is (title, people, date, description &hellip;) and set the sub-sections.</p>', place: 'left' },
+      { id: 'responses', label: 'Entries', hint: 'What goes into the newsletter', steps: () => [
+        { before: goTab('responses'), target: '#tab-responses .toolbar', title: 'Straight from the database', body: '<p>These are the approved entries of the department database, read live: there is nothing to import. Filter them by status, section and dates.</p>', place: 'bottom' },
+        { target: '#responses-list', title: 'Decide what goes in', body: '<p>Every entry is in the newsletter unless you <b>reject</b> it; you can approve it again, or mark it <b>featured</b>. To change what an entry says, or which fields feed the newsletter, use the portal (Review &amp; submissions and Form builder).</p>', place: 'top' },
       ] },
       { id: 'front', label: 'Front pages', hint: "HOD's desk, vision, editorial board", steps: () => [
         { before: goTab('front'), target: '.front-bar', title: 'Front pages', body: '<p>The pages that come before the sections: HOD\'s Desk, vision and mission, editorial board. Anything left empty is simply left out. <b>Save front pages</b> when done.</p>', place: 'bottom' },
@@ -236,10 +189,6 @@
         { target: '#paper', title: 'The page', body: '<p>Arrange and resize elements. This is how one entry will look in the newsletter.</p>', place: 'left' },
         { target: '.inspector', title: 'Inspector', body: '<p>Fine-tune the selected element, and choose sample data to preview with.</p>', place: 'left' },
       ] },
-      { id: 'responses', label: 'Responses', hint: 'Review, approve, feature', steps: () => [
-        { before: goTab('responses'), target: '#tab-responses .toolbar', title: 'Filter and add', body: '<p>Filter by status and section. <b>Import CSV</b> or <b>+ Add response</b> to bring entries in by hand.</p>', place: 'bottom' },
-        { target: '#responses-list', title: 'Review each response', body: '<p>Open an entry to edit it, <b>approve or reject</b> it, or mark it <b>featured</b> for the spotlight. Only approved entries reach the newsletter.</p>', place: 'top' },
-      ] },
       { id: 'publish', label: 'Publish', hint: 'Build the Word documents', steps: () => [
         { before: goTab('publish'), target: '#publish-sections', title: 'Choose sections', body: '<p>Tick the sections to include, and build each one as its own Word document if you want.</p>', place: 'right' },
         { target: '.publish-side', title: 'Master newsletter', body: '<p>Combines every ticked section, featured items first, into <b>one Word document</b>. Front pages are included if you wish.</p>', place: 'left' },
@@ -248,7 +197,7 @@
     const kit = TourKit.mount({
       app: 'studio', host: document.getElementById('help-host'), me, token, welcome, sections: () => S,
       current: () => document.querySelector('#main-tabs .tab.active')?.dataset.tab,
-      snapshot: () => { const t = document.querySelector('#main-tabs .tab.active')?.dataset.tab || 'overview'; return () => switchTab(t); },
+      snapshot: () => { const t = document.querySelector('#main-tabs .tab.active')?.dataset.tab || 'responses'; return () => switchTab(t); },
     });
     kit.autoStart();
     return kit;
@@ -259,5 +208,5 @@
     if (!token) return null;
     try { const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } }); return r.ok ? { me: await r.json(), token } : null; } catch (e) { return null; }
   }
-  window.Tours = { home, portal, diary, studio, fetchMe };
+  window.Tours = { portal, diary, studio, fetchMe };
 })();

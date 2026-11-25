@@ -20,7 +20,7 @@ CANONICAL_FIELD_OPTIONS = [
     {"tag": "impact_or_indexing", "label": "Impact Factor / Indexing / Level", "type": "text", "description": "Indexing level or target audience"},
     {"tag": "featured_flag", "label": "Landmark / Milestone Spotlight Flag", "type": "select", "description": "Nominate as featured landmark entry"},
     {"tag": "submitter_email", "label": "Submitter Email Address", "type": "text", "description": "Email address of form submitter"},
-    {"tag": "submission_timestamp", "label": "Form Submission Timestamp", "type": "text", "description": "Google Form submission timestamp"},
+    {"tag": "submission_timestamp", "label": "Form Submission Timestamp", "type": "text", "description": "Entry submission timestamp"},
     {"tag": "category_id", "label": "Subcategory Selector", "type": "select", "description": "Maps to subcategory within section"},
     {"tag": "custom", "label": "Custom Field Tag", "type": "text", "description": "Any custom tag not in standard canonical registry"}
 ]
@@ -385,74 +385,6 @@ class ConfigService:
         self._save_mappings(mappings_data)
         return self.get_form(form_id)
 
-    def bulk_import_columns(self, form_id: str, raw_headers_text: str) -> Dict[str, Any]:
-        """
-        Takes raw comma-separated, tab-separated, or newline-separated Google Form headers,
-        infers canonical tags & types, and updates the form columns.
-        """
-        # Split by comma or newline
-        # A pasted Sheets header row is tab-separated; only split on commas for single-line input
-        separator = r"[\r\n\t]+" if re.search(r"[\r\n\t]", raw_headers_text.strip()) else r","
-        lines = [line.strip() for line in re.split(separator, raw_headers_text) if line.strip()]
-        if not lines:
-            raise ValueError("No valid column headers found in input")
-
-        mappings_data = self._read_mappings()
-        forms = mappings_data.get("forms", {})
-        if form_id not in forms:
-            raise ValueError(f"Form '{form_id}' not found")
-
-        fspec = forms[form_id]
-        field_mappings = fspec.setdefault("field_mappings", {})
-        column_metadata = fspec.setdefault("column_metadata", {})
-
-        for header in lines:
-            header_clean = header.strip()
-            if not header_clean:
-                continue
-            if header_clean in field_mappings and header_clean in column_metadata:
-                continue # preserve existing mapping
-
-            inferred_tag = self._infer_canonical_tag(header_clean)
-            inferred_type = self._infer_type(inferred_tag, header_clean)
-            
-            field_mappings[header_clean] = inferred_tag
-            column_metadata[header_clean] = {
-                "canonical_tag": inferred_tag,
-                "type": inferred_type,
-                "required": False,
-                "description": "Auto-imported from Google Form headers"
-            }
-
-        self._save_mappings(mappings_data)
-        return self.get_form(form_id)
-
-    def analyze_script(self, script: str) -> List[Dict[str, Any]]:
-        """Parse an Apps Script and describe each form it builds: columns with detected tags, category question and options."""
-        existing = {f["form_name"].strip().lower(): f["form_id"] for f in self.get_all_forms()}
-        result = []
-        for f in parse_form_script(script):
-            columns, category_field, category_map = [], "", {}
-            choice_questions = [q for q in f["questions"] if len(q["choices"]) >= 2]
-            for q in f["questions"]:
-                tag = self._infer_canonical_tag(q["name"])
-                columns.append({"name": q["name"], "canonical_tag": tag, "required": q["required"],
-                                "type": self._infer_type(tag, q["name"])})
-            cat_col = next((c for c in columns if c["canonical_tag"] == "category_id"), None)
-            if not cat_col:   # no obvious name: the first choice question that is not the spotlight yes/no
-                q = next((q for q in choice_questions if self._infer_canonical_tag(q["name"]) != "featured_flag" and len(q["choices"]) > 2), None)
-                cat_col = next((c for c in columns if q and c["name"] == q["name"]), None)
-                if cat_col:
-                    cat_col["canonical_tag"], cat_col["type"] = "category_id", "select"
-            if cat_col:
-                cat_col["required"] = True
-                category_field = cat_col["name"]
-                q = next(q for q in f["questions"] if q["name"] == category_field)
-                category_map = {label: "cat_" + re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")[:24] for label in q["choices"]}
-            result.append({"title": f["title"], "columns": columns, "category_field": category_field,
-                           "category_map": category_map, "existing_form_id": existing.get(f["title"].strip().lower())})
-        return result
-
     def _infer_canonical_tag(self, col_name: str) -> str:
         s = col_name.lower().strip()
         if "timestamp" in s:
@@ -504,52 +436,3 @@ class ConfigService:
         if tag == "category_id":
             return "select"
         return "text"
-
-
-# ---------------------------------------------------------------------------
-# Reading the questions out of a Google Apps Script that builds a form
-# ---------------------------------------------------------------------------
-_STR = r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'|`(?:[^`\\]|\\.)*`'
-_SCRIPT_TOKENS = re.compile(
-    r"(?P<form>FormApp\s*\.\s*create\(\s*(?P<form_arg>" + _STR + r")[^)]*\))"
-    r"|(?P<item>\.\s*add(?P<kind>\w+?)Item\(\s*\))"
-    r"|(?<!form)(?P<title>\.\s*setTitle\(\s*(?P<title_arg>" + _STR + r")\s*\))"
-    r"|(?P<req>\.\s*setRequired\(\s*(?P<req_arg>true|false)\s*\))"
-    r"|(?P<choices>\.\s*setChoiceValues\(\s*\[(?P<choices_arg>.*?)\]\s*\))",
-    re.S,
-)
-_NON_QUESTIONS = {"PageBreak", "SectionHeader", "Image", "Video"}
-
-
-def _unquote(s: str) -> str:
-    body = s[1:-1]
-    return re.sub(r"\\(.)", lambda m: {"n": " ", "t": " "}.get(m.group(1), m.group(1)), body)
-
-
-def parse_form_script(script: str) -> List[Dict[str, Any]]:
-    """Return [{title, questions: [{name, kind, required, choices}]}] for every form the script builds."""
-    forms: List[Dict[str, Any]] = []
-    current: Optional[Dict[str, Any]] = None
-    item: Optional[Dict[str, Any]] = None
-    # a script made of several functions: only code after the first FormApp.create belongs to a form
-    for m in _SCRIPT_TOKENS.finditer(re.sub(r"//[^\n]*", "", script)):
-        if m.group("form"):
-            current = {"title": _unquote(m.group("form_arg")), "questions": []}
-            forms.append(current)
-            item = None
-        elif current is None:
-            continue
-        elif m.group("item"):
-            kind = m.group("kind")
-            item = None if kind in _NON_QUESTIONS else {"name": "", "kind": kind, "required": False, "choices": []}
-            if item:
-                current["questions"].append(item)
-        elif m.group("title") and item is not None and not item["name"]:
-            item["name"] = _unquote(m.group("title_arg")).strip()
-        elif m.group("req") and item is not None:
-            item["required"] = m.group("req_arg") == "true"
-        elif m.group("choices") and item is not None:
-            item["choices"] = [_unquote(s) for s in re.findall(_STR, m.group("choices_arg"))]
-    for f in forms:
-        f["questions"] = [q for q in f["questions"] if q["name"]]
-    return [f for f in forms if f["questions"]]

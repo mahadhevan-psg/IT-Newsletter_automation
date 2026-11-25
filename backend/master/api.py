@@ -23,7 +23,7 @@ def _filters(loc: Dict[str, Any]) -> Dict[str, Any]:
 
 async def _file(file: UploadFile) -> bytes:
     if not (file.filename or "").lower().endswith(".xlsx"):
-        raise HTTPException(400, "Please upload an .xlsx file (in Google Sheets: File > Download > Microsoft Excel)")
+        raise HTTPException(400, "Please upload an .xlsx file (save or export the file as Microsoft Excel)")
     data = await file.read()
     if len(data) > 15_000_000:
         raise HTTPException(413, "File is larger than 15 MB")
@@ -62,6 +62,8 @@ def api_meta(user: User = Depends(staff_user)):
             "current_ay": (conn.execute("SELECT ay_id FROM academic_years WHERE is_current = 1").fetchone() or [None])[0],
             "forms": [{"form_id": fid, "title": s["title"], "form_type": s["form_type"]} for fid, s in ingest.specs()["forms"].items()],
             "categories": {fid: next((q["choices"] for q in s["questions"] if q.get("key") == "category"), []) for fid, s in ingest.specs()["forms"].items()},
+            "levels": list(dict.fromkeys(c for fid in ("form_faculty", "form_student") for q in ingest.specs()["forms"].get(fid, {}).get("questions", [])
+                                         if q.get("key") == "level" and not q.get("legacy") for c in q.get("choices", []))),
             "organizations": [dict(r) for r in conn.execute("SELECT org_id, name FROM organizations ORDER BY name")],
             "faculty": [dict(r) for r in conn.execute("SELECT emp_id, full_name FROM faculty WHERE status != 'Relieved' AND emp_id != 'ADMIN' ORDER BY full_name")],
         }
@@ -193,13 +195,6 @@ async def api_faculty_upload(file: UploadFile = File(...), user: User = Depends(
         return people.upload_faculty(conn, user, data)
 
 
-@router.get("/api/master/faculty-form-choices")
-def api_faculty_choices(user: User = Depends(admin_user)):
-    with db() as conn:
-        return Response(people.form_choices(conn), media_type="text/plain; charset=utf-8")
-
-
-# ================================================================ person pages (everything one person has entered, segregated)
 @router.get("/api/master/faculty/{emp_id}/profile")
 def api_faculty_profile(emp_id: str, ay_id: Optional[str] = None, user: User = Depends(staff_user)):
     with db() as conn:
@@ -288,29 +283,14 @@ def api_submission(sid: int, user: User = Depends(staff_user)):
         return submissions.get_submission(conn, user, sid)
 
 
-@router.get("/api/master/forms/{form_id}/template")
-def api_form_template(form_id: str, user: User = Depends(admin_user)):
-    if form_id not in ingest.specs()["forms"]:
-        raise HTTPException(404, "Unknown form")
-    heads = ingest.template_headers(form_id)
-    return _xlsx(f"{form_id}_template.xlsx", heads if heads[:1] == ["Timestamp"] else ["Timestamp", "Email Address"] + heads)
-
-
-@router.post("/api/master/forms/{form_id}/upload")
-async def api_form_upload(form_id: str, file: UploadFile = File(...), user: User = Depends(admin_user)):
-    if form_id not in ingest.specs()["forms"]:
-        raise HTTPException(404, "Unknown form")
-    return ingest.upload_excel(form_id, await _file(file))
-
-
-# ================================================================ placements (uploaded by the Admin; everyone else only reads, within their scope)
+# ================================================================ placements (uploaded by the Admin, or by a class tutor for their own class; others read within their scope)
 @router.get("/api/master/placements/template")
-def api_placement_template(user: User = Depends(admin_user)):
+def api_placement_template(user: User = Depends(editor_user)):
     return _xlsx("placements_template.xlsx", placements.template_headers(), placements.example_row())
 
 
 @router.post("/api/master/placements/upload")
-async def api_placement_upload(file: UploadFile = File(...), ay_id: Optional[str] = Form(None), user: User = Depends(admin_user)):
+async def api_placement_upload(file: UploadFile = File(...), ay_id: Optional[str] = Form(None), user: User = Depends(editor_user)):      # every row is checked against the tutor's class
     data = await _file(file)
     with db() as conn:
         return placements.upload_placements(conn, user, data, ay_id)

@@ -114,6 +114,8 @@ def _take_new_shipped(conn) -> None:
     version = str(shipped.get("version", ""))
     docs = {fid: _ids(spec) for fid, spec in shipped["forms"].items()}
     docs[PLACEMENT] = shipped["placement"]
+    if os.path.exists(SECTIONS_FILE):
+        docs[SECTIONS] = _read_file(SECTIONS_FILE)
     changed = False
     for form_id, spec in docs.items():
         rows = conn.execute("SELECT version, status, created_by, note, spec_json FROM form_definitions WHERE form_id = ? ORDER BY version", (form_id,)).fetchall()

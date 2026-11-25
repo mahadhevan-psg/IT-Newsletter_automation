@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from backend import app as studio  # noqa: E402
 from database import db_manager  # noqa: E402
+from database.master_db import init_master_db  # noqa: E402
 
 
 def test_dates_are_read_whatever_way_the_form_wrote_them():
@@ -27,7 +28,9 @@ def test_range_includes_both_ends_and_drops_undated_entries_only_when_a_range_is
 
 def test_entries_and_documents_use_only_the_chosen_range(tmp_path, monkeypatch):
     monkeypatch.setattr(db_manager, "DB_PATH", str(tmp_path / "news.db"))
+    monkeypatch.setenv("MASTER_DB_PATH", str(tmp_path / "master.db"))                 # the studio reads the master database: an empty one here
     db_manager.init_db()
+    init_master_db()
     issue = db_manager.get_all_issues()[0]["issue_id"]
     sec = db_manager.get_sections_and_categories()[0]
     mk = lambda title, date: db_manager.create_canonical_entry({
@@ -55,7 +58,9 @@ def test_a_bad_range_is_refused():
 
 def test_entries_are_approved_by_default_and_only_a_rejection_keeps_them_out(tmp_path, monkeypatch):
     monkeypatch.setattr(db_manager, "DB_PATH", str(tmp_path / "news.db"))
+    monkeypatch.setenv("MASTER_DB_PATH", str(tmp_path / "master.db"))                 # the studio reads the master database: an empty one here
     db_manager.init_db()
+    init_master_db()
     issue = db_manager.get_all_issues()[0]["issue_id"]
     sec = db_manager.get_sections_and_categories()[0]
     base = {"issue_id": issue, "section_id": sec["section_id"], "category_id": (sec.get("subcategories") or [{}])[0].get("category_id"), "title": "T", "event_date": "2026-03-15", "author_or_person": "A", "organization_or_venue": "V", "description": "d"}

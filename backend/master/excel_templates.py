@@ -25,7 +25,7 @@ STUDENT_NOTES = [
     "The class is not in the sheet: a tutor's own class is used automatically; the Admin picks the class in the upload box on the portal.",
     "A roll number that already exists is updated; if it was in another class it is moved to the class you upload for.",
     "A tutor can only upload students of their own class; the Admin can upload for any class.",
-    "Save as .xlsx (in Google Sheets: File > Download > Microsoft Excel). Delete nothing from the header row.",
+    "Save as .xlsx (File > Save as > Excel Workbook). Delete nothing from the header row.",
 ]
 
 FACULTY_HEADERS = ["Employee ID", "Full Name", "Email", "Phone", "Designation", "Qualification", "Date of Joining"]
@@ -43,7 +43,7 @@ FACULTY_NOTES = [
     "Admin only. Roles (HoD, programme coordinator, tutor) are set afterwards in the portal, not in this sheet.",
     "A new employee ID gets a temporary password, shown once after the upload (download it as CSV and share it privately).",
     "An employee ID that already exists is updated; nothing is deleted if a person is missing from the sheet.",
-    "Save as .xlsx (in Google Sheets: File > Download > Microsoft Excel). Delete nothing from the header row.",
+    "Save as .xlsx (File > Save as > Excel Workbook). Delete nothing from the header row.",
 ]
 
 _HEAD_FILL = PatternFill("solid", fgColor="1F4E78")

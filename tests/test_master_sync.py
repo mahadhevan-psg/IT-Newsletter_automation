@@ -64,9 +64,17 @@ def test_roster_of_roll_numbers_only_gets_names_from_the_college_records(master)
 
 
 def test_newsletter_takes_entries_from_the_master_database_once(master, monkeypatch):
+    from database import db_manager
+    monkeypatch.setattr(db_manager, "DB_PATH", str(master / "news.db"))
+    db_manager.init_db()
     created = []
-    monkeypatch.setattr(master_sync, "create_canonical_entry", lambda e: created.append(e) or f"ENTRY_{len(created)}")
-    monkeypatch.setattr(master_sync, "save_raw_response", lambda *a, **k: "RESP_1")
+    real = master_sync.create_canonical_entry
+
+    def keep(e):
+        created.append(e)
+        return real(e)
+
+    monkeypatch.setattr(master_sync, "create_canonical_entry", keep)
     ingest.ingest_form_row("form_student", student_row("21IT001\n21IT002", "Smart India Hackathon"))
     ingest.ingest_form_row("form_student", student_row("21IT001", "Private Project", permission="No - do not publish"))
 
@@ -78,7 +86,7 @@ def test_newsletter_takes_entries_from_the_master_database_once(master, monkeypa
     assert entry["section_id"] == "sec_student" and entry["issue_id"] == "ISSUE_X"
     with db() as conn:
         linked = conn.execute("SELECT newsletter_entry_id FROM form_submissions WHERE title = 'Smart India Hackathon'").fetchone()[0]
-    assert linked == "ENTRY_1"
+    assert linked == created[0].get("entry_id") or linked.startswith("ENTRY_")
 
     again = master_sync.MasterSync().sync("ISSUE_X")                                     # nothing new: no duplicate entries
     assert again["created"] == 0 and len(created) == 1

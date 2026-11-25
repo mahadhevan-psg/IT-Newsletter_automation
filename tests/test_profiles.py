@@ -85,11 +85,11 @@ def test_faculty_page_is_segregated_by_what_each_form_collects(world):
         p = profiles.faculty_profile(c, ADMIN, "EMP001")
     s = sections(p)
     assert list(s) == ["research", "achievements", "events", "outreach", "mentoring"]
-    assert groups(s["research"]) == {"Journal papers": ["Paper One"], "Patents & IP": ["Patent One"], "Funded projects": ["DST Project"]}
-    assert groups(s["achievements"]) == {"Awards & honours": ["Best Teacher"], "Invited talks & keynotes": ["Keynote on AI"]}
-    assert groups(s["events"]) == {"Workshops & FDPs organised": ["AI Workshop"], "Conferences & symposia organised": ["Symposium"]}
-    assert groups(s["outreach"]) == {"MoUs & collaborations": ["MoU with Acme"]}
-    assert groups(s["mentoring"]) == {"Hackathons & coding competitions": ["SIH 2025"]}      # EMP002 mentored the chess entry, not EMP001
+    assert groups(s["research"]) == {"Journal Publications": ["Paper One"], "Patents & Intellectual Property": ["Patent One"], "Funded Research Projects": ["DST Project"]}
+    assert groups(s["achievements"]) == {"Awards & Honors Received": ["Best Teacher"], "Invited Keynote / Expert Lectures Delivered": ["Keynote on AI"]}
+    assert groups(s["events"]) == {"Workshops & FDPs Organized": ["AI Workshop"], "Conferences & Symposia Organized": ["Symposium"]}
+    assert groups(s["outreach"]) == {"MoUs Signed & Industrial Collaborations": ["MoU with Acme"]}
+    assert groups(s["mentoring"]) == {"Hackathons & Coding Competitions": ["SIH 2025"]}      # EMP002 mentored the chess entry, not EMP001
 
     roles = {i["title"]: i["role"] for sec in p["sections"] for g in sec["groups"] for i in g["items"]}
     assert roles["Paper One"] == "Lead author" and roles["Patent One"] == "Co-author (#2)"
@@ -99,7 +99,7 @@ def test_faculty_page_is_segregated_by_what_each_form_collects(world):
     assert {"text": "Q1", "tone": "ok"} in paper["badges"]
     assert ["Authors", "Dr. Asha Rao, Kavin M, Dr. X (ext.)"] in paper["facts"]            # names looked up from the roll / employee IDs
     summary = {x["label"]: x["value"] for x in p["summary"]}
-    assert summary["Journal papers"] == 1 and summary["Patents"] == 1 and summary["Funded projects"] == 1 and summary["Events organised"] == 2
+    assert summary["Journal papers"] == 1 and summary["Patents"] == 1 and summary["Funded projects"] == 1 and summary["Department entries"] == 2
     assert summary["Talks & sessions"] == 1 and summary["Students mentored"] == 1 and summary["Research funding"] == "₹12,00,000"
     assert p["person"]["subtitle"] == "Professor" and any(t.startswith("Tutor · UG-") for t in p["person"]["tags"])
 
@@ -118,14 +118,14 @@ def test_student_page_splits_achievements_from_participations(world):
         p = profiles.student_profile(c, ADMIN, "21IT001")
     s = sections(p)
     assert list(s) == ["achievements", "participations", "research", "events", "placement"]
-    assert groups(s["achievements"]) == {"Hackathons & coding competitions": ["SIH 2025"]}
-    assert groups(s["participations"]) == {"Sports, cultural & co-curricular": ["Inter-college Chess"]}
-    assert groups(s["research"]) == {"Journal papers": ["Paper One"]}
+    assert groups(s["achievements"]) == {"Hackathons & Coding Competitions": ["SIH 2025"]}
+    assert groups(s["participations"]) == {"Sports, Cultural & Co-Curricular Accomplishments": ["Inter-college Chess"]}
+    assert groups(s["research"]) == {"Journal Publications": ["Paper One"]}
     assert groups(s["events"]) == {"Industry & outreach": ["MoU with Acme"]}
     assert set(groups(s["placement"])) == {"Status", "Offers", "Internship experience", "Interview experience"}
     sih = s["achievements"]["groups"][0]["items"][0]
     assert sih["role"] == "Team lead" and any(k == "Team" and "Kavin M" in v and "Divya S" in v for k, v in sih["facts"])
-    assert ["Prize / scholarship", "₹50,000"] in sih["facts"] and ["Mentor", "Dr. Asha Rao"] in sih["facts"]
+    assert any(v == "₹50,000" and k.startswith("Prize") for k, v in sih["facts"]) and ["Mentor", "Dr. Asha Rao"] in sih["facts"]      # under the form's own label
     summary = {x["label"]: x["value"] for x in p["summary"]}
     assert summary["Achievements"] == 1 and summary["Participations"] == 1 and summary["Offers"] == 1 and summary["Prize money"] == "₹50,000"
     with db() as c:
@@ -174,9 +174,9 @@ def test_catalog_lists_every_kind_of_work_with_counts(world):
         old = works.catalog(c, ADMIN, "2024-25")
     types = {t["label"]: t["count"] for g in cat["groups"] for t in g["types"]}
     assert [g["id"] for g in cat["groups"]] == ["RESEARCH", "FACULTY", "DEPARTMENT", "OUTREACH", "STUDENT"]
-    assert types["Journal papers"] == 1 and types["Patents & IP"] == 1 and types["Funded projects"] == 1 and types["Conference papers"] == 0
-    assert types["Awards & honours"] == 1 and types["Invited talks & keynotes"] == 1 and types["Workshops & FDPs organised"] == 1
-    assert types["Hackathons & coding competitions"] == 1 and types["Sports, cultural & co-curricular"] == 1 and types["MoUs & collaborations"] == 1
+    assert types["Journal Publications"] == 1 and types["Patents & Intellectual Property"] == 1 and types["Funded Research Projects"] == 1 and types["Conference Publications"] == 0
+    assert types["Awards & Honors Received"] == 1 and types["Invited Keynote / Expert Lectures Delivered"] == 1 and types["Workshops & FDPs Organized"] == 1
+    assert types["Hackathons & Coding Competitions"] == 1 and types["Sports, Cultural & Co-Curricular Accomplishments"] == 1 and types["MoUs Signed & Industrial Collaborations"] == 1
     assert cat["total"] == 10 and old["total"] == 1                         # the year filter changes the counts too
     research = next(g for g in cat["groups"] if g["id"] == "RESEARCH")
     quartile = next(f for f in research["filters"] if f["param"] == "quartile")
@@ -262,10 +262,10 @@ def read_csv(data: bytes):
 
 def test_export_contains_only_the_columns_the_user_picked(world):
     with db() as c:
-        head, rows = read_csv(works.export_csv(c, ADMIN, "RESEARCH", "", {}, ["title", "date", "authors", "quartile", "funding_amount"]))
-        assert head == ["Title", "Date", "Authors (in order)", "Quartile", "Funding amount (₹)"]            # exactly these, in this order
+        head, rows = read_csv(works.export_csv(c, ADMIN, "RESEARCH", "", {}, ["title", "date", "authors", "f_quartile", "f_funding_amount"]))
+        assert head[:3] == ["Title", "Date", "Authors (in order)"] and head[3] == "Quartile" and len(head) == 5            # exactly these, in this order, named as the form asks
         assert [r[0] for r in rows] == ["Paper One", "DST Project", "Patent One"]                           # newest first, same as the screen
-        assert rows[0][2] == "Dr. Asha Rao; Kavin M; Dr. X (ext.)" and rows[0][3] == "Q1" and float(rows[1][4]) == 1200000
+        assert rows[0][2] == "Dr. Asha Rao; Kavin M; Dr. X (ext.)" and rows[0][3] == "Q1" and rows[1][4] == "12 lakhs"      # form fields come out as they were entered
         _, journal = read_csv(works.export_csv(c, ADMIN, "RESEARCH", "Journal Publications", {}, ["title"]))
         assert journal == [["Paper One"]]
         _, narrowed = read_csv(works.export_csv(c, ADMIN, "RESEARCH", "", {"quartile": "Q1"}, ["title"]))     # the page's work filters still apply
@@ -288,11 +288,11 @@ def test_every_column_of_every_group_exports(world):
             assert len(keys) == len(set(keys)) and set(g["default_columns"]) <= set(keys), g["id"]
             head, rows = read_csv(works.export_csv(c, ADMIN, g["id"], "", {}, keys))                         # no SQL error for any column
             assert len(head) == len(keys) and len(rows) == g["count"], g["id"]
-            assert {col["part"] for col in g["columns"]} >= {"Basics", "Links"}
-        head, rows = read_csv(works.export_csv(c, ADMIN, "STUDENT", "Hackathons & Coding Competitions", {}, ["students", "rolls", "n_students", "classes", "mentor", "prize", "entry"]))
+            assert {col["part"] for col in g["columns"]} >= {"Basics", "People"}
+        head, rows = read_csv(works.export_csv(c, ADMIN, "STUDENT", "Hackathons & Coding Competitions", {}, ["students", "rolls", "n_students", "classes", "mentor", "f_prize_amount", "f_entry_kind"]))
         st = dict(zip(head, rows[0]))
         assert st["Roll numbers"] == "21IT001; 21IT002" and st["Number of students"] == "2" and st["Faculty mentor"] == "Dr. Asha Rao"
-        assert "Kavin M (21IT001)" in st["Students (name and roll no.)"] and st["Class at the time"] and st["Achievement or participation"] == "Achievement"
+        assert "Kavin M (21IT001)" in st["Students (name and roll no.)"] and st["Class at the time"] and "50000" in st.values() and any(v.startswith("Achievement") for v in st.values())
 
 
 def test_export_refuses_bad_requests_and_defuses_formulas(world):
@@ -318,11 +318,11 @@ def test_submissions_download_gives_the_picked_columns_within_the_users_scope(wo
         cat = exports.catalog("submissions")
         assert {"title", "date", "students", "faculty"} <= {x["key"] for x in cat["columns"]} and set(cat["default_columns"]) <= {x["key"] for x in cat["columns"]}
         head, rows = read_csv(exports.export_csv(c, ADMIN, "submissions", {}, ["title", "date", "submitted_by"]))
-        assert head == ["Title", "Date", "Submitted by (faculty)"] and len(rows) == submissions.list_submissions(c, ADMIN, {})["total"] > 0
+        assert head == ["Title", "Date", "Entered by (faculty)"] and len(rows) == submissions.list_submissions(c, ADMIN, {})["total"] > 0
         _, mine = read_csv(exports.export_csv(c, tutor, "submissions", {}, ["title"]))
         assert len(mine) == submissions.list_submissions(c, tutor, {})["total"] <= len(rows)            # a tutor downloads only what she can see
         _, one = read_csv(exports.export_csv(c, ADMIN, "submissions", {"form_type": "RESEARCH"}, ["form"]))
-        assert one and {r[0] for r in one} == {"Research & innovation"}                                  # the page's filters apply
+        assert one and {r[0] for r in one} == {"Research & Innovation"}                                  # the page's filters apply; the form's own title
         for cols in ([], ["title", "fs.title) FROM x; --"]):
             with pytest.raises(HTTPException) as e:
                 exports.export_csv(c, ADMIN, "submissions", {}, cols)

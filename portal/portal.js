@@ -338,8 +338,10 @@ async function viewClasses() {
 // ---------------------------------------------------------------- uploads
 async function viewUploads() {
   $('#view').innerHTML = `<div class="card-head"><h2>Data upload</h2></div>
-    <p class="hint">Download the template, fill it, then upload it. Student and faculty lists are uploaded from the Students and Faculty pages.</p>
-    ${uploadCard({ title: 'Placement data', hint: 'One row per offer. <b>A student who is already in the database is replaced</b> by the rows in this file (for that academic year).',
+    <p class="hint">Download a template, fill it, then upload it. There is one for each of the six forms. Student and faculty lists are uploaded from the Students and Faculty pages.</p>
+    ${meta.forms.map(f => uploadCard({ title: f.title, hint: 'One sheet per category (the student form has one sheet with a category column), one row per entry. Each row names the faculty member by employee ID. <b>Rows are saved as approved at once</b>; a row already in the records is skipped. Photos and files cannot go in Excel: paste a link or leave them empty.',
+      template: [`/api/master/bulk/${f.form_id}/template`, f.form_id + '_bulk_upload.xlsx'], path: `/api/master/bulk/${f.form_id}/upload` })).join('')}
+    ${uploadCard({ title: 'Student Placement Diary', hint: 'One row per offer. <b>A student who is already in the database is replaced</b> by the rows in this file (for that academic year).',
       template: ['/api/master/placements/template', 'placements_template.xlsx'], path: '/api/master/placements/upload',
       extra: `<select class="compact" id="pl-ay">${ayOpts(meta.current_ay, 'Academic year if the sheet has none')}</select>`,
       fields: (el, f) => { const v = $('#pl-ay', el).value; if (v) f.append('ay_id', v); } })}

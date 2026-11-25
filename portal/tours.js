@@ -85,8 +85,8 @@
       { target: '#add-class', optional: true, title: 'Add a class', body: '<p>For a new batch. Choose the programme, group, starting semester and tutor.</p>', place: 'bottom' },
       { target: '#view .graduate', optional: true, title: 'When a class finishes', body: '<p>In its last semester you can <b>mark it graduated</b>: its students become Graduated and the class closes. All records are kept.</p>', place: 'top' },
     ] });
-    if (has('ADMIN')) S.push({ id: 'uploads', label: 'Data upload', hint: 'Placement sheets', steps: () => [
-      { before: goTab('uploads'), target: () => document.querySelectorAll('#view > .card')[0], title: 'Placement sheets', body: '<p>Download the template, fill one row per offer, upload. <b>A student already in the system is replaced</b> by the rows in this file for that academic year.</p>', place: 'bottom' },
+    if (has('ADMIN')) S.push({ id: 'uploads', label: 'Data upload', hint: 'Excel uploads for all six forms', steps: () => [
+      { before: goTab('uploads'), target: () => document.querySelectorAll('#view > .card')[0], title: 'One card per form', body: '<p>Each of the six forms has a card: download its Excel template, fill it and upload it. The five faculty forms have a sheet per category and their rows are saved as approved (a wrong one can be revoked under <b>Review &amp; submissions</b>). In the <b>placement</b> card, a student already in the system is replaced by the rows for that year.</p>', place: 'bottom' },
       { target: card('#unmatched'), title: 'Roll numbers that matched nobody', body: '<p>If a roll number or employee ID on an entry matches nobody, it is listed here so you can fix the student list or the entry. Nothing is lost.</p>', place: 'top' },
     ] });
     if (hasClasses()) S.push({ id: 'placements', label: 'Placements', hint: 'Offers and opt-in / opt-out', steps: () => [

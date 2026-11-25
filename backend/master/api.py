@@ -4,9 +4,10 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, Response, UploadFile
 
 from backend.master import analytics, diary, excel_templates, exports, ingest, people, placements, profiles, submissions, works
+from backend.master import bulk
 from backend.master.auth import User, admin_user, change_password, current_user, editor_user, login, mark_tour_seen, staff_user
 from backend.master.common import make_xlsx
-from database.master_db import db
+from database.master_db import audit, db
 
 router = APIRouter()
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -281,6 +282,21 @@ def api_unmatched(user: User = Depends(admin_user)):
 def api_submission(sid: int, user: User = Depends(staff_user)):
     with db() as conn:
         return submissions.get_submission(conn, user, sid)
+
+
+# ================================================================ bulk upload of the five faculty forms (the Admin)
+@router.get("/api/master/bulk/{form_id}/template")
+def api_bulk_template(form_id: str, user: User = Depends(admin_user)):
+    return Response(bulk.template(form_id), media_type=XLSX, headers={"Content-Disposition": f'attachment; filename="{form_id}_bulk_upload.xlsx"'})
+
+
+@router.post("/api/master/bulk/{form_id}/upload")
+async def api_bulk_upload(form_id: str, file: UploadFile = File(...), user: User = Depends(admin_user)):
+    data = await _file(file)
+    with db() as conn:
+        result = bulk.upload(conn, user, form_id, data)
+        audit(conn, user.id, "BULK_UPLOAD", "form_submissions", form_id, f"{result['added']} added, {result['duplicates_skipped']} already there, {result['rows']} rows")
+    return result
 
 
 # ================================================================ placements (uploaded by the Admin, or by a class tutor for their own class; others read within their scope)

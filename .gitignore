@@ -25,3 +25,4 @@ google-key*.json
 database/master_system.db*
 database/INITIAL_ADMIN_PASSWORD.txt
 database/.master_secret
+git_sync.bat

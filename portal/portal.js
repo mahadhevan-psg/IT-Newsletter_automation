@@ -107,10 +107,10 @@ function table(cols, rows, o = {}) {
   return `<div class="scroll"><table class="table"><thead><tr>${cols.map(c => `<th class="${c.num ? 'num' : ''}">${esc(c.h)}</th>`).join('')}</tr></thead><tbody>` +
     rows.map((r, i) => `<tr class="${o.click ? 'click' : ''}" data-i="${i}">${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.html ? c.html(r) : esc(c.f ? c.f(r) : r[c.k])}</td>`).join('')}</tr>`).join('') + '</tbody></table></div>';
 }
-function bars(series, unit = '') {
+function bars(series, unit = '', full = false) {                  // full: long names (categories) wrap instead of being cut short
   if (!series || !series.length) return '<div class="empty">No data yet.</div>';
   const max = Math.max(...series.map(s => s.value), 1);
-  return '<div class="bars">' + series.map(s => `<div class="bar-row"><span class="lbl" title="${esc(s.label)}">${esc(s.label)}</span><div class="bar"><i style="width:${Math.round(100 * s.value / max)}%"></i></div><span class="val">${esc(s.value)}${unit}</span></div>`).join('') + '</div>';
+  return `<div class="bars ${full ? 'full' : ''}">` + series.map(s => `<div class="bar-row"><span class="lbl" title="${esc(s.label)}">${esc(s.label)}</span><div class="bar"><i style="width:${Math.round(100 * s.value / max)}%"></i></div><span class="val">${esc(s.value)}${unit}</span></div>`).join('') + '</div>';
 }
 const kpi = (n, l) => `<div class="kpi"><b>${esc(n ?? '–')}</b><span>${esc(l)}</span></div>`;
 // ...but changes stay with the Admin and the tutor of the class
@@ -184,15 +184,30 @@ async function boot() {
   meta = await api('/api/master/meta');
   $('#app').classList.remove('hidden');
   $('#who').textContent = `${me.name} · ${me.roles.filter(r => r !== 'FACULTY').join(', ') || 'Faculty'}`;
-  if (me.roles.includes('ADMIN') || me.roles.includes('HOD')) $('#who').insertAdjacentHTML('beforeend', ' <a class="btn sm" href="/newsletter/">Newsletter studio</a>');
-  const tabs = [
-    ['dash', 'Dashboard', () => true], ['entry', 'Add entry', () => !me.roles.includes('ADMIN')], ['review', 'Review & submissions', () => true], ['builder', 'Form builder', () => me.roles.includes('ADMIN')],
-    ['students', 'Students', hasClasses], ['classes', 'Classes', () => me.roles.includes('ADMIN')], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
-    ['records', 'Records', () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
-    .filter(t => t[2]() && (!me.must_change || t[0] === 'account'));       // with a temporary password there is only one thing to do
-  if (me.must_change) $('#who a')?.remove();
-  $('#tabs').innerHTML = tabs.map(t => `<button class="tab" data-t="${t[0]}">${t[1]}</button>`).join('');
-  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); };
+  // The sidebar. The Admin and everyone else have their own menu; an item is [page, name, who may see it], and a group opens in place.
+  const admin = me.roles.includes('ADMIN');
+  const studio = { href: '/newsletter/', label: 'Newsletter studio', ok: admin || me.roles.includes('HOD') };
+  const students = ['students', 'View student data', hasClasses];
+  const menu = admin ? [
+    ['dash', 'Dashboard'], ['records', 'Reports'], ['review', 'Contribution tracker'],
+    { group: 'Administration', items: [['uploads', 'Bulk data upload'], ['faculty', 'Faculty & roles'], ['classes', 'View classes'], students, ['builder', 'Software customization'], studio] },
+    ['mine', 'My activities'], ['account', 'Account'],
+  ] : [
+    ['dash', 'Dashboard'], ['entry', 'Data submission'], ['records', 'Reports'], ['review', 'Contribution tracker'],
+    students, ['faculty', 'View faculty data', () => me.all_access],
+    studio, ['mine', 'My activities'], ['account', 'Account'],
+  ];
+  // with a temporary password there is only one thing to do
+  const allowed = x => me.must_change ? x[0] === 'account' : x.href ? x.ok : !x[2] || x[2]();
+  const shown = menu.map(x => x.group ? { group: x.group, items: x.items.filter(allowed) } : x).filter(x => x.group ? x.items.length : allowed(x));
+  const tabs = shown.flatMap(x => x.group ? x.items : [x]).filter(x => !x.href);
+  const item = x => x.href ? `<a class="tab" href="${x.href}">${esc(x.label)}</a>` : `<button type="button" class="tab" data-t="${x[0]}">${esc(x[1])}</button>`;
+  $('#tabs').innerHTML = shown.map((x, n) => !x.group ? item(x) : `<button type="button" class="tab tab-group" data-group aria-expanded="false" aria-controls="tab-sub-${n}">${esc(x.group)}<span class="chev" aria-hidden="true"></span></button>
+    <div class="tab-sub" id="tab-sub-${n}" hidden>${x.items.map(item).join('')}</div>`).join('');
+  $('#tabs').onclick = e => {
+    const g = e.target.closest('[data-group]'); if (g) return openGroup(g, g.getAttribute('aria-expanded') !== 'true');
+    const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t);
+  };
   $('#nav-toggle').onclick = () => setNav(!navIsOpen(), true);
   $('#nav-close').onclick = $('#nav-shade').onclick = () => setNav(false, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && navIsOpen()) setNav(false, true); });
@@ -210,12 +225,18 @@ function setNav(open, focus) {
   $('#nav-toggle').setAttribute('aria-expanded', open);
   if (focus) (open ? $('#tabs .tab.active') || $('#tabs .tab') : $('#nav-toggle'))?.focus({ preventScroll: true });
 }
+function openGroup(button, open) {
+  button.setAttribute('aria-expanded', open);
+  document.getElementById(button.getAttribute('aria-controls')).hidden = !open;
+}
 function show(id) {
   current = id;
   setNav(false);
   if (location.hash) history.replaceState(null, '', location.pathname);
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.t === id));
-  $('#banner').innerHTML = me.must_change ? '<div class="banner">Please set a new password (Account tab) - you are still using a temporary one.</div>' : '';
+  const inGroup = $(`.tab-sub .tab[data-t="${id}"]`)?.closest('.tab-sub');        // the group holding the page on screen is open
+  if (inGroup) openGroup($(`[aria-controls="${inGroup.id}"]`), true);
+  $('#banner').innerHTML = me.must_change ? '<div class="banner">Please set a new password (Account page) - you are still using a temporary one.</div>' : '';
   $('#view').onclick = null;
   $('#view').innerHTML = '<div class="empty">Loading…</div>';
   go(VIEWS[id])();
@@ -253,21 +274,22 @@ function dashCard(h, on, wholeDept) {
 // what is shown under the cards for the category that is chosen
 function dashDetail(id, a) {
   const s = a.students, p = a.placements, d = a.department;
+  const categories = () => bars(a.highlights.find(h => h.id === id).categories, '', true);
   const box = (title, body) => `<div class="card"><h4>${title}</h4>${body}</div>`;
   const pair = (x, y) => `<div class="grid-2">${x}${y}</div>`;
-  if (id === 'student') return pair(box('By category', bars(s.by_category)), box('By level', bars(s.by_level))) +
+  if (id === 'student') return pair(box('By category', categories()), box('By level', bars(s.by_level))) +
     pair(box('Achievement or participation', bars(s.by_kind)), box('By academic year', bars(s.by_year))) +
     pair(box('Class-wise participation', table([{ h: 'Class', k: 'label' }, { h: 'Students', k: 'students', num: 1 }, { h: 'Achievers', k: 'achievers', num: 1 }, { h: 'Achievements', k: 'achievements', num: 1 }], s.per_class)),
       box('Top students', table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'name' }, { h: 'Class', k: 'class_code' }, { h: 'Count', k: 'achievements', num: 1 }], s.top_students)));
   if (id === 'placement') return `<div class="kpis">${kpi(p.opted_in, 'Opted in')}${kpi(p.opted_out, 'Opted out')}${kpi(p.unplaced_opted_in, 'Opted in, not placed')}${kpi(p.median_lpa ? p.median_lpa + ' LPA' : '–', 'Median package')}</div>` +
     pair(box('Package distribution (LPA)', bars(p.package_distribution)), box('Offer type', bars(p.by_offer_type))) +
     pair(box('Top recruiters', bars(p.by_company)), box('Placed per year', bars(p.by_year))) + box('Reasons for opting out', bars(p.opt_out_reasons));
-  if (id === 'research') return pair(box('By type', bars(d.research_by_category)), box('By indexing', bars(d.research_by_indexing))) + box('By quartile', bars(d.research_by_quartile));
-  if (id === 'faculty') return pair(box('By category', bars(d.faculty_by_category)), box('By level', bars(d.faculty_by_level))) +
+  if (id === 'research') return box('By category', categories()) + pair(box('By indexing', bars(d.research_by_indexing)), box('By quartile', bars(d.research_by_quartile)));
+  if (id === 'faculty') return pair(box('By category', categories()), box('By level', bars(d.faculty_by_level))) +
     box('Most active faculty (entries in all forms)', table([{ h: 'ID', html: r => profileLink('faculty', r.emp_id) }, { h: 'Name', k: 'name' }, { h: 'Submissions', k: 'submissions', num: 1 }], d.top_faculty));
-  if (id === 'department') return pair(box('By category', bars(d.department_by_category)),
+  if (id === 'department') return pair(box('By category', categories()),
     box('MoU status', table([{ h: 'Partner', k: 'partner' }, { h: 'Expiry', k: 'expiry' }, { h: 'Status', html: r => `<span class="pill ${r.status === 'Active' ? 'ok' : r.status === 'Expired' ? 'bad' : 'warn'}">${r.status}</span>` }], d.mou_status)));
-  return pair(box('By category', bars(d.outreach_by_category)), box('Top partners', bars(d.top_partners)));
+  return pair(box('By category', categories()), box('Top partners', bars(d.top_partners)));
 }
 async function viewDash() {
   const st = { ay: '', cls: '', prog: '', pick: '' };
@@ -310,7 +332,7 @@ async function viewDash() {
 // ---------------------------------------------------------------- students
 async function viewStudents() {
   const st = { class_id: '', status: 'Active', q: '', offset: 0 };
-  $('#view').innerHTML = `<div class="card-head"><h2>Students</h2><div>${isEditor() ? '<button class="btn primary" id="add-st">+ Add student</button>' : ''}</div></div>
+  $('#view').innerHTML = `<div class="card-head"><h2>Student data</h2><div>${isEditor() ? '<button class="btn primary" id="add-st">+ Add student</button>' : ''}</div></div>
     <div class="filters">${hasBothGroups() ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${classFilter('f-class', 'All Classes')}
       <select class="compact" id="f-status"><option>Active</option><option>Graduated</option><option>Removed</option><option value="">Any status</option></select>
       <input class="input compact" id="f-q" placeholder="Search roll no / name"></div>
@@ -361,7 +383,7 @@ async function viewStudents() {
 async function viewClasses() {
   const classes = await api('/api/master/classes'); meta.classes = classes;
   const admin = me.roles.includes('ADMIN');
-  $('#view').innerHTML = `<div class="card-head"><h2>Classes</h2>${admin ? '<button class="btn primary" id="add-class">+ Add class</button>' : ''}</div>
+  $('#view').innerHTML = `<div class="card-head"><h2>View classes</h2>${admin ? '<button class="btn primary" id="add-class">+ Add class</button>' : ''}</div>
     <p class="hint">A class is known by its tutor and its semester. Two semesters make a year (UG has 8 semesters, PG has 4), so the year and the class code follow the semester the tutor sets: nobody is promoted, the students simply stay in their class as it moves up. Two classes can be in the same year at once. Only the Admin changes a class's tutor or adds a class.</p>` +
     (classes.map(c => `<div class="card" data-c="${c.class_id}"><div class="card-head"><div><h3>${esc(c.class_code)} · ${esc(c.ay_id)}</h3>
       <span class="muted">${c.student_count} active students</span></div>
@@ -397,8 +419,8 @@ async function viewClasses() {
 
 // ---------------------------------------------------------------- uploads
 async function viewUploads() {
-  $('#view').innerHTML = `<div class="card-head"><h2>Data upload</h2></div>
-    <p class="hint">Download a template, fill it, then upload it. There is one for each of the six forms. Student and faculty lists are uploaded from the Students and Faculty pages.</p>
+  $('#view').innerHTML = `<div class="card-head"><h2>Bulk data upload</h2></div>
+    <p class="hint">Download a template, fill it, then upload it. There is one for each of the six forms. Student and faculty lists are uploaded from the View student data and Faculty &amp; roles pages.</p>
     ${meta.forms.map(f => uploadCard({ title: f.title, hint: 'One sheet per category (the student form has one sheet with a category column), one row per entry. Each row names the faculty member by employee ID. <b>Rows are saved as approved at once</b>; a row already in the records is skipped. Photos and files cannot go in Excel: paste a link or leave them empty.',
       template: [`/api/master/bulk/${f.form_id}/template`, f.form_id + '_bulk_upload.xlsx'], path: `/api/master/bulk/${f.form_id}/upload` })).join('')}
     ${uploadCard({ title: 'Student Placement Diary', hint: 'One row per offer. <b>A student who is already in the database is replaced</b> by the rows in this file (for that academic year).',
@@ -594,7 +616,7 @@ async function viewFaculty() {
   const desigs = [...new Set(list.map(f => f.designation).filter(Boolean))].sort();
   const count = (f, k) => (f.counts || {})[k] || 0;
   const hasRole = (f, r) => r === 'TUTOR' ? f.tutor_of.length > 0 : f.roles.some(x => x.role === r);
-  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty'}</h2>${admin ? '<div><button class="btn" id="fac-order">⇅ Change order</button> <button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
+  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty data'}</h2>${admin ? '<div><button class="btn" id="fac-order">⇅ Change order</button> <button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
     <div class="filters">
       <input class="input compact" id="ff-q" placeholder="Search name, ID or email" style="min-width:220px">
       <select class="compact" id="ff-desig">${opts(desigs, d => d, d => d, '', 'Any designation')}</select>
@@ -636,7 +658,7 @@ async function viewFaculty() {
     if (t.dataset.rel && confirm('Relieve ' + f.full_name + '? Their records stay; they can no longer sign in.')) { await api('/api/master/faculty/' + f.emp_id, { method: 'PUT', body: { status: 'Relieved' } }); toast('Relieved'); show('faculty'); }
     if (t.dataset.roles) {
       const has = (role, p, g) => f.roles.some(r => r.role === role && (r.programme || '') === (p || '') && (r.grp || '') === (g || ''));
-      modal('Roles for ' + f.full_name, `<p class="hint">Tutor is set on the Classes page.</p>${[['ADMIN', '', ''], ['HOD', '', ''], ['PC', 'UG', 'G1'], ['PC', 'UG', 'G2'], ['PC', 'PG', '']]
+      modal('Roles for ' + f.full_name, `<p class="hint">Tutor is set on the View classes page.</p>${[['ADMIN', '', ''], ['HOD', '', ''], ['PC', 'UG', 'G1'], ['PC', 'UG', 'G2'], ['PC', 'PG', '']]
         .map(([r, p, g]) => `<label style="display:block;margin:6px 0"><input type="checkbox" data-r="${r}" data-p="${p}" data-g="${g}" ${has(r, p, g) ? 'checked' : ''}> ${r === 'PC' ? 'Programme Coordinator – ' + p + (g ? ' ' + g : '') : r === 'HOD' ? 'Head of Department' : 'Admin'}</label>`).join('')}`,
         async o => { await api(`/api/master/faculty/${f.emp_id}/roles`, { method: 'PUT', body: { roles: [...o.querySelectorAll('input:checked')].map(i => ({ role: i.dataset.r, programme: i.dataset.p, grp: i.dataset.g })) } }); toast('Roles saved'); show('faculty'); });
     }
@@ -701,7 +723,7 @@ async function viewRecords() {
       : '<div class="card"><div class="empty">Nothing matches these filters.</div></div>';
     const more = $('#w-more'); if (more) more.onclick = go(() => load(false));
   };
-  $('#view').innerHTML = `<div class="card-head"><h2>Records</h2></div><div class="wk-bar" id="wk-bar"></div><div id="rec-body"></div>`;
+  $('#view').innerHTML = `<div class="card-head"><h2>Reports</h2></div><div class="wk-bar" id="wk-bar"></div><div id="rec-body"></div>`;
   // one kind of work: its own filters, totals, cards and a download with every field of its form
   const showWork = async () => {
     $('#rec-body').innerHTML = `<div class="card"><div class="card-head"><div><h3 id="wk-title"></h3><p class="hint" id="wk-hint" style="margin:2px 0 0"></p></div>

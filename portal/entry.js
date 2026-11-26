@@ -11,7 +11,7 @@
     E.cat = await api('/api/entry/catalog'); E.drafts = E.cat.drafts;
     const forms = E.cat.forms;
     $('#view').innerHTML = `<div class="en">
-      <div class="card-head"><div><h2>Add an entry</h2><p class="hint" style="margin:2px 0 0">Choose what happened. Your entry goes to the Admin or HoD for approval; nothing is used before that.</p></div></div>
+      <div class="card-head"><div><h2>Data submission</h2><p class="hint" style="margin:2px 0 0">Choose what happened. Your entry goes to the Admin or HoD for approval; nothing is used before that.</p></div></div>
       <div class="en-search"><input class="input" id="en-q" placeholder="What happened? Try “hackathon”, “paper”, “MoU”, “award”" autocomplete="off"></div>
       <div id="en-drafts"></div><div id="en-tiles"></div><div id="en-composer"></div></div>`;
     drawDrafts(); drawTiles('');

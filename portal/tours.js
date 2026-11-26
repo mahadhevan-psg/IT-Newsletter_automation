@@ -11,7 +11,7 @@
   const card = selector => () => document.querySelector(selector)?.closest('.card');
 
   // ================================================================ staff portal (/portal/)
-  // These rely on the portal's own globals: me, current, show(), isEditor(), hasClasses()
+  // These rely on the portal's own globals: me, current, show(), isEditor()
   function portal(me, token) {
     const has = r => me.roles.includes(r);
     const goTab = id => async () => { if (current !== id || id === 'mine') show(id); };
@@ -19,12 +19,12 @@
     const welcome = () => {
       const blocks = [];
       if (has('ADMIN')) blocks.push(role('Admin', 'You run the system: add faculty and give them roles, choose each class\'s tutor, change the forms under Software customization, upload placement sheets, and see every analytic.'));
-      if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. You also <b>approve the entries</b> faculty submit (see <b>Contribution tracker</b>).'));
+      if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. You also <b>approve the entries</b> faculty submit (see <b>Returned submissions</b>).'));
       if (has('PC')) blocks.push(role('Programme Coordinator', 'You coordinate your programme. Like all faculty you can see every record in the department; your view is read-only.'));
-      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Contribution tracker</b>).'));
+      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Returned submissions</b>).'));
       blocks.push(role('Faculty', blocks.length
-        ? 'You also have your own page of everything you have entered (see <b>My activities</b>).'
-        : 'You can see and download all the department\'s records: records, placements and everyone\'s activities. Your own page (<b>My activities</b>) lists what you have entered.'));
+        ? 'You also have your own page of everything you have entered (see <b>Contribution tracker</b>).'
+        : 'You can see and download all the department\'s records: records, placements and everyone\'s activities. Your own page (<b>Contribution tracker</b>) lists what you have entered.'));
       return [{
         welcome: true, title: `Welcome, ${esc(firstName(me.name))}!`,
         body: `<p>This is the <b>IT Department Portal</b>: students, classes, faculty work, placements and analytics in one place. Here is what <b>your role${blocks.length > 1 ? 's' : ''}</b> can do:</p>${blocks.join('')}
@@ -43,7 +43,7 @@
 
     const S = [];                                                   // sections, in tab order, only the ones this person can open
     S.push({ id: 'basics', label: 'Menu and top bar', hint: 'Menu, Help, sign out', steps: () => [
-      { target: '#nav-toggle', before: () => { setNav(false); window.scrollTo(0, 0); }, title: 'The menu button', body: '<p>This button opens the menu. A red number on it means entries are waiting under <b>Contribution tracker</b>.</p>', place: 'bottom' },
+      { target: '#nav-toggle', before: () => { setNav(false); window.scrollTo(0, 0); }, title: 'The menu button', body: '<p>This button opens the menu. A red number on it means entries are waiting under <b>Returned submissions</b>.</p>', place: 'bottom' },
       { before: async () => { setNav(true); await TourUtil.sleep(260); }, target: '#tabs', title: 'Your menu', body: '<p>Each item is a part of the portal; one with an arrow opens to show more. <b>What you see depends on your role</b>, so you only get what you can use. We will visit them one by one.</p>', place: 'right' },
       { before: () => setNav(false), target: '.tour-help', title: 'Help', body: '<p>Replay this tour, or have just the page you are on explained.</p>', place: 'bottom' },
       { target: '#who', title: 'Who you are', body: '<p>Your name and role(s).</p>', place: 'bottom' },
@@ -65,13 +65,13 @@
       { target: '.bd-fields', title: 'Fields', body: '<p>Click a field to change its name, kind, choices or newsletter role. Retire a field to hide it from new entries while keeping old answers.</p>', place: 'top' },
       { target: '#bd-edit', title: 'Draft, then publish', body: '<p>Your changes stay in a draft. <b>Publish changes</b> makes them live for everyone and updates the newsletter. History lets you go back to an earlier version.</p>', place: 'left' },
     ] });
-    S.push({ id: 'review', label: 'Contribution tracker', hint: 'Check, edit and approve entries', steps: () => [
+    S.push({ id: 'review', label: 'Returned submissions', hint: 'Check, edit and approve entries', steps: () => [
       { before: goTab('review'), target: '#rv-tabs', title: 'Where entries wait', body: `<p>${me.roles.includes('ADMIN') || me.roles.includes('HOD') ? 'Entries wait here until you decide. <b>Nothing is used in the application before it is approved.</b>' : me.tutor_class_ids.length ? 'The placement details of your students wait here for your approval.' : 'Entries sent back to you for correction appear here, and you can follow what you submitted.'}</p><p>The red number on the tab is how many need you.</p>`, place: 'bottom' },
       { target: '#rv-list', title: 'The queue', body: '<p>Click an entry to read it. An orange mark means something needs a look (a roll number that matches nobody, a missing link). Tick several and use <b>Approve selected</b>, or <b>Approve all clean</b> for those with no marks.</p>', place: 'right' },
       { target: '#rv-detail', optional: true, title: 'Read, then decide', body: '<p>Answers are listed as in the form, and the people the IDs belong to are shown, so mistakes stand out. Hover a value and click the pencil to fix it.</p>', place: 'left' },
       { target: '#rv-foot', optional: true, title: 'Four ways to decide', body: '<p><b>Approve</b> as it is. <b>Edit &amp; approve</b> to fix it first (both versions are kept). <b>Reject with reason</b> sends it back to a faculty member you choose, who corrects it and resubmits. <b>Reject without reason</b> sets it aside.</p>', place: 'top' },
     ] });
-    if (hasClasses()) S.push({ id: 'students', label: 'View student data', hint: 'Find, add and open students', steps: () => [
+    if (me.student_list) S.push({ id: 'students', label: 'View student data', hint: 'Find, add and open students', steps: () => [
       { before: goTab('students'), target: '#view .filters', title: 'Find students', body: `<p>${document.getElementById('f-grp') ? 'Choose <b>both groups, G1 or G2</b>, then a class, a status, or search by roll number or name.' : 'Pick a class, a status, or search by roll number or name.'}</p>`, place: 'bottom' },
       { target: '#st-list', title: 'The student list', body: `<p><b>Click a roll number</b> to open that student\'s page: achievements, participations, research, events and placement.</p>${isEditor() ? '<p><b>Move</b> shifts a student to another class; <b>Remove</b> takes them out of the class (their records are kept).</p>' : '<p>This list is view-only for your role.</p>'}</p>`, place: 'top' },
       { target: '#add-st', optional: true, title: 'Add a student', body: '<p>Enter a roll number and name for a student who joins your class.</p>', place: 'bottom' },
@@ -85,10 +85,10 @@
       { target: '#view .graduate', optional: true, title: 'When a class finishes', body: '<p>In its last semester you can <b>mark it graduated</b>: its students become Graduated and the class closes. All records are kept.</p>', place: 'top' },
     ] });
     if (has('ADMIN')) S.push({ id: 'uploads', label: 'Bulk data upload', hint: 'Excel uploads for all six forms', steps: () => [
-      { before: goTab('uploads'), target: () => document.querySelectorAll('#view > .card')[0], title: 'One card per form', body: '<p>Each of the six forms has a card: download its Excel template, fill it and upload it. The five faculty forms have a sheet per category and their rows are saved as approved (a wrong one can be revoked under <b>Contribution tracker</b>). In the <b>placement</b> card, a student already in the system is replaced by the rows for that year.</p>', place: 'bottom' },
+      { before: goTab('uploads'), target: () => document.querySelectorAll('#view > .card')[0], title: 'One card per form', body: '<p>Each of the six forms has a card: download its Excel template, fill it and upload it. The five faculty forms have a sheet per category and their rows are saved as approved (a wrong one can be revoked under <b>Returned submissions</b>). In the <b>placement</b> card, a student already in the system is replaced by the rows for that year.</p>', place: 'bottom' },
       { target: card('#unmatched'), title: 'Roll numbers that matched nobody', body: '<p>If a roll number or employee ID on an entry matches nobody, it is listed here so you can fix the student list or the entry. Nothing is lost.</p>', place: 'top' },
     ] });
-    if (me.all_access) S.push({ id: 'faculty', label: has('ADMIN') ? 'Faculty & roles' : 'View faculty data', hint: 'Directory, activity counts, roles', steps: () => [
+    if (has('ADMIN') || has('HOD')) S.push({ id: 'faculty', label: has('ADMIN') ? 'Faculty & roles' : 'View faculty data', hint: 'Directory, activity counts, roles', steps: () => [
       { before: goTab('faculty'), target: () => document.getElementById('ff-q')?.closest('.filters'), title: 'Find faculty', body: '<p>Search, or filter by <b>designation, status, role</b>, or by what they have entered (research, achievements, events, outreach, mentoring).</p>', place: 'bottom' },
       { target: '#fac-list', title: 'The faculty table', body: `<p>The counts show how much each person has entered. <b>Click a name</b> or <b>Activities</b> to open their page.</p>${has('ADMIN') ? '<p>As Admin you can also set <b>Roles</b>, <b>Edit</b>, <b>Reset password</b> or <b>Relieve</b> someone.</p>' : ''}`, place: 'top' },
       { target: '#fac-order', optional: true, title: 'Order of faculty', body: '<p>Faculty are listed from A to Z until you change it here. <b>The order you save is what everyone sees</b>, in the list and in faculty drop-downs.</p>', place: 'bottom' },
@@ -101,7 +101,7 @@
       { target: '#s-out', optional: true, title: 'Open a record', body: '<p><b>Click a row</b> for everything that was entered: the people involved, every detail, and the documents.</p>', place: 'top' },
       { target: '#s-dl', optional: true, title: 'Download', body: '<p>Set the <b>dates</b>, <b>tick the columns</b> you want and download a file for Excel. Choosing one form first gives you a column for every field of that form.</p>', place: 'bottom' },
     ] });
-    S.push({ id: 'mine', label: 'My activities', hint: 'Your own page', steps: () => profileSteps(goTab('mine')) });
+    S.push({ id: 'mine', label: 'Contribution tracker', hint: 'Your own page', steps: () => profileSteps(goTab('mine')) });
     S.push({ id: 'account', label: 'Account', hint: 'Change your password', steps: () => [
       { before: goTab('account'), target: card('#pw-old'), title: 'Your password', body: '<p>Choose a new password of at least 8 characters. A temporary password from the Admin must be changed after your first sign-in.</p>', place: 'bottom' },
     ] });

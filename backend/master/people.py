@@ -163,8 +163,11 @@ def set_tutor(conn, admin: User, class_id: int, emp_id: str):
 
 # ================================================================ students
 def _student_scope(user: User, where: List[str], args: List[Any]):
-    if not user.all_access:
-        ids = sorted(user.class_ids) or [-1]
+    """The student list: everyone for the Admin, HoD and Programme Coordinators; a tutor's own class; nobody else."""
+    if user.student_list is None:
+        raise HTTPException(403, "The student list is for the Admin, HoD, Programme Coordinators and class tutors")
+    if user.student_list == "own":
+        ids = sorted(user.tutor_class_ids)
         where.append(f"s.class_id IN ({','.join('?' * len(ids))})")
         args += ids
 

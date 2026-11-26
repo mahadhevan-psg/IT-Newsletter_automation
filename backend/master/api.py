@@ -156,6 +156,8 @@ async def api_students_upload(file: UploadFile = File(...), class_id: Optional[i
 # ================================================================ faculty (Admin)
 @router.get("/api/master/faculty")
 def api_faculty(q: str = "", status: str = "", user: User = Depends(staff_user)):
+    if not user.sees_faculty_list:
+        raise HTTPException(403, "The faculty list is for the Admin and HoD")
     with db() as conn:
         return people.list_faculty(conn, user, q, status)
 

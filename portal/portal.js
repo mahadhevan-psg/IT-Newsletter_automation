@@ -116,7 +116,8 @@ const kpi = (n, l) => `<div class="kpi"><b>${esc(n ?? '–')}</b><span>${esc(l)}
 // ...but changes stay with the Admin and the tutor of the class
 const mayEditClass = id => meta.classes.some(c => c.class_id === id && c.can_edit);
 const isEditor = () => me.roles.includes('ADMIN') || me.tutor_class_ids.length > 0;
-const hasClasses = () => me.all_access || me.class_ids.length > 0;
+// the student list: all classes for the Admin, HoD and coordinators; a tutor's own; the server enforces the same
+const listClasses = () => me.student_list === 'all' ? meta.classes : meta.classes.filter(c => me.tutor_class_ids.includes(c.class_id));
 const fmtMoney = n => n == null ? '' : Number(n).toLocaleString('en-IN');
 
 function resultBox(res) {
@@ -187,15 +188,15 @@ async function boot() {
   // The sidebar. The Admin and everyone else have their own menu; an item is [page, name, who may see it], and a group opens in place.
   const admin = me.roles.includes('ADMIN');
   const studio = { href: '/newsletter/', label: 'Newsletter studio', ok: admin || me.roles.includes('HOD') };
-  const students = ['students', 'View student data', hasClasses];
+  const students = ['students', 'View student data', () => !!me.student_list];
   const menu = admin ? [
-    ['dash', 'Dashboard'], ['records', 'Reports'], ['review', 'Contribution tracker'],
+    ['dash', 'Dashboard'], ['records', 'Reports'], ['review', 'Returned submissions'],
     { group: 'Administration', items: [['uploads', 'Bulk data upload'], ['faculty', 'Faculty & roles'], ['classes', 'View classes'], students, ['builder', 'Software customization'], studio] },
-    ['mine', 'My activities'], ['account', 'Account'],
+    ['mine', 'Contribution tracker'], ['account', 'Account'],
   ] : [
-    ['dash', 'Dashboard'], ['entry', 'Data submission'], ['records', 'Reports'], ['review', 'Contribution tracker'],
-    students, ['faculty', 'View faculty data', () => me.all_access],
-    studio, ['mine', 'My activities'], ['account', 'Account'],
+    ['dash', 'Dashboard'], ['entry', 'Data submission'], ['records', 'Reports'], ['review', 'Returned submissions'],
+    students, ['faculty', 'View faculty data', () => me.roles.includes('HOD')],
+    studio, ['mine', 'Contribution tracker'], ['account', 'Account'],
   ];
   // with a temporary password there is only one thing to do
   const allowed = x => me.must_change ? x[0] === 'account' : x.href ? x.ok : !x[2] || x[2]();
@@ -332,8 +333,13 @@ async function viewDash() {
 // ---------------------------------------------------------------- students
 async function viewStudents() {
   const st = { class_id: '', status: 'Active', q: '', offset: 0 };
+  const mine = listClasses(), own = me.student_list === 'own';
+  const groups = new Set(mine.map(c => c.grp).filter(Boolean));
+  const pickClass = own && mine.length === 1 ? `<input type="hidden" id="f-class" value="${mine[0].class_id}">`
+    : `<select class="compact" id="f-class">${opts(mine, c => c.class_id, classLabel, '', own ? 'All my classes' : 'All Classes')}</select>`;
   $('#view').innerHTML = `<div class="card-head"><h2>Student data</h2><div>${isEditor() ? '<button class="btn primary" id="add-st">+ Add student</button>' : ''}</div></div>
-    <div class="filters">${hasBothGroups() ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${classFilter('f-class', 'All Classes')}
+    ${own ? `<p class="hint">Your class${mine.length > 1 ? 'es' : ''}: ${mine.map(c => esc(c.class_code)).join(', ')}</p>` : ''}
+    <div class="filters">${groups.size > 1 ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${pickClass}
       <select class="compact" id="f-status"><option>Active</option><option>Graduated</option><option>Removed</option><option value="">Any status</option></select>
       <input class="input compact" id="f-q" placeholder="Search roll no / name"></div>
     <div class="card" id="st-list"></div>
@@ -363,7 +369,7 @@ async function viewStudents() {
   const grp = $('#f-grp');
   if (grp) grp.onchange = go(async () => {          // narrow the class drop-down to the chosen group, then reload the list
     const cls = $('#f-class');
-    if (cls && cls.tagName === 'SELECT') cls.innerHTML = opts(meta.classes.filter(c => !grp.value || c.grp === grp.value), c => c.class_id, classLabel, '', 'All classes');
+    if (cls && cls.tagName === 'SELECT') cls.innerHTML = opts(mine.filter(c => !grp.value || c.grp === grp.value), c => c.class_id, classLabel, '', own ? 'All my classes' : 'All classes');
     await draw();
   });
   $('#f-q').oninput = go(draw);

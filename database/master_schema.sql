@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS faculty (
     qualification   TEXT,
     date_of_joining DATE,
     status          TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','OnLeave','Relieved')),
+    display_order   INTEGER,                      -- the Admin's order of faculty; NULL = by name, after those that have a place
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

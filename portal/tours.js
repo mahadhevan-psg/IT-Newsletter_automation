@@ -91,6 +91,7 @@
     if (me.all_access) S.push({ id: 'faculty', label: has('ADMIN') ? 'Faculty & roles' : 'Faculty', hint: 'Directory, activity counts, roles', steps: () => [
       { before: goTab('faculty'), target: () => document.getElementById('ff-q')?.closest('.filters'), title: 'Find faculty', body: '<p>Search, or filter by <b>designation, status, role</b>, or by what they have entered (research, achievements, events, outreach, mentoring).</p>', place: 'bottom' },
       { target: '#fac-list', title: 'The faculty table', body: `<p>The counts show how much each person has entered. <b>Click a name</b> or <b>Activities</b> to open their page.</p>${has('ADMIN') ? '<p>As Admin you can also set <b>Roles</b>, <b>Edit</b>, <b>Reset password</b> or <b>Relieve</b> someone.</p>' : ''}`, place: 'top' },
+      { target: '#fac-order', optional: true, title: 'Order of faculty', body: '<p>Faculty are listed from A to Z until you change it here. <b>The order you save is what everyone sees</b>, in the list and in faculty drop-downs.</p>', place: 'bottom' },
       { target: '#add-fac', optional: true, title: 'Add faculty', body: '<p>Creates the login and shows a <b>one-time temporary password</b>. Share it privately; they must change it at first sign-in.</p>', place: 'bottom' },
       { target: card('#view .drop'), optional: true, title: 'Upload faculty', body: '<p>Upload an Excel list: existing employee IDs are updated and new ones get temporary passwords (shown once).</p>', place: 'top' },
     ] });

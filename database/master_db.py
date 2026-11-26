@@ -147,6 +147,13 @@ def add_department_mou_dates(conn):
             conn.execute(f"ALTER TABLE department_highlights ADD COLUMN {col} DATE")
 
 
+def add_faculty_order(conn):
+    """The Admin can choose the order in which faculty are listed."""
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(faculty)")}
+    if have and "display_order" not in have:
+        conn.execute("ALTER TABLE faculty ADD COLUMN display_order INTEGER")
+
+
 def init_master_db():
     """Create tables, the 10 fixed classes and the first admin account (idempotent)."""
     from backend.master.auth import hash_password
@@ -164,6 +171,7 @@ def init_master_db():
         add_tours_seen(conn)
         add_placement_columns(conn)
         add_department_mou_dates(conn)
+        add_faculty_order(conn)
         repair_publish_permission(conn)
         cur_ay = ensure_ay(conn, ay_for(date.today()))
         conn.execute("UPDATE academic_years SET is_current = (ay_id = ?)", (cur_ay,))

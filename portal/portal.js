@@ -537,6 +537,56 @@ async function submissionDetail(id) {
 }
 
 // ---------------------------------------------------------------- faculty (Admin)
+// The same rule as the server's (in_faculty_order): by name from A to Z, not counting Dr., Mr., Prof. ...
+const facultyNameKey = f => String(f.full_name || '').trim().replace(/^(?:(?:dr|mr|mrs|ms|miss|prof|er)(?:\.\s*|\s+))+/i, '').toLowerCase();
+const byFacultyName = (a, b) => { const x = facultyNameKey(a), y = facultyNameKey(b); return x < y ? -1 : x > y ? 1 : a.emp_id < b.emp_id ? -1 : 1; };
+// The Admin arranges the list (drag a row, use the arrows, or type a position). What is saved is the order every login sees.
+function facultyOrderDialog(list, saved) {
+  let rows = [...list], custom = list.some(f => f.custom_order);
+  const dlg = modal('Change faculty order', `<p class="hint" style="margin-top:0">Drag a name, use the arrows, or type its new position. <b>Everyone</b> sees this order in the faculty list, tutor and faculty drop-downs and name suggestions. People added later go to the end.</p>
+    <div class="fo-bar"><button type="button" class="btn sm" id="fo-az">Sort A to Z</button><span class="muted" id="fo-mode"></span></div><ol class="fo-list" id="fo-list"></ol>`,
+    async () => {
+      await api('/api/master/faculty-order', { method: 'PUT', body: { order: custom ? rows.map(f => f.emp_id) : [] } });
+      toast(custom ? 'Faculty order saved' : 'Faculty are listed A to Z'); await saved();
+    }, 'Save order');
+  const ul = $('#fo-list', dlg);
+  const draw = focus => {
+    $('#fo-mode', dlg).textContent = custom ? 'Your own order' : 'A to Z (the default). People added later take their place by name.';
+    ul.innerHTML = rows.map((f, i) => `<li class="fo-row" draggable="true" data-id="${esc(f.emp_id)}"><span class="fo-grip" aria-hidden="true">⠿</span>
+      <input type="number" class="input fo-pos" min="1" max="${rows.length}" value="${i + 1}" aria-label="Position of ${esc(f.full_name)}">
+      <span class="fo-who"><b>${esc(f.full_name)}</b><small>${esc([f.emp_id, f.designation, f.status && f.status !== 'Active' ? f.status : ''].filter(Boolean).join(' · '))}</small></span>
+      <button type="button" class="btn sm" data-mv="-1" aria-label="Move ${esc(f.full_name)} up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn sm" data-mv="1" aria-label="Move ${esc(f.full_name)} down" ${i === rows.length - 1 ? 'disabled' : ''}>↓</button></li>`).join('');
+    if (focus) { const li = [...ul.children].find(x => x.dataset.id === focus.id); const el = li && ($(focus.sel, li)?.disabled ? $('.fo-pos', li) : $(focus.sel, li)); el?.focus(); li?.scrollIntoView({ block: 'nearest' }); }
+  };
+  const move = (id, to, sel) => {
+    const from = rows.findIndex(f => f.emp_id === id); to = Math.max(0, Math.min(rows.length - 1, to));
+    if (from !== to) { rows.splice(to, 0, ...rows.splice(from, 1)); custom = true; }
+    draw({ id, sel });
+  };
+  ul.onclick = e => {
+    const b = e.target.closest('[data-mv]'); if (!b) return;
+    const id = b.closest('li').dataset.id;
+    move(id, rows.findIndex(f => f.emp_id === id) + Number(b.dataset.mv), `[data-mv="${b.dataset.mv}"]`);
+  };
+  ul.onchange = e => { const n = parseInt(e.target.value, 10), id = e.target.closest('li').dataset.id; if (n) move(id, n - 1, '.fo-pos'); else draw(); };
+  ul.onkeydown = e => { if (e.key === 'Enter' && e.target.matches('.fo-pos')) { e.preventDefault(); e.target.dispatchEvent(new Event('change', { bubbles: true })); } };
+  let dragged = null;
+  ul.ondragstart = e => { dragged = e.target.closest('li'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragged.dataset.id); setTimeout(() => dragged?.classList.add('drag')); };
+  ul.ondragover = e => {
+    if (!dragged) return; e.preventDefault();
+    const over = e.target.closest('li'); if (!over || over === dragged) return;
+    const r = over.getBoundingClientRect();
+    ul.insertBefore(dragged, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
+  };
+  ul.ondrop = e => e.preventDefault();
+  ul.ondragend = () => {                        // read the new order from what is on screen
+    const ids = [...ul.children].map(li => li.dataset.id);
+    if (ids.some((id, i) => rows[i].emp_id !== id)) { rows = ids.map(id => rows.find(f => f.emp_id === id)); custom = true; }
+    dragged = null; draw();
+  };
+  $('#fo-az', dlg).onclick = () => { rows.sort(byFacultyName); custom = false; draw(); };
+  draw();
+}
 async function viewFaculty() {
   const list = await api('/api/master/faculty');
   const admin = me.roles.includes('ADMIN');
@@ -544,7 +594,7 @@ async function viewFaculty() {
   const desigs = [...new Set(list.map(f => f.designation).filter(Boolean))].sort();
   const count = (f, k) => (f.counts || {})[k] || 0;
   const hasRole = (f, r) => r === 'TUTOR' ? f.tutor_of.length > 0 : f.roles.some(x => x.role === r);
-  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty'}</h2>${admin ? '<div><button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
+  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty'}</h2>${admin ? '<div><button class="btn" id="fac-order">⇅ Change order</button> <button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
     <div class="filters">
       <input class="input compact" id="ff-q" placeholder="Search name, ID or email" style="min-width:220px">
       <select class="compact" id="ff-desig">${opts(desigs, d => d, d => d, '', 'Any designation')}</select>
@@ -571,6 +621,7 @@ async function viewFaculty() {
   $('#ff-q').oninput = drawFac;
   $('#ff-clear').onclick = () => { for (const id of ['ff-q', 'ff-desig', 'ff-status', 'ff-role', 'ff-has']) $('#' + id).value = ''; drawFac(); };
   drawFac();
+  if (admin) $('#fac-order').onclick = () => facultyOrderDialog(list, async () => { meta = await api('/api/master/meta'); show('faculty'); });
   const facForm = (f = {}) => `<div class="grid-2">${[['emp_id', 'Employee ID'], ['full_name', 'Full name'], ['email', 'Email'], ['phone', 'Phone'], ['designation', 'Designation'], ['qualification', 'Qualification']]
     .map(([k, l]) => `<div class="field"><label>${l}</label><input class="input" data-k="${k}" value="${esc(f[k] || '')}" ${k === 'emp_id' && f.emp_id ? 'disabled' : ''}></div>`).join('')}</div>`;
   const collect = o => Object.fromEntries([...o.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value]));

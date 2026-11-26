@@ -166,6 +166,14 @@ details.act summary { list-style: none; cursor: pointer; } details.act summary::
 /* narrower screens: one under the other, scrolling as a normal page */
 @media (max-width: 1100px) { .dash-split { grid-template-columns: minmax(0, 1fr); } .dash-side { position: static; height: auto; min-height: 0; overflow: visible; padding: 0; } }
 @media (max-width: 560px) { .hl-grid { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- Faculty order (the Admin) ---------- */
+.fo-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; }
+.fo-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.fo-row { display: flex; align-items: center; gap: 10px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: grab; }
+.fo-row.drag { opacity: .45; border-style: dashed; }
+.fo-grip { color: var(--muted); font-size: 16px; user-select: none; }
+.fo-pos { width: 62px; padding: 4px 6px; text-align: right; flex: none; }
+.fo-who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; } .fo-who small { color: var(--muted); font-size: 11.5px; }
 @media print { .topbar, .sidebar, .nav-shade, .snav, .p-tools, .filters, #banner { display: none !important; } body { background: #fff; } details.act { break-inside: avoid; } .acts { grid-template-columns: 1fr 1fr; } }
 
 /* ---------- By work: a bar of drop-downs under the main navigation ---------- */

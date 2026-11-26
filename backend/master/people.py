@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 
 from backend.master.auth import User, set_staff_password
-from backend.master.common import EFF_CLASS, norm_header, read_xlsx
+from backend.master.common import EFF_CLASS, in_faculty_order, norm_header, read_xlsx
 from database.master_db import audit, ay_for, ensure_ay
 
 from backend.master.excel_templates import FACULTY_HEADERS as FACULTY_TEMPLATE, STUDENT_HEADERS as STUDENT_TEMPLATE  # noqa: E402  (one definition of the upload columns)
@@ -294,6 +294,21 @@ def _revive(conn, user, roll, class_id):
 
 
 # ================================================================ faculty (Admin)
+def save_faculty_order(conn, user: User, emp_ids: List[str]) -> Dict[str, Any]:
+    """The order every login sees. An empty list goes back to A to Z."""
+    ids = [str(x).strip() for x in emp_ids]
+    if len(set(ids)) != len(ids):
+        raise HTTPException(400, "A faculty member is in the list twice")
+    known = {r[0] for r in conn.execute("SELECT emp_id FROM faculty WHERE emp_id != 'ADMIN'")}
+    unknown = [x for x in ids if x not in known]
+    if unknown:
+        raise HTTPException(400, "Not in the faculty list: " + ", ".join(unknown[:5]))
+    conn.execute("UPDATE faculty SET display_order = NULL")
+    conn.executemany("UPDATE faculty SET display_order = ? WHERE emp_id = ?", [(i, x) for i, x in enumerate(ids, 1)])
+    audit(conn, user.id, "FACULTY_ORDER", "faculty", None, f"{len(ids)} placed" if ids else "back to A to Z")
+    return {"order": "custom" if ids else "alphabetical"}
+
+
 def list_faculty(conn, user: User, q: str = "", status: str = "") -> List[Dict[str, Any]]:
     cols = "f.emp_id, f.full_name, f.designation" + (", f.email, f.phone, f.qualification, f.date_of_joining, f.status" if user.all_access else "")
     where, args = ["f.emp_id != 'ADMIN'"], []
@@ -303,10 +318,11 @@ def list_faculty(conn, user: User, q: str = "", status: str = "") -> List[Dict[s
     if status:
         where.append("f.status = ?")
         args.append(status)
-    rows = conn.execute(f"SELECT {cols} FROM faculty f WHERE {' AND '.join(where)} ORDER BY f.full_name", args).fetchall()
+    rows = in_faculty_order(conn.execute(f"SELECT {cols}, f.display_order FROM faculty f WHERE {' AND '.join(where)}", args))
     out = []
     for r in rows:
         d = dict(r)
+        d["custom_order"] = d.pop("display_order") is not None          # has a place chosen by the Admin
         if user.all_access:
             d["roles"] = [{"role": x["role"], "programme": x["programme"], "grp": x["grp"]} for x in
                           conn.execute("SELECT role, programme, grp FROM role_assignments WHERE emp_id = ?", (r["emp_id"],))]

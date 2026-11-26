@@ -22,6 +22,5 @@ __pycache__/
 google-key*.json
 
 # Master database (credentials, local secrets)
-database/master_system.db*
 database/INITIAL_ADMIN_PASSWORD.txt
 database/.master_secret

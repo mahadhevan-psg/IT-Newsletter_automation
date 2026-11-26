@@ -49,12 +49,10 @@
       { target: '#who', title: 'Who you are', body: '<p>Your name and role(s). If you can open the Newsletter studio, its button sits right here.</p>', place: 'bottom' },
       { target: '#logout', title: 'Sign out', body: '<p>Always sign out on a shared computer.</p>', place: 'bottom' },
     ] });
-    S.push({ id: 'dash', label: 'Dashboard', hint: 'Charts and totals for your scope', steps: () => [
-      { before: goTab('dash'), target: '#view .filters', title: 'Choose what to look at', body: `<p>Pick an <b>academic year</b>${me.all_access ? ', a <b>programme</b>' : ''} and a <b>class</b>. Every number and chart below follows your choice.</p>${me.all_access ? '' : '<p>You only see the classes you are responsible for.</p>'}`, place: 'bottom' },
-      { target: '#dash-out > .kpis', title: 'Headline numbers', body: '<p>Active students, how many have achievements, the participation rate, the placement percentage, and the highest and average package.</p>' },
-      { target: '#dash-out .grid-2', title: 'Student achievements', body: '<p>By category, level, domain and year, then class-wise participation and the <b>top students</b>. Click a roll number to open that student\'s page.</p>', place: 'top' },
-      { target: () => find('#dash-out h2', /Placements/)()?.nextElementSibling, title: 'Placements', body: '<p>Opted in and out, who is still unplaced, package distribution, top recruiters, offer types and the reasons students opt out.</p>' },
-      ...(me.all_access ? [{ target: () => find('#dash-out h2', /Department/)()?.nextElementSibling, title: 'The whole department', body: '<p>Research funding, event participants, outreach attendance, submissions by form and year, research by indexing and quartile, faculty achievements, <b>MoU status</b> and the most active faculty.</p>' }] : []),
+    S.push({ id: 'dash', label: 'Dashboard', hint: 'The department at a glance', steps: () => [
+      { before: goTab('dash'), target: '#view .filters', title: 'Choose what to look at', body: `<p>Pick an <b>academic year</b>${me.all_access ? ', a <b>programme</b>' : ''} and a <b>class</b>.${me.all_access ? ' Programme and class narrow the two student cards; the other four always show the whole department.' : ' Every number below follows your choice.'}</p>` },
+      { target: '#dash-cards', title: 'The six categories at a glance', body: '<p>Each card shows a total and the most important figures of one category. <b>Click a card</b> to see its details on the right.</p>', place: 'right' },
+      { target: '#dash-detail', title: 'The details', body: '<p>Charts and lists for the card you chose; this panel scrolls on its own. Where you see a roll number or an employee ID, click it to open that person\'s page.</p>', place: 'left' },
     ] });
     if (!has('ADMIN')) S.push({ id: 'entry', label: 'Add entry', hint: 'Record what happened', steps: () => [
       { before: goTab('entry'), target: '#en-q', title: 'Say what happened', body: '<p>Type a word (hackathon, paper, MoU, award) or pick a tile below. There are no forms to hunt for: each tile opens the right entry.</p>', place: 'bottom' },

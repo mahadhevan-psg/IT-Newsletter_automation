@@ -222,36 +222,84 @@ function show(id) {
 }
 
 // ---------------------------------------------------------------- dashboard
+// The six categories, each drawn with the picture it has on the IT Matrix logo.
+const DASH_ICONS = {
+  research: '<path d="M9 3h6M10 3v6L5 18.500a1.700 1.700 0 0 0 1.500 2.500h11a1.700 1.700 0 0 0 1.500-2.500L14 9V3M7.500 15h9"/>',
+  faculty: '<circle cx="12" cy="7.500" r="4"/><path d="M4.500 21c0-4.500 3.400-7 7.500-7s7.500 2.500 7.500 7"/>',
+  department: '<path d="M3 9l9-5.500 9 5.500zM6 12v6M10 12v6M14 12v6M18 12v6M3.500 21h17"/>',
+  outreach: '<rect x="2.500" y="8" width="12" height="8" rx="4"/><rect x="9.500" y="8" width="12" height="8" rx="4"/>',
+  student: '<path d="M2 9.500L12 5l10 4.500-10 4.500zM6.500 12v4.500c3 2.500 8 2.500 11 0V12M22 9.500V15"/>',
+  placement: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5.500h6V8M3 13.500h18"/>',
+};
+// a figure as it is shown: rupees in lakh / crore so that it stays short (the full amount appears on hover)
+function dashValue(x) {
+  if (x.value === null || x.value === undefined) return '–';
+  if (x.kind === 'percent') return x.value + '%';
+  if (x.kind === 'lpa') return x.value + ' LPA';
+  if (x.kind === 'money') {
+    const n = Number(x.value), short = (v, unit) => '₹' + Number(v.toFixed(v < 10 ? 2 : 1)) + ' ' + unit;
+    return n >= 1e7 ? short(n / 1e7, 'Cr') : n >= 1e5 ? short(n / 1e5, 'L') : '₹' + n.toLocaleString('en-IN');
+  }
+  return Number(x.value).toLocaleString('en-IN');
+}
+const dashFull = x => x.kind === 'money' ? ` title="₹${esc(fmtMoney(x.value))}"` : '';
+function dashCard(h, on, wholeDept) {
+  return `<button type="button" class="hl ${on ? 'on' : ''}" data-h="${h.id}" aria-pressed="${on}">
+    <span class="hl-head"><span class="hl-icon"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${DASH_ICONS[h.id]}</svg></span><span class="hl-title">${esc(h.title)}<small>${esc(h.unit)}${wholeDept ? ' · whole department' : ''}</small></span><b class="hl-total">${dashValue({ value: h.total })}</b></span>
+    <span class="hl-stats">${h.stats.map(x => `<span class="hl-stat ${x.value ? '' : 'zero'}"${dashFull(x)}><b>${esc(dashValue(x))}</b><span>${esc(x.label)}</span></span>`).join('')}</span>
+    <span class="hl-notes">${h.notes.map(x => `<span${dashFull(x)}><b>${esc(dashValue(x))}</b> ${esc(x.label)}</span>`).join('')}</span>
+  </button>`;
+}
+// what is shown under the cards for the category that is chosen
+function dashDetail(id, a) {
+  const s = a.students, p = a.placements, d = a.department;
+  const box = (title, body) => `<div class="card"><h4>${title}</h4>${body}</div>`;
+  const pair = (x, y) => `<div class="grid-2">${x}${y}</div>`;
+  if (id === 'student') return pair(box('By category', bars(s.by_category)), box('By level', bars(s.by_level))) +
+    pair(box('Achievement or participation', bars(s.by_kind)), box('By academic year', bars(s.by_year))) +
+    pair(box('Class-wise participation', table([{ h: 'Class', k: 'label' }, { h: 'Students', k: 'students', num: 1 }, { h: 'Achievers', k: 'achievers', num: 1 }, { h: 'Achievements', k: 'achievements', num: 1 }], s.per_class)),
+      box('Top students', table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'name' }, { h: 'Class', k: 'class_code' }, { h: 'Count', k: 'achievements', num: 1 }], s.top_students)));
+  if (id === 'placement') return `<div class="kpis">${kpi(p.opted_in, 'Opted in')}${kpi(p.opted_out, 'Opted out')}${kpi(p.unplaced_opted_in, 'Opted in, not placed')}${kpi(p.median_lpa ? p.median_lpa + ' LPA' : '–', 'Median package')}</div>` +
+    pair(box('Package distribution (LPA)', bars(p.package_distribution)), box('Offer type', bars(p.by_offer_type))) +
+    pair(box('Top recruiters', bars(p.by_company)), box('Placed per year', bars(p.by_year))) + box('Reasons for opting out', bars(p.opt_out_reasons));
+  if (id === 'research') return pair(box('By type', bars(d.research_by_category)), box('By indexing', bars(d.research_by_indexing))) + box('By quartile', bars(d.research_by_quartile));
+  if (id === 'faculty') return pair(box('By category', bars(d.faculty_by_category)), box('By level', bars(d.faculty_by_level))) +
+    box('Most active faculty (entries in all forms)', table([{ h: 'ID', html: r => profileLink('faculty', r.emp_id) }, { h: 'Name', k: 'name' }, { h: 'Submissions', k: 'submissions', num: 1 }], d.top_faculty));
+  if (id === 'department') return pair(box('By category', bars(d.department_by_category)),
+    box('MoU status', table([{ h: 'Partner', k: 'partner' }, { h: 'Expiry', k: 'expiry' }, { h: 'Status', html: r => `<span class="pill ${r.status === 'Active' ? 'ok' : r.status === 'Expired' ? 'bad' : 'warn'}">${r.status}</span>` }], d.mou_status)));
+  return pair(box('By category', bars(d.outreach_by_category)), box('Top partners', bars(d.top_partners)));
+}
 async function viewDash() {
-  const st = { ay: '', cls: '', prog: '' };
+  const st = { ay: '', cls: '', prog: '', pick: '' };
+  let a = null;
+  // the six cards (left) give the whole picture at once; choosing one shows its charts and tables beside them (right)
+  const drawDetail = () => {
+    const h = a.highlights.find(x => x.id === st.pick);
+    $('#dash-detail').innerHTML = `<h2 class="dash-h">${esc(h.title)} in detail</h2>${dashDetail(h.id, a)}` +
+      (a.department && !['student', 'placement'].includes(h.id) ? `<div class="card"><h4>All form entries by academic year</h4>${bars(a.department.submissions_by_year)}</div>` : '');
+    $('#dash-detail').scrollTop = 0;                              // a newly chosen category is read from the top
+    $('#dash-cards').querySelectorAll('.hl').forEach(b => { b.classList.toggle('on', b.dataset.h === st.pick); b.setAttribute('aria-pressed', b.dataset.h === st.pick); });
+  };
   const draw = async () => {
     const qs = new URLSearchParams(); if (st.ay) qs.set('ay_id', st.ay); if (st.cls) qs.set('class_id', st.cls); if (st.prog) qs.set('programme', st.prog);
-    const a = await api('/api/master/analytics?' + qs);
-    const s = a.students, p = a.placements, d = a.department;
+    a = await api('/api/master/analytics?' + qs);
+    if (!$('#dash-out')) return;                                  // another page was opened while this was loading
+    if (!a.highlights.some(h => h.id === st.pick)) st.pick = a.highlights[0].id;
+    const narrowed = !!(st.cls || st.prog);
     $('#dash-out').innerHTML = `
-      <div class="kpis">${kpi(s.active_students, 'Active students')}${kpi(s.students_with_achievements, 'Students with achievements')}${kpi(s.participation_rate + '%', 'Participation rate')}
-        ${kpi(p.placement_percent + '%', 'Placed of opted-in')}${kpi(p.placed, 'Students placed')}${kpi(p.highest_lpa ? p.highest_lpa + ' LPA' : '–', 'Highest package')}${kpi(p.average_lpa ? p.average_lpa + ' LPA' : '–', 'Average package')}</div>
-      <h2 style="margin:6px 0 12px">Student achievements</h2>
-      <div class="grid-2"><div class="card"><h4>By category</h4>${bars(s.by_category)}</div><div class="card"><h4>By level</h4>${bars(s.by_level)}</div></div>
-      <div class="grid-2"><div class="card"><h4>Achievement or participation</h4>${bars(s.by_kind)}</div><div class="card"><h4>By academic year</h4>${bars(s.by_year)}</div></div>
-      <div class="grid-2"><div class="card"><h4>Class-wise participation</h4>${table([{ h: 'Class', k: 'label' }, { h: 'Students', k: 'students', num: 1 }, { h: 'Achievers', k: 'achievers', num: 1 }, { h: 'Achievements', k: 'achievements', num: 1 }], s.per_class)}</div>
-        <div class="card"><h4>Top students</h4>${table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'name' }, { h: 'Class', k: 'class_code' }, { h: 'Count', k: 'achievements', num: 1 }], s.top_students)}</div></div>
-      <h2 style="margin:6px 0 12px">Placements</h2>
-      <div class="kpis">${kpi(p.opted_in, 'Opted in')}${kpi(p.opted_out, 'Opted out')}${kpi(p.unplaced_opted_in, 'Opted in, not placed')}${kpi(p.median_lpa ? p.median_lpa + ' LPA' : '–', 'Median package')}</div>
-      <div class="grid-2"><div class="card"><h4>Package distribution (LPA)</h4>${bars(p.package_distribution)}</div><div class="card"><h4>Offer type</h4>${bars(p.by_offer_type)}</div></div>
-      <div class="grid-2"><div class="card"><h4>Top recruiters</h4>${bars(p.by_company)}</div><div class="card"><h4>Placed per year</h4>${bars(p.by_year)}</div></div>
-      <div class="card"><h4>Reasons for opting out</h4>${bars(p.opt_out_reasons)}</div>
-      ${d ? `<h2 style="margin:6px 0 12px">Department</h2>
-        <div class="kpis">${kpi(fmtMoney(d.funding_total_inr), 'Research funding (₹)')}${kpi(d.department_participants, 'Event participants')}${kpi(d.outreach_attendance, 'Outreach attendance')}</div>
-        <div class="grid-2"><div class="card"><h4>Submissions by form</h4>${bars(d.submissions_by_form)}</div><div class="card"><h4>Submissions by year</h4>${bars(d.submissions_by_year)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Research by type</h4>${bars(d.research_by_category)}</div><div class="card"><h4>Research by indexing</h4>${bars(d.research_by_indexing)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Research by quartile</h4>${bars(d.research_by_quartile)}</div><div class="card"><h4>Faculty achievements by category</h4>${bars(d.faculty_by_category)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Faculty achievements by level</h4>${bars(d.faculty_by_level)}</div><div class="card"><h4>Department highlights</h4>${bars(d.department_by_category)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Outreach by category</h4>${bars(d.outreach_by_category)}</div><div class="card"><h4>Top partners</h4>${bars(d.top_partners)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Most active faculty</h4>${table([{ h: 'ID', html: r => profileLink('faculty', r.emp_id) }, { h: 'Name', k: 'name' }, { h: 'Submissions', k: 'submissions', num: 1 }], d.top_faculty)}</div>
-          <div class="card"><h4>MoU status</h4>${table([{ h: 'Partner', k: 'partner' }, { h: 'Expiry', k: 'expiry' }, { h: 'Status', html: r => `<span class="pill ${r.status === 'Active' ? 'ok' : r.status === 'Expired' ? 'bad' : 'warn'}">${r.status}</span>` }], d.mou_status)}</div></div>` : ''}`;
+      <div class="dash-split">
+        <div class="hl-grid" id="dash-cards">${a.highlights.map(h => dashCard(h, h.id === st.pick, narrowed && !['student', 'placement'].includes(h.id))).join('')}</div>
+        <section class="dash-side" id="dash-detail" aria-live="polite" tabindex="0"></section>
+      </div>`;
+    $('#dash-note').textContent = `Approved records, ${st.ay || 'all academic years'}. Click a card for its details.`;
+    drawDetail();
+    $('#dash-cards').onclick = e => {
+      const b = e.target.closest('[data-h]'); if (!b) return;
+      st.pick = b.dataset.h; drawDetail();
+      if (matchMedia('(max-width: 1100px)').matches) $('#dash-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });   // there the details are below the cards
+    };
   };
-  $('#view').innerHTML = `<div class="filters"><h2>Dashboard</h2><span class="spacer"></span>
+  $('#view').innerHTML = `<div class="filters dash-bar"><h2>Department at a glance</h2><span class="hint" id="dash-note"></span><span class="spacer"></span>
     <select class="compact" id="d-ay">${ayOpts('', 'All years')}</select>
     ${me.all_access ? '<select class="compact" id="d-prog"><option value="">UG + PG</option><option>UG</option><option>PG</option></select>' : '<input type="hidden" id="d-prog" value="">'}
     ${classFilter('d-cls', 'All Classes')}</div><div id="dash-out"></div>`;

@@ -30,7 +30,10 @@
     try {
       const s = await api('/api/review/summary'); RV.summary = s;
       const b = document.querySelector('.tab[data-t="review"]'); if (!b) return;
-      b.innerHTML = 'Review &amp; submissions' + (s.badge ? ` <span class="tab-badge">${s.badge > 99 ? '99+' : s.badge}</span>` : '');
+      const n = s.badge > 99 ? '99+' : s.badge;
+      b.innerHTML = 'Review &amp; submissions' + (s.badge ? ` <span class="tab-badge">${n}</span>` : '');
+      const m = document.getElementById('nav-badge');            // the same count on the menu button, seen while the menu is closed
+      if (m) { m.textContent = s.badge ? n : ''; m.classList.toggle('hidden', !s.badge); }
     } catch (e) { /* the badge is a convenience */ }
   };
 

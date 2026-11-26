@@ -21,7 +21,7 @@
       if (has('ADMIN')) blocks.push(role('Admin', 'You run the system: add faculty and give them roles, choose each class\'s tutor, edit the forms in the Form builder, upload placement sheets, and see every analytic.'));
       if (has('HOD')) blocks.push(role('Head of Department', 'You see every student, faculty member and chart, can explore all of the department\'s work by type, and open the Newsletter studio. You also <b>approve the entries</b> faculty submit (see <b>Review &amp; submissions</b>).'));
       if (has('PC')) blocks.push(role('Programme Coordinator', 'You coordinate your programme. Like all faculty you can see every record in the department; your view is read-only.'));
-      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, set the class\'s semester, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Review &amp; submissions</b>).'));
+      if (has('TUTOR')) blocks.push(role('Class tutor', 'You look after your own class: add or remove students, and follow its achievements, participation and placements. <b>You approve your students\' placement details</b> (see <b>Review &amp; submissions</b>).'));
       blocks.push(role('Faculty', blocks.length
         ? 'You also have your own page of everything you have entered (see <b>My activities</b>).'
         : 'You can see and download all the department\'s records: records, placements and everyone\'s activities. Your own page (<b>My activities</b>) lists what you have entered.'));
@@ -42,9 +42,10 @@
     ];
 
     const S = [];                                                   // sections, in tab order, only the ones this person can open
-    S.push({ id: 'basics', label: 'The top bar', hint: 'Tabs, Help, sign out', steps: () => [
-      { before: () => { document.querySelector('#view') && window.scrollTo(0, 0); }, target: '#tabs', title: 'Your tabs', body: '<p>Each tab is a part of the portal. <b>What you see depends on your role</b>, so you only get what you can use. We will visit them one by one.</p>', place: 'bottom' },
-      { target: '.tour-help', title: 'Help', body: '<p>Replay this tour, or have just the page you are on explained.</p>', place: 'bottom' },
+    S.push({ id: 'basics', label: 'Menu and top bar', hint: 'Menu, Help, sign out', steps: () => [
+      { target: '#nav-toggle', before: () => { setNav(false); window.scrollTo(0, 0); }, title: 'The menu button', body: '<p>This button opens the menu. A red number on it means entries are waiting under <b>Review &amp; submissions</b>.</p>', place: 'bottom' },
+      { before: async () => { setNav(true); await TourUtil.sleep(260); }, target: '#tabs', title: 'Your menu', body: '<p>Each item is a part of the portal. <b>What you see depends on your role</b>, so you only get what you can use. We will visit them one by one.</p>', place: 'right' },
+      { before: () => setNav(false), target: '.tour-help', title: 'Help', body: '<p>Replay this tour, or have just the page you are on explained.</p>', place: 'bottom' },
       { target: '#who', title: 'Who you are', body: '<p>Your name and role(s). If you can open the Newsletter studio, its button sits right here.</p>', place: 'bottom' },
       { target: '#logout', title: 'Sign out', body: '<p>Always sign out on a shared computer.</p>', place: 'bottom' },
     ] });
@@ -78,9 +79,9 @@
       { target: '#add-st', optional: true, title: 'Add a student', body: '<p>Enter a roll number and name for a student who joins your class.</p>', place: 'bottom' },
       { target: card('#view .drop'), optional: true, title: 'Upload a class list', body: '<p>Download the template, fill <b>Roll No</b> and <b>Full Name</b>, upload. Existing roll numbers are updated, and a tutor\'s students go into the tutor\'s own class.</p>', place: 'top' },
     ] });
-    if (hasClasses()) S.push({ id: 'classes', label: 'Classes', hint: 'Tutor and semester of each class', steps: () => [
+    if (has('ADMIN')) S.push({ id: 'classes', label: 'Classes', hint: 'Tutor and semester of each class', steps: () => [
       { before: goTab('classes'), target: '#view [data-c]', title: 'One card per class', body: '<p>A class is known by its <b>tutor and semester</b>. Two semesters make a year, so the year and class code follow the semester. Students stay with their class as it moves up: nobody is promoted one by one.</p>', place: 'bottom' },
-      { target: '#view [data-c] .sem', optional: true, title: 'Move a class on', body: '<p>Tutors (and the Admin) set the <b>semester</b> and <b>academic year</b> here, then Save.</p>', place: 'bottom' },
+      { target: '#view [data-c] .sem', optional: true, title: 'Move a class on', body: '<p>Set the <b>semester</b> and <b>academic year</b> here, then Save.</p>', place: 'bottom' },
       { target: '#view [data-c] .tutor', optional: true, title: 'Choose the tutor', body: '<p>Only the <b>Admin</b> changes a class\'s tutor.</p>', place: 'bottom' },
       { target: '#add-class', optional: true, title: 'Add a class', body: '<p>For a new batch. Choose the programme, group, starting semester and tutor.</p>', place: 'bottom' },
       { target: '#view .graduate', optional: true, title: 'When a class finishes', body: '<p>In its last semester you can <b>mark it graduated</b>: its students become Graduated and the class closes. All records are kept.</p>', place: 'top' },
@@ -89,11 +90,6 @@
       { before: goTab('uploads'), target: () => document.querySelectorAll('#view > .card')[0], title: 'One card per form', body: '<p>Each of the six forms has a card: download its Excel template, fill it and upload it. The five faculty forms have a sheet per category and their rows are saved as approved (a wrong one can be revoked under <b>Review &amp; submissions</b>). In the <b>placement</b> card, a student already in the system is replaced by the rows for that year.</p>', place: 'bottom' },
       { target: card('#unmatched'), title: 'Roll numbers that matched nobody', body: '<p>If a roll number or employee ID on an entry matches nobody, it is listed here so you can fix the student list or the entry. Nothing is lost.</p>', place: 'top' },
     ] });
-    if (hasClasses()) S.push({ id: 'placements', label: 'Placements', hint: 'Offers and opt-in / opt-out', steps: () => [
-      { before: goTab('placements'), target: () => document.querySelector('#view [data-m]')?.parentElement, title: 'Two views', body: '<p><b>Offers</b> lists every offer (company, type, package). <b>Opt-in / opt-out</b> shows who chose to sit for placements, and why some did not.</p>', place: 'bottom' },
-      { target: () => document.querySelector('#p-ay')?.closest('.filters'), title: 'Filters', body: '<p>Year, class, company, offer type, package range and search. Click a roll number to open the student\'s page.</p>', place: 'bottom' },
-      { target: '#p-out', title: 'The results', body: '<p>The Admin uploads placement sheets for anyone, and a class tutor for their own class (<b>Upload Excel</b>); the data shows up here and on the Dashboard.</p>', place: 'top' },
-    ] });
     if (me.all_access) S.push({ id: 'faculty', label: has('ADMIN') ? 'Faculty & roles' : 'Faculty', hint: 'Directory, activity counts, roles', steps: () => [
       { before: goTab('faculty'), target: () => document.getElementById('ff-q')?.closest('.filters'), title: 'Find faculty', body: '<p>Search, or filter by <b>designation, status, role</b>, or by what they have entered (research, achievements, events, outreach, mentoring).</p>', place: 'bottom' },
       { target: '#fac-list', title: 'The faculty table', body: `<p>The counts show how much each person has entered. <b>Click a name</b> or <b>Activities</b> to open their page.</p>${has('ADMIN') ? '<p>As Admin you can also set <b>Roles</b>, <b>Edit</b>, <b>Reset password</b> or <b>Relieve</b> someone.</p>' : ''}`, place: 'top' },
@@ -101,7 +97,7 @@
       { target: card('#view .drop'), optional: true, title: 'Upload faculty', body: '<p>Upload an Excel list: existing employee IDs are updated and new ones get temporary passwords (shown once).</p>', place: 'top' },
     ] });
     S.push({ id: 'records', label: 'Records', hint: 'Every approved entry, with filters and downloads', steps: () => [
-      { before: goTab('records'), target: '#wk-bar', title: 'All forms, or one', body: '<p><b>All forms</b> lists every approved entry together. Each drop-down opens one form (or one of its categories) with its own filters, totals and download.</p>', place: 'bottom' },
+      { before: goTab('records'), target: '#wk-bar', title: 'All forms, or one', body: '<p><b>All forms</b> lists every approved entry together. Each drop-down opens one form (or one of its categories) with its own filters, totals and download. <b>Placements</b> shows the offers and who opted in or out; a class tutor records and uploads their class there.</p>', place: 'bottom' },
       { target: '#rec-body .filters', title: 'Narrow it down', body: '<p>Under <b>All forms</b> filter by year, category, class, level, roll number, dates or words in the title. For one form, the filters are about that work: indexing and quartile for papers, level for awards, amounts and so on.</p>', place: 'bottom' },
       { target: '#s-out', optional: true, title: 'Open a record', body: '<p><b>Click a row</b> for everything that was entered: the people involved, every detail, and the documents.</p>', place: 'top' },
       { target: '#s-dl', optional: true, title: 'Download', body: '<p>Set the <b>dates</b>, <b>tick the columns</b> you want and download a file for Excel. Choosing one form first gives you a column for every field of that form.</p>', place: 'bottom' },

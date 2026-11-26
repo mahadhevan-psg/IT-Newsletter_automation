@@ -181,6 +181,8 @@ def change_password(user: User, old: str, new: str):
         row = conn.execute("SELECT password_hash FROM users WHERE user_id = ?", (user.id,)).fetchone()
         if not row or not verify_password(old or "", row["password_hash"]):
             raise HTTPException(400, "Current password is wrong")
+        if new == old:
+            raise HTTPException(400, "Choose a new password that is different from the current one")
         conn.execute("UPDATE users SET password_hash = ?, must_change = 0 WHERE user_id = ?", (hash_password(new), user.id))
 
 

@@ -8,10 +8,13 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', system-ui, sans-serif; background: #fff; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #12336b; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+/* One picture behind the whole page (header, sign-in box and footer), at 35% brightness (the two 0.65 values: 65% black over it).
+   To change the picture replace assets/backdrop.jpg. */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: linear-gradient(rgba(0, 0, 0, .65), rgba(0, 0, 0, .65)), url('/assets/backdrop.jpg') center / cover no-repeat; }
 
 /* ---------- Header ribbon: two logos left, one right, college and department in the middle ---------- */
-.ribbon { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; padding: 14px 32px; background: linear-gradient(90deg, var(--blue-dark), var(--blue)); color: #fff; box-shadow: 0 2px 10px rgba(18, 51, 107, .25); }
+.ribbon { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; padding: 14px 32px; color: #fff; background: transparent; text-shadow: 0 1px 6px rgba(0, 0, 0, .6); }
 .logos { display: flex; gap: 14px; align-items: center; }
 .logos.right { justify-content: flex-end; }
 .logo-slot { position: relative; width: 84px; height: 84px; border-radius: 10px; background: rgba(255, 255, 255, .12); display: grid; place-items: center; overflow: hidden; }
@@ -40,8 +43,8 @@ h1::after { content: ""; display: block; width: 72px; height: 4px; border-radius
 .go i { font-style: normal; display: inline-block; transition: transform .15s; }
 .card:hover .go i { transform: translateX(4px); }
 
-.foot { display: flex; justify-content: space-between; gap: 16px; padding: 14px 32px; border-top: 1px solid var(--line); background: var(--blue-soft); font-size: 12px; color: var(--muted); }
-.foot a { color: var(--blue); text-decoration: none; font-weight: 500; }
+.foot { display: flex; justify-content: space-between; gap: 16px; padding: 14px 32px; background: transparent; font-size: 12px; color: rgba(255, 255, 255, .8); }
+.foot a { color: #fff; text-decoration: none; font-weight: 500; }
 .foot a:hover { text-decoration: underline; }
 
 /* The six cards stay in one row on desktop; narrower screens wrap rather than squash them */
@@ -61,6 +64,11 @@ h1::after { content: ""; display: block; width: 72px; height: 4px; border-radius
 .card.soon { opacity: .6; cursor: default; pointer-events: none; border-top-color: var(--muted); }
 .card.soon .go { color: var(--muted); }
 
+.app-name { text-align: center; margin: 28px 0 0; font-size: 34px; font-weight: 700; color: #ffc43d; letter-spacing: .01em; text-shadow: 0 2px 8px rgba(0, 0, 0, .55); }
+.app-name::after { background: #ffc43d; }
+/* the logo sits on the title's line, as tall as the lettering (34px) and centred on the capital letters */
+.app-logo { width: 34px; height: 34px; margin-right: 10px; vertical-align: -5px; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .45)); }
+.app-name + .login-panel { margin-top: 16px; }
 .login-panel { max-width: 460px; margin: 28px auto 0; padding: 26px 28px; border: 1px solid var(--line); border-top: 4px solid var(--blue); border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(31, 78, 156, .07); text-align: center; }
 .login-panel h2 { font-size: 20px; color: var(--blue-dark); }
 .login-panel p { color: var(--muted); font-size: 13px; margin: 6px 0 16px; }

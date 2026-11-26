@@ -78,7 +78,7 @@ def api_classes(include_completed: bool = False, user: User = Depends(staff_user
 
 
 @router.put("/api/master/classes/{class_id}/term")
-def api_class_term(class_id: int, payload: Dict[str, Any] = Body(...), user: User = Depends(staff_user)):
+def api_class_term(class_id: int, payload: Dict[str, Any] = Body(...), user: User = Depends(admin_user)):
     with db() as conn:
         return people.set_term(conn, user, class_id, int(payload.get("semester") or 0), payload.get("ay_id"))
 
@@ -90,7 +90,7 @@ def api_add_class(payload: Dict[str, Any] = Body(...), user: User = Depends(admi
 
 
 @router.post("/api/master/classes/{class_id}/graduate")
-def api_class_graduate(class_id: int, user: User = Depends(staff_user)):
+def api_class_graduate(class_id: int, user: User = Depends(admin_user)):
     with db() as conn:
         return people.graduate_class(conn, user, class_id)
 

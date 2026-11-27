@@ -10,3 +10,5 @@ pydantic==2.14.2
 requests==2.34.2
 cryptography==50.0.2
 tzdata==2026.6
+# the server's name on the local network (http://itmatrix.local), used by run_server.py
+zeroconf>=0.132,<1

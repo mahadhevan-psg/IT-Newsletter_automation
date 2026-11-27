@@ -4,25 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IT Portal · Department Data</title>
+  <link rel="icon" type="image/png" href="/assets/it-matrix-icon.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="ui.css">
   <link rel="stylesheet" href="tour.css">
   <link rel="stylesheet" href="review.css">
   <link rel="stylesheet" href="entry.css">
 </head>
-<body>
+<body class="portal">
   <div id="app" class="hidden">
     <header class="topbar">
       <div class="top-row">
-        <span></span>
-        <div class="top-title">IT Matrix</div>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-controls="sidebar" aria-expanded="false" title="Menu">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          <span class="tab-badge nav-badge hidden" id="nav-badge"></span>
+        </button>
+        <div class="top-title"><img src="/assets/it-matrix-logo.png" alt="IT Matrix, Department of Information Technology, PSG College of Technology" width="1100" height="318"></div>
         <div class="top-right">
           <span id="help-host"></span>
           <div class="who"><span id="who"></span><button class="btn sm" id="logout">Sign out</button></div>
         </div>
       </div>
-      <nav class="tabs" id="tabs"></nav>
     </header>
+    <div class="nav-shade" id="nav-shade"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head"><span>Menu</span><button type="button" class="side-close" id="nav-close" aria-label="Close menu">&times;</button></div>
+      <nav class="tabs" id="tabs"></nav>
+    </aside>
     <main class="page"><div id="banner"></div><div id="view"></div></main>
   </div>
   <script src="tour.js"></script>

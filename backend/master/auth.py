@@ -82,6 +82,17 @@ class User:
     def is_admin(self):
         return "ADMIN" in self.roles
 
+    @property
+    def student_list(self) -> Optional[str]:
+        """Whose students the View student data list shows: 'all' (Admin, HoD, Programme Coordinators), 'own' (a tutor's class), or none."""
+        if self.roles & {"ADMIN", "HOD", "PC"}:
+            return "all"
+        return "own" if self.tutor_class_ids else None
+
+    @property
+    def sees_faculty_list(self) -> bool:
+        return bool(self.roles & {"ADMIN", "HOD"})
+
     def sees_class(self, class_id) -> bool:
         return self.all_access or class_id in self.class_ids
 
@@ -91,6 +102,7 @@ class User:
     def public(self):
         return {"id": self.id, "name": self.name, "kind": self.kind, "roles": sorted(self.roles), "all_access": self.all_access,
                 "class_ids": sorted(self.class_ids), "tutor_class_ids": sorted(self.tutor_class_ids), "must_change": self.must_change,
+                "student_list": self.student_list,
                 "tours_seen": sorted(self.tours_seen)}
 
 
@@ -181,6 +193,8 @@ def change_password(user: User, old: str, new: str):
         row = conn.execute("SELECT password_hash FROM users WHERE user_id = ?", (user.id,)).fetchone()
         if not row or not verify_password(old or "", row["password_hash"]):
             raise HTTPException(400, "Current password is wrong")
+        if new == old:
+            raise HTTPException(400, "Choose a new password that is different from the current one")
         conn.execute("UPDATE users SET password_hash = ?, must_change = 0 WHERE user_id = ?", (hash_password(new), user.id))
 
 

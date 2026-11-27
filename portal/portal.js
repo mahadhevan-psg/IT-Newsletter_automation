@@ -107,16 +107,17 @@ function table(cols, rows, o = {}) {
   return `<div class="scroll"><table class="table"><thead><tr>${cols.map(c => `<th class="${c.num ? 'num' : ''}">${esc(c.h)}</th>`).join('')}</tr></thead><tbody>` +
     rows.map((r, i) => `<tr class="${o.click ? 'click' : ''}" data-i="${i}">${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.html ? c.html(r) : esc(c.f ? c.f(r) : r[c.k])}</td>`).join('')}</tr>`).join('') + '</tbody></table></div>';
 }
-function bars(series, unit = '') {
+function bars(series, unit = '', full = false) {                  // full: long names (categories) wrap instead of being cut short
   if (!series || !series.length) return '<div class="empty">No data yet.</div>';
   const max = Math.max(...series.map(s => s.value), 1);
-  return '<div class="bars">' + series.map(s => `<div class="bar-row"><span class="lbl" title="${esc(s.label)}">${esc(s.label)}</span><div class="bar"><i style="width:${Math.round(100 * s.value / max)}%"></i></div><span class="val">${esc(s.value)}${unit}</span></div>`).join('') + '</div>';
+  return `<div class="bars ${full ? 'full' : ''}">` + series.map(s => `<div class="bar-row"><span class="lbl" title="${esc(s.label)}">${esc(s.label)}</span><div class="bar"><i style="width:${Math.round(100 * s.value / max)}%"></i></div><span class="val">${esc(s.value)}${unit}</span></div>`).join('') + '</div>';
 }
 const kpi = (n, l) => `<div class="kpi"><b>${esc(n ?? '–')}</b><span>${esc(l)}</span></div>`;
 // ...but changes stay with the Admin and the tutor of the class
 const mayEditClass = id => meta.classes.some(c => c.class_id === id && c.can_edit);
 const isEditor = () => me.roles.includes('ADMIN') || me.tutor_class_ids.length > 0;
-const hasClasses = () => me.all_access || me.class_ids.length > 0;
+// the student list: all classes for the Admin, HoD and coordinators; a tutor's own; the server enforces the same
+const listClasses = () => me.student_list === 'all' ? meta.classes : meta.classes.filter(c => me.tutor_class_ids.includes(c.class_id));
 const fmtMoney = n => n == null ? '' : Number(n).toLocaleString('en-IN');
 
 function resultBox(res) {
@@ -184,62 +185,144 @@ async function boot() {
   meta = await api('/api/master/meta');
   $('#app').classList.remove('hidden');
   $('#who').textContent = `${me.name} · ${me.roles.filter(r => r !== 'FACULTY').join(', ') || 'Faculty'}`;
-  if (me.roles.includes('ADMIN') || me.roles.includes('HOD')) $('#who').insertAdjacentHTML('beforeend', ' <a class="btn sm" href="/newsletter/">Newsletter studio</a>');
-  const tabs = [
-    ['dash', 'Dashboard', () => true], ['entry', 'Add entry', () => !me.roles.includes('ADMIN')], ['review', 'Review & submissions', () => true], ['builder', 'Form builder', () => me.roles.includes('ADMIN')],
-    ['students', 'Students', hasClasses], ['classes', 'Classes', hasClasses], ['uploads', 'Data upload', () => me.roles.includes('ADMIN')],
-    ['placements', 'Placements', hasClasses], ['records', 'Records', () => true], ['faculty', me.roles.includes('ADMIN') ? 'Faculty & roles' : 'Faculty', () => me.all_access], ['mine', 'My activities', () => true], ['account', 'Account', () => true]]
-    .filter(t => t[2]());
-  $('#tabs').innerHTML = tabs.map(t => `<button class="tab" data-t="${t[0]}">${t[1]}</button>`).join('');
-  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); };
-  if (window.refreshReviewBadge) refreshReviewBadge();
+  // The sidebar. The Admin and everyone else have their own menu; an item is [page, name, who may see it], and a group opens in place.
+  const admin = me.roles.includes('ADMIN');
+  const studio = { href: '/newsletter/', label: 'Newsletter studio', ok: admin || me.roles.includes('HOD') };
+  const students = ['students', 'View student data', () => !!me.student_list];
+  const menu = admin ? [
+    ['dash', 'Dashboard'], ['records', 'Reports'], ['review', 'Returned submissions'],
+    { group: 'Administration', items: [['uploads', 'Bulk data upload'], ['faculty', 'Faculty & roles'], ['classes', 'View classes'], students, ['builder', 'Software customization'], studio] },
+    ['mine', 'Contribution tracker'], ['account', 'Account'],
+  ] : [
+    ['dash', 'Dashboard'], ['entry', 'Data submission'], ['records', 'Reports'], ['review', 'Returned submissions'],
+    students, ['faculty', 'View faculty data', () => me.roles.includes('HOD')],
+    studio, ['mine', 'Contribution tracker'], ['account', 'Account'],
+  ];
+  // with a temporary password there is only one thing to do
+  const allowed = x => me.must_change ? x[0] === 'account' : x.href ? x.ok : !x[2] || x[2]();
+  const shown = menu.map(x => x.group ? { group: x.group, items: x.items.filter(allowed) } : x).filter(x => x.group ? x.items.length : allowed(x));
+  const tabs = shown.flatMap(x => x.group ? x.items : [x]).filter(x => !x.href);
+  const item = x => x.href ? `<a class="tab" href="${x.href}">${esc(x.label)}</a>` : `<button type="button" class="tab" data-t="${x[0]}">${esc(x[1])}</button>`;
+  $('#tabs').innerHTML = shown.map((x, n) => !x.group ? item(x) : `<button type="button" class="tab tab-group" data-group aria-expanded="false" aria-controls="tab-sub-${n}">${esc(x.group)}<span class="chev" aria-hidden="true"></span></button>
+    <div class="tab-sub" id="tab-sub-${n}" hidden>${x.items.map(item).join('')}</div>`).join('');
+  $('#tabs').onclick = e => {
+    const g = e.target.closest('[data-group]'); if (g) return openGroup(g, g.getAttribute('aria-expanded') !== 'true');
+    const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t);
+  };
+  $('#nav-toggle').onclick = () => setNav(!navIsOpen(), true);
+  $('#nav-close').onclick = $('#nav-shade').onclick = () => setNav(false, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && navIsOpen()) setNav(false, true); });
+  if (window.refreshReviewBadge && !me.must_change) refreshReviewBadge();
   const deep = location.hash.match(/^#\/(faculty|student)\/([^/]+)$/);       // a copied link to someone's page opens it directly
   show(me.must_change ? 'account' : (location.hash === '#add' && tabs.some(t => t[0] === 'entry')) ? 'entry' : tabs[0][0]);
   if (deep && !me.must_change) go(openProfile)(deep[1], decodeURIComponent(deep[2]));
-  try { Tours.portal(me, token); }            // Help button; the welcome tour the first time this person opens the portal
+  if (!me.must_change) try { Tours.portal(me, token); }            // Help button; the welcome tour the first time this person opens the portal
   catch (e) { console.error('The guided tour could not start:', e); }      // help must never keep anyone out
+}
+// the menu is a sidebar that slides in from the left; "focus" moves the keyboard with it (not wanted when the guided tour opens it)
+const navIsOpen = () => document.body.classList.contains('nav-open');
+function setNav(open, focus) {
+  document.body.classList.toggle('nav-open', open);
+  $('#nav-toggle').setAttribute('aria-expanded', open);
+  if (focus) (open ? $('#tabs .tab.active') || $('#tabs .tab') : $('#nav-toggle'))?.focus({ preventScroll: true });
+}
+function openGroup(button, open) {
+  button.setAttribute('aria-expanded', open);
+  document.getElementById(button.getAttribute('aria-controls')).hidden = !open;
 }
 function show(id) {
   current = id;
+  setNav(false);
   if (location.hash) history.replaceState(null, '', location.pathname);
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.t === id));
-  $('#banner').innerHTML = me.must_change ? '<div class="banner">Please set a new password (Account tab) - you are still using a temporary one.</div>' : '';
+  const inGroup = $(`.tab-sub .tab[data-t="${id}"]`)?.closest('.tab-sub');        // the group holding the page on screen is open
+  if (inGroup) openGroup($(`[aria-controls="${inGroup.id}"]`), true);
+  $('#banner').innerHTML = me.must_change ? '<div class="banner">Please set a new password (Account page) - you are still using a temporary one.</div>' : '';
   $('#view').onclick = null;
   $('#view').innerHTML = '<div class="empty">Loading…</div>';
   go(VIEWS[id])();
 }
 
 // ---------------------------------------------------------------- dashboard
+// The six categories, each drawn with the picture it has on the IT Matrix logo.
+const DASH_ICONS = {
+  research: '<path d="M9 3h6M10 3v6L5 18.500a1.700 1.700 0 0 0 1.500 2.500h11a1.700 1.700 0 0 0 1.500-2.500L14 9V3M7.500 15h9"/>',
+  faculty: '<circle cx="12" cy="7.500" r="4"/><path d="M4.500 21c0-4.500 3.400-7 7.500-7s7.500 2.500 7.500 7"/>',
+  department: '<path d="M3 9l9-5.500 9 5.500zM6 12v6M10 12v6M14 12v6M18 12v6M3.500 21h17"/>',
+  outreach: '<rect x="2.500" y="8" width="12" height="8" rx="4"/><rect x="9.500" y="8" width="12" height="8" rx="4"/>',
+  student: '<path d="M2 9.500L12 5l10 4.500-10 4.500zM6.500 12v4.500c3 2.500 8 2.500 11 0V12M22 9.500V15"/>',
+  placement: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5.500h6V8M3 13.500h18"/>',
+};
+// a figure as it is shown: rupees in lakh / crore so that it stays short (the full amount appears on hover)
+function dashValue(x) {
+  if (x.value === null || x.value === undefined) return '–';
+  if (x.kind === 'percent') return x.value + '%';
+  if (x.kind === 'lpa') return x.value + ' LPA';
+  if (x.kind === 'money') {
+    const n = Number(x.value), short = (v, unit) => '₹' + Number(v.toFixed(v < 10 ? 2 : 1)) + ' ' + unit;
+    return n >= 1e7 ? short(n / 1e7, 'Cr') : n >= 1e5 ? short(n / 1e5, 'L') : '₹' + n.toLocaleString('en-IN');
+  }
+  return Number(x.value).toLocaleString('en-IN');
+}
+const dashFull = x => x.kind === 'money' ? ` title="₹${esc(fmtMoney(x.value))}"` : '';
+function dashCard(h, on, wholeDept) {
+  return `<button type="button" class="hl ${on ? 'on' : ''}" data-h="${h.id}" aria-pressed="${on}">
+    <span class="hl-head"><span class="hl-icon"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${DASH_ICONS[h.id]}</svg></span><span class="hl-title">${esc(h.title)}<small>${esc(h.unit)}${wholeDept ? ' · whole department' : ''}</small></span><b class="hl-total">${dashValue({ value: h.total })}</b></span>
+    <span class="hl-stats">${h.stats.map(x => `<span class="hl-stat ${x.value ? '' : 'zero'}"${dashFull(x)}><b>${esc(dashValue(x))}</b><span>${esc(x.label)}</span></span>`).join('')}</span>
+    <span class="hl-notes">${h.notes.map(x => `<span${dashFull(x)}><b>${esc(dashValue(x))}</b> ${esc(x.label)}</span>`).join('')}</span>
+  </button>`;
+}
+// what is shown under the cards for the category that is chosen
+function dashDetail(id, a) {
+  const s = a.students, p = a.placements, d = a.department;
+  const categories = () => bars(a.highlights.find(h => h.id === id).categories, '', true);
+  const box = (title, body) => `<div class="card"><h4>${title}</h4>${body}</div>`;
+  const pair = (x, y) => `<div class="grid-2">${x}${y}</div>`;
+  if (id === 'student') return pair(box('By category', categories()), box('By level', bars(s.by_level))) +
+    pair(box('Achievement or participation', bars(s.by_kind)), box('By academic year', bars(s.by_year))) +
+    pair(box('Class-wise participation', table([{ h: 'Class', k: 'label' }, { h: 'Students', k: 'students', num: 1 }, { h: 'Achievers', k: 'achievers', num: 1 }, { h: 'Achievements', k: 'achievements', num: 1 }], s.per_class)),
+      box('Top students', table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'name' }, { h: 'Class', k: 'class_code' }, { h: 'Count', k: 'achievements', num: 1 }], s.top_students)));
+  if (id === 'placement') return `<div class="kpis">${kpi(p.opted_in, 'Opted in')}${kpi(p.opted_out, 'Opted out')}${kpi(p.unplaced_opted_in, 'Opted in, not placed')}${kpi(p.median_lpa ? p.median_lpa + ' LPA' : '–', 'Median package')}</div>` +
+    pair(box('Package distribution (LPA)', bars(p.package_distribution)), box('Offer type', bars(p.by_offer_type))) +
+    pair(box('Top recruiters', bars(p.by_company)), box('Placed per year', bars(p.by_year))) + box('Reasons for opting out', bars(p.opt_out_reasons));
+  if (id === 'research') return box('By category', categories()) + pair(box('By indexing', bars(d.research_by_indexing)), box('By quartile', bars(d.research_by_quartile)));
+  if (id === 'faculty') return pair(box('By category', categories()), box('By level', bars(d.faculty_by_level))) +
+    box('Most active faculty (entries in all forms)', table([{ h: 'ID', html: r => profileLink('faculty', r.emp_id) }, { h: 'Name', k: 'name' }, { h: 'Submissions', k: 'submissions', num: 1 }], d.top_faculty));
+  if (id === 'department') return pair(box('By category', categories()),
+    box('MoU status', table([{ h: 'Partner', k: 'partner' }, { h: 'Expiry', k: 'expiry' }, { h: 'Status', html: r => `<span class="pill ${r.status === 'Active' ? 'ok' : r.status === 'Expired' ? 'bad' : 'warn'}">${r.status}</span>` }], d.mou_status)));
+  return pair(box('By category', categories()), box('Top partners', bars(d.top_partners)));
+}
 async function viewDash() {
-  const st = { ay: '', cls: '', prog: '' };
+  const st = { ay: '', cls: '', prog: '', pick: '' };
+  let a = null;
+  // the six cards (left) give the whole picture at once; choosing one shows its charts and tables beside them (right)
+  const drawDetail = () => {
+    const h = a.highlights.find(x => x.id === st.pick);
+    $('#dash-detail').innerHTML = `<h2 class="dash-h">${esc(h.title)} in detail</h2>${dashDetail(h.id, a)}` +
+      (a.department && !['student', 'placement'].includes(h.id) ? `<div class="card"><h4>All form entries by academic year</h4>${bars(a.department.submissions_by_year)}</div>` : '');
+    $('#dash-detail').scrollTop = 0;                              // a newly chosen category is read from the top
+    $('#dash-cards').querySelectorAll('.hl').forEach(b => { b.classList.toggle('on', b.dataset.h === st.pick); b.setAttribute('aria-pressed', b.dataset.h === st.pick); });
+  };
   const draw = async () => {
     const qs = new URLSearchParams(); if (st.ay) qs.set('ay_id', st.ay); if (st.cls) qs.set('class_id', st.cls); if (st.prog) qs.set('programme', st.prog);
-    const a = await api('/api/master/analytics?' + qs);
-    const s = a.students, p = a.placements, d = a.department;
+    a = await api('/api/master/analytics?' + qs);
+    if (!$('#dash-out')) return;                                  // another page was opened while this was loading
+    if (!a.highlights.some(h => h.id === st.pick)) st.pick = a.highlights[0].id;
+    const narrowed = !!(st.cls || st.prog);
     $('#dash-out').innerHTML = `
-      <div class="kpis">${kpi(s.active_students, 'Active students')}${kpi(s.students_with_achievements, 'Students with achievements')}${kpi(s.participation_rate + '%', 'Participation rate')}
-        ${kpi(p.placement_percent + '%', 'Placed of opted-in')}${kpi(p.placed, 'Students placed')}${kpi(p.highest_lpa ? p.highest_lpa + ' LPA' : '–', 'Highest package')}${kpi(p.average_lpa ? p.average_lpa + ' LPA' : '–', 'Average package')}</div>
-      <h2 style="margin:6px 0 12px">Student achievements</h2>
-      <div class="grid-2"><div class="card"><h4>By category</h4>${bars(s.by_category)}</div><div class="card"><h4>By level</h4>${bars(s.by_level)}</div></div>
-      <div class="grid-2"><div class="card"><h4>Achievement or participation</h4>${bars(s.by_kind)}</div><div class="card"><h4>By academic year</h4>${bars(s.by_year)}</div></div>
-      <div class="grid-2"><div class="card"><h4>Class-wise participation</h4>${table([{ h: 'Class', k: 'label' }, { h: 'Students', k: 'students', num: 1 }, { h: 'Achievers', k: 'achievers', num: 1 }, { h: 'Achievements', k: 'achievements', num: 1 }], s.per_class)}</div>
-        <div class="card"><h4>Top students</h4>${table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'name' }, { h: 'Class', k: 'class_code' }, { h: 'Count', k: 'achievements', num: 1 }], s.top_students)}</div></div>
-      <h2 style="margin:6px 0 12px">Placements</h2>
-      <div class="kpis">${kpi(p.opted_in, 'Opted in')}${kpi(p.opted_out, 'Opted out')}${kpi(p.unplaced_opted_in, 'Opted in, not placed')}${kpi(p.median_lpa ? p.median_lpa + ' LPA' : '–', 'Median package')}</div>
-      <div class="grid-2"><div class="card"><h4>Package distribution (LPA)</h4>${bars(p.package_distribution)}</div><div class="card"><h4>Offer type</h4>${bars(p.by_offer_type)}</div></div>
-      <div class="grid-2"><div class="card"><h4>Top recruiters</h4>${bars(p.by_company)}</div><div class="card"><h4>Placed per year</h4>${bars(p.by_year)}</div></div>
-      <div class="card"><h4>Reasons for opting out</h4>${bars(p.opt_out_reasons)}</div>
-      ${d ? `<h2 style="margin:6px 0 12px">Department</h2>
-        <div class="kpis">${kpi(fmtMoney(d.funding_total_inr), 'Research funding (₹)')}${kpi(d.department_participants, 'Event participants')}${kpi(d.outreach_attendance, 'Outreach attendance')}</div>
-        <div class="grid-2"><div class="card"><h4>Submissions by form</h4>${bars(d.submissions_by_form)}</div><div class="card"><h4>Submissions by year</h4>${bars(d.submissions_by_year)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Research by type</h4>${bars(d.research_by_category)}</div><div class="card"><h4>Research by indexing</h4>${bars(d.research_by_indexing)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Research by quartile</h4>${bars(d.research_by_quartile)}</div><div class="card"><h4>Faculty achievements by category</h4>${bars(d.faculty_by_category)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Faculty achievements by level</h4>${bars(d.faculty_by_level)}</div><div class="card"><h4>Department highlights</h4>${bars(d.department_by_category)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Outreach by category</h4>${bars(d.outreach_by_category)}</div><div class="card"><h4>Top partners</h4>${bars(d.top_partners)}</div></div>
-        <div class="grid-2"><div class="card"><h4>Most active faculty</h4>${table([{ h: 'ID', html: r => profileLink('faculty', r.emp_id) }, { h: 'Name', k: 'name' }, { h: 'Submissions', k: 'submissions', num: 1 }], d.top_faculty)}</div>
-          <div class="card"><h4>MoU status</h4>${table([{ h: 'Partner', k: 'partner' }, { h: 'Expiry', k: 'expiry' }, { h: 'Status', html: r => `<span class="pill ${r.status === 'Active' ? 'ok' : r.status === 'Expired' ? 'bad' : 'warn'}">${r.status}</span>` }], d.mou_status)}</div></div>` : ''}`;
+      <div class="dash-split">
+        <div class="hl-grid" id="dash-cards">${a.highlights.map(h => dashCard(h, h.id === st.pick, narrowed && !['student', 'placement'].includes(h.id))).join('')}</div>
+        <section class="dash-side" id="dash-detail" aria-live="polite" tabindex="0"></section>
+      </div>`;
+    $('#dash-note').textContent = `Approved records, ${st.ay || 'all academic years'}. Click a card for its details.`;
+    drawDetail();
+    $('#dash-cards').onclick = e => {
+      const b = e.target.closest('[data-h]'); if (!b) return;
+      st.pick = b.dataset.h; drawDetail();
+      if (matchMedia('(max-width: 1100px)').matches) $('#dash-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });   // there the details are below the cards
+    };
   };
-  $('#view').innerHTML = `<div class="filters"><h2>Dashboard</h2><span class="spacer"></span>
+  $('#view').innerHTML = `<div class="filters dash-bar"><h2>Department at a glance</h2><span class="hint" id="dash-note"></span><span class="spacer"></span>
     <select class="compact" id="d-ay">${ayOpts('', 'All years')}</select>
     ${me.all_access ? '<select class="compact" id="d-prog"><option value="">UG + PG</option><option>UG</option><option>PG</option></select>' : '<input type="hidden" id="d-prog" value="">'}
     ${classFilter('d-cls', 'All Classes')}</div><div id="dash-out"></div>`;
@@ -250,8 +333,13 @@ async function viewDash() {
 // ---------------------------------------------------------------- students
 async function viewStudents() {
   const st = { class_id: '', status: 'Active', q: '', offset: 0 };
-  $('#view').innerHTML = `<div class="card-head"><h2>Students</h2><div>${isEditor() ? '<button class="btn primary" id="add-st">+ Add student</button>' : ''}</div></div>
-    <div class="filters">${hasBothGroups() ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${classFilter('f-class', 'All Classes')}
+  const mine = listClasses(), own = me.student_list === 'own';
+  const groups = new Set(mine.map(c => c.grp).filter(Boolean));
+  const pickClass = own && mine.length === 1 ? `<input type="hidden" id="f-class" value="${mine[0].class_id}">`
+    : `<select class="compact" id="f-class">${opts(mine, c => c.class_id, classLabel, '', own ? 'All my classes' : 'All Classes')}</select>`;
+  $('#view').innerHTML = `<div class="card-head"><h2>Student data</h2><div>${isEditor() ? '<button class="btn primary" id="add-st">+ Add student</button>' : ''}</div></div>
+    ${own ? `<p class="hint">Your class${mine.length > 1 ? 'es' : ''}: ${mine.map(c => esc(c.class_code)).join(', ')}</p>` : ''}
+    <div class="filters">${groups.size > 1 ? '<select class="compact" id="f-grp"><option value="">Both groups (G1 + G2)</option><option value="G1">G1 only</option><option value="G2">G2 only</option></select>' : ''}${pickClass}
       <select class="compact" id="f-status"><option>Active</option><option>Graduated</option><option>Removed</option><option value="">Any status</option></select>
       <input class="input compact" id="f-q" placeholder="Search roll no / name"></div>
     <div class="card" id="st-list"></div>
@@ -281,7 +369,7 @@ async function viewStudents() {
   const grp = $('#f-grp');
   if (grp) grp.onchange = go(async () => {          // narrow the class drop-down to the chosen group, then reload the list
     const cls = $('#f-class');
-    if (cls && cls.tagName === 'SELECT') cls.innerHTML = opts(meta.classes.filter(c => !grp.value || c.grp === grp.value), c => c.class_id, classLabel, '', 'All classes');
+    if (cls && cls.tagName === 'SELECT') cls.innerHTML = opts(mine.filter(c => !grp.value || c.grp === grp.value), c => c.class_id, classLabel, '', own ? 'All my classes' : 'All classes');
     await draw();
   });
   $('#f-q').oninput = go(draw);
@@ -301,7 +389,7 @@ async function viewStudents() {
 async function viewClasses() {
   const classes = await api('/api/master/classes'); meta.classes = classes;
   const admin = me.roles.includes('ADMIN');
-  $('#view').innerHTML = `<div class="card-head"><h2>Classes</h2>${admin ? '<button class="btn primary" id="add-class">+ Add class</button>' : ''}</div>
+  $('#view').innerHTML = `<div class="card-head"><h2>View classes</h2>${admin ? '<button class="btn primary" id="add-class">+ Add class</button>' : ''}</div>
     <p class="hint">A class is known by its tutor and its semester. Two semesters make a year (UG has 8 semesters, PG has 4), so the year and the class code follow the semester the tutor sets: nobody is promoted, the students simply stay in their class as it moves up. Two classes can be in the same year at once. Only the Admin changes a class's tutor or adds a class.</p>` +
     (classes.map(c => `<div class="card" data-c="${c.class_id}"><div class="card-head"><div><h3>${esc(c.class_code)} · ${esc(c.ay_id)}</h3>
       <span class="muted">${c.student_count} active students</span></div>
@@ -337,8 +425,8 @@ async function viewClasses() {
 
 // ---------------------------------------------------------------- uploads
 async function viewUploads() {
-  $('#view').innerHTML = `<div class="card-head"><h2>Data upload</h2></div>
-    <p class="hint">Download a template, fill it, then upload it. There is one for each of the six forms. Student and faculty lists are uploaded from the Students and Faculty pages.</p>
+  $('#view').innerHTML = `<div class="card-head"><h2>Bulk data upload</h2></div>
+    <p class="hint">Download a template, fill it, then upload it. There is one for each of the six forms. Student and faculty lists are uploaded from the View student data and Faculty &amp; roles pages.</p>
     ${meta.forms.map(f => uploadCard({ title: f.title, hint: 'One sheet per category (the student form has one sheet with a category column), one row per entry. Each row names the faculty member by employee ID. <b>Rows are saved as approved at once</b>; a row already in the records is skipped. Photos and files cannot go in Excel: paste a link or leave them empty.',
       template: [`/api/master/bulk/${f.form_id}/template`, f.form_id + '_bulk_upload.xlsx'], path: `/api/master/bulk/${f.form_id}/upload` })).join('')}
     ${uploadCard({ title: 'Student Placement Diary', hint: 'One row per offer. <b>A student who is already in the database is replaced</b> by the rows in this file (for that academic year).',
@@ -351,9 +439,10 @@ async function viewUploads() {
 }
 
 // ---------------------------------------------------------------- placements
-async function viewPlacements() {
+let redrawPlacements = () => { };
+async function recordsPlacements(host) {                    // shown inside the Records tab
   let mode = 'offers';
-  $('#view').innerHTML = `<div class="card-head"><h2>Placements</h2><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button>${isEditor() ? '<button class="btn sm primary" id="p-prefs" title="Record who opted in or out for the placement year">Record opt-in / opt-out</button><button class="btn sm" id="p-up" title="Upload placement data from an Excel sheet">⬆ Upload Excel</button>' : ''}<button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
+  host.innerHTML = `<div class="card-head"><p class="hint" style="margin:0">Placement offers, and who opted in or out. Everyone can view and download; the class tutor and the Admin record and upload.</p><div class="filters" style="margin:0"><button class="btn sm" data-m="offers">Offers</button><button class="btn sm" data-m="profiles">Opt-in / opt-out</button>${isEditor() ? '<button class="btn sm primary" id="p-prefs" title="Record who opted in or out for the placement year">Record opt-in / opt-out</button><button class="btn sm" id="p-up" title="Upload placement data from an Excel sheet">⬆ Upload Excel</button>' : ''}<button class="btn sm" id="p-dl" title="Choose columns and download as CSV">⬇ Download</button></div></div>
     <div class="filters"><select class="compact" id="p-ay">${ayOpts('', 'All years')}</select>${classFilter('p-class', 'All Classes')}
       <span id="p-extra" class="filters" style="margin:0"></span></div><div class="card" id="p-out"></div>`;
   const placeQs = (v = null, extra = { limit: 200 }) => {
@@ -363,13 +452,16 @@ async function viewPlacements() {
     return qs;
   };
   const draw = async () => {
+    if (!$('#p-out')) return;                                   // another view was chosen while this was loading
     const qs = placeQs();
     if (mode === 'offers') {
       const r = await api('/api/master/placements/offers?' + qs);
+      if (!$('#p-out') || mode !== 'offers') return;
       $('#p-out').innerHTML = `<p class="hint">${r.total} offers</p>` + table([{ h: 'Roll no', html: r => profileLink('student', r.roll_no) }, { h: 'Name', k: 'full_name' }, { h: 'Class', k: 'class_code' }, { h: 'Year', k: 'ay_id' }, { h: 'Company', k: 'company' }, { h: 'Type', k: 'offer_type' },
         { h: 'LPA', k: 'package_lpa', num: 1 }, { h: 'Stipend/mo', f: r => fmtMoney(r.stipend_per_month), num: 1 }, { h: 'Role', k: 'job_role' }, { h: 'Status', k: 'offer_status' }], r.rows);
     } else {
       const r = await api('/api/master/placements/profiles?' + qs);
+      if (!$('#p-out') || mode !== 'profiles') return;
       $('#p-out').innerHTML = `<p class="hint">${r.total} students</p>` + table([{ h: 'Roll no', k: 'roll_no' }, { h: 'Name', k: 'full_name' }, { h: 'Class', k: 'class_code' }, { h: 'Year', k: 'ay_id' },
         { h: 'Preference', html: p => `<span class="pill ${p.opt_status === 'OPTED_IN' ? 'ok' : 'warn'}">${p.opt_status === 'OPTED_IN' ? 'Opted in' : 'Opted out'}</span>` }, { h: 'Reason', k: 'opt_out_reason' }, { h: 'Offers', k: 'offers', num: 1 }, { h: 'Best LPA', k: 'best_package_lpa', num: 1 }], r.rows);
     }
@@ -381,12 +473,13 @@ async function viewPlacements() {
       : `<select class="compact" id="p-opt"><option value="">Opted in + out</option><option value="OPTED_IN">Opted in</option><option value="OPTED_OUT">Opted out</option></select>`;
     $('#p-extra').querySelectorAll('select,input').forEach(el => el.onchange = el.oninput = go(draw));
   };
-  $('#view').onclick = go(async e => { if (e.target.dataset.m) { mode = e.target.dataset.m; extras(); await draw(); } });
+  host.onclick = go(async e => { if (e.target.dataset.m) { mode = e.target.dataset.m; extras(); await draw(); } });
+  redrawPlacements = () => draw().catch(e => toast(e.message, true));
   for (const id of ['p-ay', 'p-class']) $('#' + id).onchange = go(draw);
   $('#p-dl').onclick = go(() => openDownload(mode, {
     title: mode === 'offers' ? 'Download placement offers' : 'Download opt-in / opt-out', file: 'placements_' + mode, listUrl: '/api/master/placements/' + mode, filters: placeQs,
     dates: { mode: 'ay', ay: $('#p-ay').value, hint: 'The filters set on the page (class, company, package …) also apply.' } }));
-  const upBtn = $('#p-up'); if (upBtn) upBtn.onclick = () => openPlacementUpload(() => draw().catch(e => toast(e.message, true)));
+  const upBtn = $('#p-up'); if (upBtn) upBtn.onclick = () => openPlacementUpload(() => redrawPlacements());
   const prefsBtn = $('#p-prefs'); if (prefsBtn) prefsBtn.onclick = go(() => openPreferences(classFilterValue()));
   extras(); await draw();
 }
@@ -414,7 +507,7 @@ async function openPreferences(classId) {
     async dlg => {
       const out = [...dlg.querySelectorAll('#pf-body tr')].map(tr => ({ roll_no: tr.dataset.r, opt_status: $('.pf-s', tr).value, opt_out_reason: $('.pf-r', tr).value }));
       const r = await api('/api/entry/placement-preferences', { method: 'PUT', body: { ay_id: $('#pf-ay', dlg).value, rows: out } }); toast(`Saved for ${r.saved} student${r.saved === 1 ? '' : 's'}`);
-      if (current === 'placements') show('placements');
+      redrawPlacements();
     }, 'Save', true);
   const wire = () => o.querySelectorAll('.pf-s').forEach(s => s.onchange = () => { const r = $('.pf-r', s.closest('tr')); r.disabled = s.value !== 'Opted Out'; if (r.disabled) r.value = ''; });
   wire();
@@ -472,6 +565,56 @@ async function submissionDetail(id) {
 }
 
 // ---------------------------------------------------------------- faculty (Admin)
+// The same rule as the server's (in_faculty_order): by name from A to Z, not counting Dr., Mr., Prof. ...
+const facultyNameKey = f => String(f.full_name || '').trim().replace(/^(?:(?:dr|mr|mrs|ms|miss|prof|er)(?:\.\s*|\s+))+/i, '').toLowerCase();
+const byFacultyName = (a, b) => { const x = facultyNameKey(a), y = facultyNameKey(b); return x < y ? -1 : x > y ? 1 : a.emp_id < b.emp_id ? -1 : 1; };
+// The Admin arranges the list (drag a row, use the arrows, or type a position). What is saved is the order every login sees.
+function facultyOrderDialog(list, saved) {
+  let rows = [...list], custom = list.some(f => f.custom_order);
+  const dlg = modal('Change faculty order', `<p class="hint" style="margin-top:0">Drag a name, use the arrows, or type its new position. <b>Everyone</b> sees this order in the faculty list, tutor and faculty drop-downs and name suggestions. People added later go to the end.</p>
+    <div class="fo-bar"><button type="button" class="btn sm" id="fo-az">Sort A to Z</button><span class="muted" id="fo-mode"></span></div><ol class="fo-list" id="fo-list"></ol>`,
+    async () => {
+      await api('/api/master/faculty-order', { method: 'PUT', body: { order: custom ? rows.map(f => f.emp_id) : [] } });
+      toast(custom ? 'Faculty order saved' : 'Faculty are listed A to Z'); await saved();
+    }, 'Save order');
+  const ul = $('#fo-list', dlg);
+  const draw = focus => {
+    $('#fo-mode', dlg).textContent = custom ? 'Your own order' : 'A to Z (the default). People added later take their place by name.';
+    ul.innerHTML = rows.map((f, i) => `<li class="fo-row" draggable="true" data-id="${esc(f.emp_id)}"><span class="fo-grip" aria-hidden="true">⠿</span>
+      <input type="number" class="input fo-pos" min="1" max="${rows.length}" value="${i + 1}" aria-label="Position of ${esc(f.full_name)}">
+      <span class="fo-who"><b>${esc(f.full_name)}</b><small>${esc([f.emp_id, f.designation, f.status && f.status !== 'Active' ? f.status : ''].filter(Boolean).join(' · '))}</small></span>
+      <button type="button" class="btn sm" data-mv="-1" aria-label="Move ${esc(f.full_name)} up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn sm" data-mv="1" aria-label="Move ${esc(f.full_name)} down" ${i === rows.length - 1 ? 'disabled' : ''}>↓</button></li>`).join('');
+    if (focus) { const li = [...ul.children].find(x => x.dataset.id === focus.id); const el = li && ($(focus.sel, li)?.disabled ? $('.fo-pos', li) : $(focus.sel, li)); el?.focus(); li?.scrollIntoView({ block: 'nearest' }); }
+  };
+  const move = (id, to, sel) => {
+    const from = rows.findIndex(f => f.emp_id === id); to = Math.max(0, Math.min(rows.length - 1, to));
+    if (from !== to) { rows.splice(to, 0, ...rows.splice(from, 1)); custom = true; }
+    draw({ id, sel });
+  };
+  ul.onclick = e => {
+    const b = e.target.closest('[data-mv]'); if (!b) return;
+    const id = b.closest('li').dataset.id;
+    move(id, rows.findIndex(f => f.emp_id === id) + Number(b.dataset.mv), `[data-mv="${b.dataset.mv}"]`);
+  };
+  ul.onchange = e => { const n = parseInt(e.target.value, 10), id = e.target.closest('li').dataset.id; if (n) move(id, n - 1, '.fo-pos'); else draw(); };
+  ul.onkeydown = e => { if (e.key === 'Enter' && e.target.matches('.fo-pos')) { e.preventDefault(); e.target.dispatchEvent(new Event('change', { bubbles: true })); } };
+  let dragged = null;
+  ul.ondragstart = e => { dragged = e.target.closest('li'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragged.dataset.id); setTimeout(() => dragged?.classList.add('drag')); };
+  ul.ondragover = e => {
+    if (!dragged) return; e.preventDefault();
+    const over = e.target.closest('li'); if (!over || over === dragged) return;
+    const r = over.getBoundingClientRect();
+    ul.insertBefore(dragged, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
+  };
+  ul.ondrop = e => e.preventDefault();
+  ul.ondragend = () => {                        // read the new order from what is on screen
+    const ids = [...ul.children].map(li => li.dataset.id);
+    if (ids.some((id, i) => rows[i].emp_id !== id)) { rows = ids.map(id => rows.find(f => f.emp_id === id)); custom = true; }
+    dragged = null; draw();
+  };
+  $('#fo-az', dlg).onclick = () => { rows.sort(byFacultyName); custom = false; draw(); };
+  draw();
+}
 async function viewFaculty() {
   const list = await api('/api/master/faculty');
   const admin = me.roles.includes('ADMIN');
@@ -479,7 +622,7 @@ async function viewFaculty() {
   const desigs = [...new Set(list.map(f => f.designation).filter(Boolean))].sort();
   const count = (f, k) => (f.counts || {})[k] || 0;
   const hasRole = (f, r) => r === 'TUTOR' ? f.tutor_of.length > 0 : f.roles.some(x => x.role === r);
-  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty'}</h2>${admin ? '<div><button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
+  $('#view').innerHTML = `<div class="card-head"><h2>${admin ? 'Faculty & roles' : 'Faculty data'}</h2>${admin ? '<div><button class="btn" id="fac-order">⇅ Change order</button> <button class="btn primary" id="add-fac">+ Add faculty</button></div>' : ''}</div>
     <div class="filters">
       <input class="input compact" id="ff-q" placeholder="Search name, ID or email" style="min-width:220px">
       <select class="compact" id="ff-desig">${opts(desigs, d => d, d => d, '', 'Any designation')}</select>
@@ -506,6 +649,7 @@ async function viewFaculty() {
   $('#ff-q').oninput = drawFac;
   $('#ff-clear').onclick = () => { for (const id of ['ff-q', 'ff-desig', 'ff-status', 'ff-role', 'ff-has']) $('#' + id).value = ''; drawFac(); };
   drawFac();
+  if (admin) $('#fac-order').onclick = () => facultyOrderDialog(list, async () => { meta = await api('/api/master/meta'); show('faculty'); });
   const facForm = (f = {}) => `<div class="grid-2">${[['emp_id', 'Employee ID'], ['full_name', 'Full name'], ['email', 'Email'], ['phone', 'Phone'], ['designation', 'Designation'], ['qualification', 'Qualification']]
     .map(([k, l]) => `<div class="field"><label>${l}</label><input class="input" data-k="${k}" value="${esc(f[k] || '')}" ${k === 'emp_id' && f.emp_id ? 'disabled' : ''}></div>`).join('')}</div>`;
   const collect = o => Object.fromEntries([...o.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value]));
@@ -520,7 +664,7 @@ async function viewFaculty() {
     if (t.dataset.rel && confirm('Relieve ' + f.full_name + '? Their records stay; they can no longer sign in.')) { await api('/api/master/faculty/' + f.emp_id, { method: 'PUT', body: { status: 'Relieved' } }); toast('Relieved'); show('faculty'); }
     if (t.dataset.roles) {
       const has = (role, p, g) => f.roles.some(r => r.role === role && (r.programme || '') === (p || '') && (r.grp || '') === (g || ''));
-      modal('Roles for ' + f.full_name, `<p class="hint">Tutor is set on the Classes page.</p>${[['ADMIN', '', ''], ['HOD', '', ''], ['PC', 'UG', 'G1'], ['PC', 'UG', 'G2'], ['PC', 'PG', '']]
+      modal('Roles for ' + f.full_name, `<p class="hint">Tutor is set on the View classes page.</p>${[['ADMIN', '', ''], ['HOD', '', ''], ['PC', 'UG', 'G1'], ['PC', 'UG', 'G2'], ['PC', 'PG', '']]
         .map(([r, p, g]) => `<label style="display:block;margin:6px 0"><input type="checkbox" data-r="${r}" data-p="${p}" data-g="${g}" ${has(r, p, g) ? 'checked' : ''}> ${r === 'PC' ? 'Programme Coordinator – ' + p + (g ? ' ' + g : '') : r === 'HOD' ? 'Head of Department' : 'Admin'}</label>`).join('')}`,
         async o => { await api(`/api/master/faculty/${f.emp_id}/roles`, { method: 'PUT', body: { roles: [...o.querySelectorAll('input:checked')].map(i => ({ role: i.dataset.r, programme: i.dataset.p, grp: i.dataset.g })) } }); toast('Roles saved'); show('faculty'); });
     }
@@ -543,7 +687,7 @@ async function viewRecords() {
         <option value="" ${sel.group === g.id ? 'hidden' : ''}>${esc(g.title)} (${g.count})</option>
         <option value="${g.id}|" ${sel.group === g.id && !sel.category ? 'selected' : ''}>All ${esc(g.title.toLowerCase())} (${g.count})</option>
         ${g.types.map(t => `<option value="${g.id}|${esc(t.category)}" ${sel.group === g.id && sel.category === t.category ? 'selected' : ''}>${esc(t.label)} (${t.count})</option>`).join('')}</select>`).join('') +
-      '';
+      `<button type="button" class="wk-sel wk-all ${sel.group === 'PLACEMENT' ? 'on' : ''}" id="wk-pl">Placements</button>`;
     if ($('#wk-hint')) $('#wk-hint').textContent = `${cat.total} entr${cat.total === 1 ? 'y' : 'ies'} in the department${fv.ay_id ? ' in ' + fv.ay_id : ''}. Every filter describes the work itself, not a person.`;
   };
   const drawFilters = () => {
@@ -585,7 +729,7 @@ async function viewRecords() {
       : '<div class="card"><div class="empty">Nothing matches these filters.</div></div>';
     const more = $('#w-more'); if (more) more.onclick = go(() => load(false));
   };
-  $('#view').innerHTML = `<div class="card-head"><h2>Records</h2></div><div class="wk-bar" id="wk-bar"></div><div id="rec-body"></div>`;
+  $('#view').innerHTML = `<div class="card-head"><h2>Reports</h2></div><div class="wk-bar" id="wk-bar"></div><div id="rec-body"></div>`;
   // one kind of work: its own filters, totals, cards and a download with every field of its form
   const showWork = async () => {
     $('#rec-body').innerHTML = `<div class="card"><div class="card-head"><div><h3 id="wk-title"></h3><p class="hint" id="wk-hint" style="margin:2px 0 0"></p></div>
@@ -593,7 +737,12 @@ async function viewRecords() {
       <div class="filters" id="wk-filters"></div><div class="kpis" id="wk-stats" style="margin:0"></div></div><div id="wk-results"></div>`;
     wireWork(); drawBar(); drawFilters(); await load(true);
   };
-  const show_ = async () => { if (sel.group === 'ALL') { drawBar(); await recordsAll($('#rec-body')); } else await showWork(); };
+  const show_ = async () => {
+    $('#rec-body').onclick = null;
+    if (sel.group === 'ALL') { drawBar(); await recordsAll($('#rec-body')); }
+    else if (sel.group === 'PLACEMENT') { drawBar(); await recordsPlacements($('#rec-body')); }
+    else await showWork();
+  };
   function wireWork() {
     let open = false;
     $('#w-open').onclick = () => { open = !open; document.querySelectorAll('#wk-results details.act').forEach(d => d.open = open); $('#w-open').textContent = open ? 'Collapse all' : 'Expand all'; };
@@ -611,14 +760,17 @@ async function viewRecords() {
   }
   await loadCatalog(); await show_();
   $('#wk-bar').onclick = go(async e => {
-    if (!e.target.closest('#wk-all') || sel.group === 'ALL') return;
-    sel.group = 'ALL'; sel.category = ''; tv = {}; fv.class_id = '';
+    const to = e.target.closest('#wk-all') ? 'ALL' : e.target.closest('#wk-pl') ? 'PLACEMENT' : null;
+    if (!to || sel.group === to) return;
+    $('#rec-body').onclick = null;
+    sel.group = to; sel.category = ''; tv = {}; fv.class_id = '';
     await show_();
   });
   $('#wk-bar').onchange = go(async e => {
     const el = e.target.closest('select[data-g]'); if (!el || !el.value) return;
     const [g, c] = el.value.split('|');
     if (g !== sel.group) tv = {};                          // the work-specific filters belong to one form
+    $('#rec-body').onclick = null;
     sel.group = g; sel.category = c; if (g !== 'STUDENT') fv.class_id = '';
     await showWork();
   });
@@ -632,11 +784,18 @@ async function viewRecords() {
 
 // ---------------------------------------------------------------- account
 async function viewAccount() {
-  $('#view').innerHTML = `<div class="card" style="max-width:420px"><h3>Change password</h3><div class="field" style="margin-top:12px"><label>Current password</label><input type="password" class="input" id="pw-old"></div>
-    <div class="field"><label>New password (min 8 characters)</label><input type="password" class="input" id="pw-new"></div><button class="btn primary" id="pw-go">Change password</button></div>`;
+  const first = me.must_change;
+  $('#view').innerHTML = `<div class="card" style="max-width:420px"><h3>Change password</h3>
+    ${first ? '<p class="hint">You signed in with a temporary password. Choose your own; you will then be signed out and sign in with it.</p>' : ''}
+    <div class="field" style="margin-top:12px"><label>${first ? 'Temporary password' : 'Current password'}</label><input type="password" class="input" id="pw-old" autocomplete="current-password"></div>
+    <div class="field"><label>New password (min 8 characters)</label><input type="password" class="input" id="pw-new" autocomplete="new-password"></div>
+    <div class="field"><label>New password again</label><input type="password" class="input" id="pw-again" autocomplete="new-password"></div>
+    <button class="btn primary" id="pw-go">Change password</button></div>`;
   $('#pw-go').onclick = go(async () => {
+    if ($('#pw-new').value !== $('#pw-again').value) return toast('The two new passwords are not the same', true);
     await api('/api/auth/change-password', { method: 'POST', body: { old_password: $('#pw-old').value, new_password: $('#pw-new').value } });
-    me.must_change = false; $('#banner').innerHTML = ''; toast('Password changed'); $('#pw-old').value = $('#pw-new').value = '';
+    if (first) { sessionStorage.removeItem('tok'); return location.replace('/?changed=1'); }
+    toast('Password changed'); $('#pw-old').value = $('#pw-new').value = $('#pw-again').value = '';
   });
 }
 
@@ -717,5 +876,5 @@ document.addEventListener('click', e => {
 });
 const profileLink = (kind, id, label) => `<a href="#" data-profile="${kind}:${esc(id)}">${esc(label ?? id)}</a>`;
 
-const VIEWS = { dash: viewDash, students: viewStudents, classes: viewClasses, uploads: viewUploads, placements: viewPlacements, records: viewRecords, faculty: viewFaculty, mine: () => openProfile('faculty', me.id, { mine: true }), account: viewAccount };
+const VIEWS = { dash: viewDash, students: viewStudents, classes: viewClasses, uploads: viewUploads, records: viewRecords, faculty: viewFaculty, mine: () => openProfile('faculty', me.id, { mine: true }), account: viewAccount };
 start();

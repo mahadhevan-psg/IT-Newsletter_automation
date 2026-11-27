@@ -20,7 +20,7 @@ from fastapi import HTTPException
 
 from backend.master import blocks, ingest, placements
 from backend.master.auth import User
-from backend.master.common import norm_header
+from backend.master.common import in_faculty_order, norm_header
 from database.master_db import audit, ay_for, ensure_ay
 
 PLACEMENT = "placement"
@@ -355,7 +355,8 @@ def get_item(conn, user: User, item_id: int) -> Dict[str, Any]:
             "warnings": pv["warnings"], "blockers": pv["blockers"], "timeline": timeline,
             "permissions": {"decide": can_decide(conn, user, it) and it["status"] in ("PENDING", "RETURNED"), "revoke": can_decide(conn, user, it) and it["status"] == "APPROVED",
                             "reopen": can_decide(conn, user, it) and it["status"] == "REJECTED", "resubmit": can_resubmit(user, it), "can_return": it["kind"] == "FORM"},
-            "faculty": [{"emp_id": e, "full_name": n} for e, n in sorted(names.items(), key=lambda x: x[1]) if e != "ADMIN"], "suggested_send_to": suggested,
+            "faculty": [{"emp_id": r["emp_id"], "full_name": r["full_name"]} for r in in_faculty_order(
+                conn.execute("SELECT emp_id, full_name, display_order FROM faculty WHERE emp_id != 'ADMIN'"))], "suggested_send_to": suggested,
             "student_name": (conn.execute("SELECT full_name FROM students WHERE roll_no = ?", (it["roll_no"],)).fetchone() or [None])[0] if it["roll_no"] else None}
 
 

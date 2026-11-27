@@ -21,7 +21,7 @@
 
   function draw() {
     const v = B.v;
-    $('#view').innerHTML = `<div class="card-head"><div><h2>Form builder</h2><p class="hint" style="margin:2px 0 0">Change what people are asked when they add an entry. Your changes stay in a draft until you publish them.</p></div></div>
+    $('#view').innerHTML = `<div class="card-head"><div><h2>Software customization</h2><p class="hint" style="margin:2px 0 0">Change what people are asked when they add an entry. Your changes stay in a draft until you publish them.</p></div></div>
       <div class="bd-forms">${B.forms.map(f => `<button class="rv-tab ${f.form_id === B.formId ? 'on' : ''}" data-form="${f.form_id}">${esc(f.title)}${f.has_draft ? ' <span class="bd-dot" title="Unpublished changes"></span>' : ''}</button>`).join('')}</div>
       ${v.has_draft ? `<div class="rv-banner warn bd-draft"><div><b>You have changes that are not live yet.</b>${v.problems.length ? `<div class="bd-prob">${v.problems.map(p => '⚠ ' + esc(p)).join('<br>')}</div>` : ' <span class="muted">Everyone still sees the published version.</span>'}</div>
         <div><button class="btn" id="bd-discard">Discard</button> <button class="btn primary" id="bd-publish">Publish changes</button></div></div>` : ''}

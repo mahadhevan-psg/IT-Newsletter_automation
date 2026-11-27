@@ -30,7 +30,10 @@
     try {
       const s = await api('/api/review/summary'); RV.summary = s;
       const b = document.querySelector('.tab[data-t="review"]'); if (!b) return;
-      b.innerHTML = 'Review &amp; submissions' + (s.badge ? ` <span class="tab-badge">${s.badge > 99 ? '99+' : s.badge}</span>` : '');
+      const n = s.badge > 99 ? '99+' : s.badge;
+      b.innerHTML = 'Returned submissions' + (s.badge ? ` <span class="tab-badge">${n}</span>` : '');
+      const m = document.getElementById('nav-badge');            // the same count on the menu button, seen while the menu is closed
+      if (m) { m.textContent = s.badge ? n : ''; m.classList.toggle('hidden', !s.badge); }
     } catch (e) { /* the badge is a convenience */ }
   };
 
@@ -48,7 +51,7 @@
     const first = scopes();
     RV.scope = RV.scope && first.some(x => x.id === RV.scope) ? RV.scope : (RV.summary.returned_to_me ? 'returned' : canDecide() ? 'review' : 'mine');
     RV.sel = null; RV.detail = null; RV.edit = false; RV.edits = {}; RV.checked = new Set();
-    $('#view').innerHTML = `<div class="card-head"><div><h2>Review &amp; submissions</h2><p class="hint" style="margin:2px 0 0" id="rv-sub"></p></div><div id="rv-head-actions"></div></div>
+    $('#view').innerHTML = `<div class="card-head"><div><h2>Returned submissions</h2><p class="hint" style="margin:2px 0 0" id="rv-sub"></p></div><div id="rv-head-actions"></div></div>
       <div class="rv-tabs" id="rv-tabs"></div><div class="rv-filters" id="rv-filters"></div>
       <div class="rv"><aside class="rv-list" id="rv-list"></aside><section class="rv-detail" id="rv-detail"></section></div>`;
     drawTabs(); await loadList(true);

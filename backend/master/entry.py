@@ -14,7 +14,7 @@ from fastapi import HTTPException
 
 from backend.master import blocks, definitions, ingest, media
 from backend.master.auth import User
-from backend.master.common import norm_header, parse_date, parse_num
+from backend.master.common import in_faculty_order, norm_header, parse_date, parse_num
 from backend.review import service as review
 
 # fields the person never types: filled in by the application
@@ -73,8 +73,9 @@ def form_for(form_id: str, category: str) -> Dict[str, Any]:
 # ------------------------------------------------------------------------------------------------ people look-ups used by the entry screen
 def find_faculty(conn, q: str, limit: int = 12) -> List[Dict[str, str]]:
     like = f"%{(q or '').strip()}%"
-    return [{"emp_id": r[0], "name": r[1], "label": f"{r[0]} - {r[1]}"} for r in conn.execute(
-        "SELECT emp_id, full_name FROM faculty WHERE status = 'Active' AND emp_id != 'ADMIN' AND (full_name LIKE ? OR emp_id LIKE ?) ORDER BY full_name LIMIT ?", (like, like, limit))]
+    found = in_faculty_order(conn.execute(
+        "SELECT emp_id, full_name, display_order FROM faculty WHERE status = 'Active' AND emp_id != 'ADMIN' AND (full_name LIKE ? OR emp_id LIKE ?)", (like, like)))
+    return [{"emp_id": r["emp_id"], "name": r["full_name"], "label": f"{r['emp_id']} - {r['full_name']}"} for r in found[:limit]]
 
 
 def find_students(conn, q: str, limit: int = 12) -> List[Dict[str, str]]:

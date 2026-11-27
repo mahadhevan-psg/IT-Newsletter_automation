@@ -190,3 +190,16 @@ def make_xlsx(headers: List[str], example: Optional[List[str]] = None) -> bytes:
 # tutor's view of their own placements after the students move on.
 EFF_CLASS = ("COALESCE(s.class_id, (SELECT h.class_id FROM student_class_history h WHERE h.roll_no = s.roll_no "
              "AND h.class_id IS NOT NULL ORDER BY h.from_date DESC, h.id DESC LIMIT 1))")
+
+
+# ---------------------------------------------------------------- the order of faculty, the same in every list
+_TITLE = re.compile(r"^(?:(?:dr|mr|mrs|ms|miss|prof|er)(?:\.\s*|\s+))+", re.I)
+
+
+def in_faculty_order(rows) -> List[Dict[str, Any]]:
+    """Faculty rows (each with emp_id, full_name, display_order) in the order the Admin saved. Where none is saved, and for
+    people added since, by name from A to Z; titles (Dr., Mr., Prof. ...) are not counted."""
+    def key(r):
+        place = r["display_order"]
+        return (place is None, place or 0, _TITLE.sub("", (r["full_name"] or "").strip()).casefold(), r["emp_id"])
+    return sorted((dict(r) for r in rows), key=key)

@@ -1,9 +1,11 @@
 """Charts data. Student-related series respect the caller's class scope; department-wide series are Admin / HoD only."""
+import re
 import statistics
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 
+from backend.master import ingest
 from backend.master.auth import User
 from backend.master.common import EFF_CLASS
 
@@ -118,9 +120,113 @@ def placement_section(conn, user: User, ay: Optional[str], class_id, programme) 
     }
 
 
+# ---------------------------------------------------------------- the dashboard's first sight: six categories, a headline figure and four more each
+def _category_counts(conn, form_type: str, ay: Optional[str]) -> Dict[str, int]:
+    ayc, aya = (" AND ay_id = ?", [ay]) if ay else ("", [])
+    return {r[0] or "": r[1] for r in conn.execute(f"SELECT category, COUNT(*) FROM form_submissions WHERE form_type = ?{ayc} GROUP BY category", [form_type] + aya)}
+
+
+def _matching(counts: Dict[str, int], pattern: str) -> int:
+    """Entries in the categories whose name matches (by words, so a category the Admin renames slightly is still counted)."""
+    return sum(n for name, n in counts.items() if re.search(pattern, name, re.I))
+
+
+def _stat(label: str, value, kind: str = "count") -> Dict[str, Any]:
+    return {"label": label, "value": value, "kind": kind}           # kind: count | money (rupees) | percent | lpa
+
+
+# the form behind each card; its published title and categories are what the dashboard shows
+CARD_FORMS = {"research": "form_research", "faculty": "form_faculty", "department": "form_departmental", "outreach": "form_industry", "student": "form_student"}
+
+
+def _section_name(card: str) -> str:
+    specs = ingest.specs()
+    if card == "placement":
+        return specs.get("placement", {}).get("title") or "Student Placement Diary"
+    return specs["forms"][CARD_FORMS[card]]["title"]
+
+
+def _categories(card: str) -> List[str]:
+    """The categories the form offers today, in the form's order."""
+    return next((list(q.get("choices", [])) for q in ingest.specs()["forms"][CARD_FORMS[card]]["questions"]
+                 if q.get("key") == "category" and not q.get("legacy")), [])
+
+
+def _category_stat(card: str, counts: Dict[str, int], pattern: str, otherwise: str) -> Dict[str, Any]:
+    """A figure named exactly as its category is named on the form; `otherwise` only if the Admin has renamed it beyond recognition."""
+    name = next((c for c in _categories(card) if re.search(pattern, c, re.I)), otherwise)
+    return _stat(name, _matching(counts, pattern))
+
+
+def _category_list(card: str, counts: Dict[str, int]) -> List[Dict[str, Any]]:
+    """Every category of the section, also those with nothing yet; entries kept under a name the form no longer has come after."""
+    names = _categories(card)
+    return [{"label": n, "value": counts.get(n, 0)} for n in names] + [
+        {"label": f"{n or 'No category'} (earlier category)", "value": v} for n, v in sorted(counts.items(), key=lambda x: -x[1]) if n not in names]
+
+
+def _department_cards(conn, ay: Optional[str], dept: Dict[str, Any]) -> List[Dict[str, Any]]:
+    res, fac = _category_counts(conn, "RESEARCH", ay), _category_counts(conn, "FACULTY", ay)
+    dep, out = _category_counts(conn, "DEPARTMENT", ay), _category_counts(conn, "OUTREACH", ay)
+    ayc, aya = (" AND ay_id = ?", [ay]) if ay else ("", [])
+    people = conn.execute(f"SELECT COUNT(DISTINCT submitter_emp_id) FROM form_submissions WHERE form_type = 'FACULTY'{ayc}", aya).fetchone()[0]
+    top_quartiles = sum(r["value"] for r in dept["research_by_quartile"] if str(r["label"]).strip().upper() in ("Q1", "Q2"))
+    r = lambda pattern, otherwise: _category_stat("research", res, pattern, otherwise)
+    f = lambda pattern, otherwise: _category_stat("faculty", fac, pattern, otherwise)
+    d = lambda pattern, otherwise: _category_stat("department", dep, pattern, otherwise)
+    o = lambda pattern, otherwise: _category_stat("outreach", out, pattern, otherwise)
+    cards = [
+        {"id": "research", "total": sum(res.values()), "unit": "entries", "counts": res, "stats": [
+            r(r"journal", "Journal Publications"), r(r"conference", "Conference Publications"), r(r"patent", "Patents & Intellectual Property Rights (IPR)"),
+            _stat("Funding amount", dept["funding_total_inr"], "money")],
+         "notes": [r(r"book", "Book / Book Chapters"), _stat("papers in Q1 or Q2", top_quartiles)]},
+        {"id": "faculty", "total": sum(fac.values()), "unit": "entries", "counts": fac, "stats": [
+            f(r"award|hono", "Awards & Honors Received"), f(r"certification", "Certifications & Upskilling Completed"),
+            f(r"lecture|keynote", "Invited Keynote / Expert Lectures Delivered"), f(r"\bfdp|workshops attended", "FDP / Workshops Attended")],
+         "notes": [f(r"resource person|session chair", "Resource Person / Session Chair Roles"), _stat("faculty have entries", people)]},
+        {"id": "department", "total": sum(dep.values()), "unit": "entries", "counts": dep, "stats": [
+            d(r"awards|recognitions", "Departmental Achievements / Awards / Recognitions"), d(r"^events", "Events / Programs Conducted"),
+            d(r"\bmou", "MoU / Industry Collaboration / Partnerships"), _stat("Participants reached", dept["department_participants"])],
+         "notes": [d(r"infrastructure|laboratory", "Infrastructure / Laboratory Development")]},
+        {"id": "outreach", "total": sum(out.values()), "unit": "entries", "counts": out, "stats": [
+            o(r"visit", "Industrial Visits & Field Tours"), o(r"expert|technical talk", "Industry Expert Lectures & Technical Talks"),
+            o(r"\bmou", "MoUs Signed & Industrial Collaborations"), o(r"alumni", "Alumni Interactions & Mentorship Sessions")],
+         "notes": [o(r"community|social", "Community & Social Outreach Initiatives"), _stat("recorded attendance", dept["outreach_attendance"])]},
+    ]
+    for card in cards:
+        card["title"] = _section_name(card["id"])
+        card["categories"] = _category_list(card["id"], card.pop("counts"))
+    return cards
+
+
+def _student_cards(conn, user: User, ay: Optional[str], class_id, programme, students: Dict[str, Any], placements: Dict[str, Any]) -> List[Dict[str, Any]]:
+    sc, sa = _scope(user, "class_id", class_id, programme)
+    ayc, aya = (" AND ay_id = ?", [ay]) if ay else ("", [])
+    mine = f"SELECT DISTINCT submission_id FROM v_student_achievements WHERE 1=1{sc}{ayc}"        # each entry once, however many students took part
+    kinds = {r[0]: r[1] for r in conn.execute(f"SELECT entry_kind, COUNT(*) FROM student_achievements WHERE submission_id IN ({mine}) GROUP BY entry_kind", sa + aya)}
+    prize = conn.execute(f"SELECT COALESCE(SUM(prize_amount), 0) FROM student_achievements WHERE submission_id IN ({mine})", sa + aya).fetchone()[0]
+    by_category = {("" if x["label"] == "Not given" else x["label"]): x["value"] for x in students["by_category"]}
+    pc, pa = _scope(user, EFF_CLASS, class_id, programme)
+    oy, oa = (" AND o.ay_id = ?", [ay]) if ay else ("", [])
+    offers, companies = conn.execute(
+        f"SELECT COUNT(*), COUNT(DISTINCT o.org_id) FROM placement_offers o JOIN students s ON s.roll_no = o.roll_no WHERE o.offer_status = 'Accepted'{pc}{oy}", pa + oa).fetchone()
+    return [
+        {"id": "student", "title": _section_name("student"), "total": sum(kinds.values()), "unit": "entries", "categories": _category_list("student", by_category), "stats": [
+            _stat("Achievements", kinds.get("ACHIEVEMENT", 0)), _stat("Participations", kinds.get("PARTICIPATION", 0)),
+            _stat("Students involved", students["students_with_achievements"]), _stat("Participation rate", students["participation_rate"], "percent")],
+         "notes": [_stat("in prize money", prize, "money"), _stat("active students", students["active_students"])]},
+        {"id": "placement", "title": _section_name("placement"), "total": placements["placed"], "unit": "students placed", "stats": [
+            _stat("Placed of opted-in", placements["placement_percent"], "percent"), _stat("Highest package", placements["highest_lpa"], "lpa"),
+            _stat("Average package", placements["average_lpa"], "lpa"), _stat("Recruiting companies", companies)],
+         "notes": [_stat("accepted offers", offers), _stat("students opted in", placements["opted_in"])]},
+    ]
+
+
 def overview(conn, user: User, ay: Optional[str] = None, class_id: Optional[int] = None, programme: Optional[str] = None) -> Dict[str, Any]:
     out = {"scope": "all" if user.all_access else "classes", "students": student_section(conn, user, ay, class_id, programme),
            "placements": placement_section(conn, user, ay, class_id, programme)}
     if user.all_access:
         out["department"] = department_section(conn, ay)
+    out["highlights"] = (_department_cards(conn, ay, out["department"]) if user.all_access else []) + _student_cards(
+        conn, user, ay, class_id, programme, out["students"], out["placements"])
     return out

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request
 
 from backend.master import analytics, diary, excel_templates, exports, ingest, people, placements, profiles, submissions, works
 from backend.master import bulk
+from backend.master.common import in_faculty_order
 from backend.master.auth import User, admin_user, change_password, current_user, editor_user, login, mark_tour_seen, staff_user
 from backend.master.common import make_xlsx
 from database.master_db import audit, db
@@ -66,7 +67,8 @@ def api_meta(user: User = Depends(staff_user)):
             "levels": list(dict.fromkeys(c for fid in ("form_faculty", "form_student") for q in ingest.specs()["forms"].get(fid, {}).get("questions", [])
                                          if q.get("key") == "level" and not q.get("legacy") for c in q.get("choices", []))),
             "organizations": [dict(r) for r in conn.execute("SELECT org_id, name FROM organizations ORDER BY name")],
-            "faculty": [dict(r) for r in conn.execute("SELECT emp_id, full_name FROM faculty WHERE status != 'Relieved' AND emp_id != 'ADMIN' ORDER BY full_name")],
+            "faculty": [{"emp_id": r["emp_id"], "full_name": r["full_name"]} for r in in_faculty_order(
+                conn.execute("SELECT emp_id, full_name, display_order FROM faculty WHERE status != 'Relieved' AND emp_id != 'ADMIN'"))],
         }
 
 
@@ -78,7 +80,7 @@ def api_classes(include_completed: bool = False, user: User = Depends(staff_user
 
 
 @router.put("/api/master/classes/{class_id}/term")
-def api_class_term(class_id: int, payload: Dict[str, Any] = Body(...), user: User = Depends(staff_user)):
+def api_class_term(class_id: int, payload: Dict[str, Any] = Body(...), user: User = Depends(admin_user)):
     with db() as conn:
         return people.set_term(conn, user, class_id, int(payload.get("semester") or 0), payload.get("ay_id"))
 
@@ -90,7 +92,7 @@ def api_add_class(payload: Dict[str, Any] = Body(...), user: User = Depends(admi
 
 
 @router.post("/api/master/classes/{class_id}/graduate")
-def api_class_graduate(class_id: int, user: User = Depends(staff_user)):
+def api_class_graduate(class_id: int, user: User = Depends(admin_user)):
     with db() as conn:
         return people.graduate_class(conn, user, class_id)
 
@@ -154,6 +156,8 @@ async def api_students_upload(file: UploadFile = File(...), class_id: Optional[i
 # ================================================================ faculty (Admin)
 @router.get("/api/master/faculty")
 def api_faculty(q: str = "", status: str = "", user: User = Depends(staff_user)):
+    if not user.sees_faculty_list:
+        raise HTTPException(403, "The faculty list is for the Admin and HoD")
     with db() as conn:
         return people.list_faculty(conn, user, q, status)
 
@@ -162,6 +166,14 @@ def api_faculty(q: str = "", status: str = "", user: User = Depends(staff_user))
 def api_add_faculty(payload: Dict[str, Any] = Body(...), user: User = Depends(admin_user)):
     with db() as conn:
         return people.add_faculty(conn, user, payload)
+
+
+@router.put("/api/master/faculty-order")
+def api_faculty_order(payload: Dict[str, Any] = Body(...), user: User = Depends(admin_user)):
+    if not isinstance(payload.get("order"), list):
+        raise HTTPException(400, "Send the employee IDs in their order")
+    with db() as conn:
+        return people.save_faculty_order(conn, user, payload["order"])
 
 
 @router.put("/api/master/faculty/{emp_id}")

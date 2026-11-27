@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in · IT Department Portal</title>
+  <title>Sign in · IT Matrix</title>
+  <link rel="icon" type="image/png" href="/assets/it-matrix-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/home.css">
@@ -25,6 +26,7 @@
 
   <main class="wrap">
     <section class="login-panel" id="login">
+      <h1 class="app-name"><img src="/assets/it-matrix-login.png" alt="IT Matrix" width="1000" height="410"></h1>
       <h2>Sign in</h2>
       <p>One login for everyone. Faculty go to the staff portal, students to the Placements Diary.</p>
       <form id="login-form" autocomplete="on">
@@ -78,6 +80,10 @@
       }
     })();
 
+    if (new URLSearchParams(location.search).get('changed')) {
+      addEventListener('DOMContentLoaded', () => { const m = document.getElementById('lg-err'); m.style.color = '#15803d'; m.textContent = 'Password changed. Sign in with your new password.'; history.replaceState(null, '', '/'); });
+    }
+
     // Demo site only: show the demo accounts (the endpoint answers {enabled:false} on a normal deployment).
     (async () => {
       try {
@@ -118,7 +124,8 @@
         const staff = data.user.kind === 'STAFF';
         sessionStorage.removeItem(staff ? 'dtok' : 'tok');                  // never keep two different people's sessions in one tab
         sessionStorage.setItem(staff ? 'tok' : 'dtok', data.token);
-        location.href = staff ? (next || STAFF_HOME) : STUDENT_HOME;
+        // a temporary password goes straight to the portal's (or the diary's) change-password step
+        location.href = staff ? ((data.user.must_change ? null : next) || STAFF_HOME) : STUDENT_HOME;
       } catch (ex) {
         err.textContent = ex.message;
         btn.disabled = false;

@@ -27,18 +27,32 @@ function logout() { sessionStorage.removeItem('dtok'); location.replace('/'); }
 async function boot() {
   me = await api('/api/auth/me');
   $('#app').classList.remove('hidden');
-  $('#banner').innerHTML = me.must_change ? '<div class="banner">Please change your password (top right) - you are still using your roll number.</div>' : '';
+  if (me.must_change) {                       // a temporary password: nothing else until it is changed
+    window.onhashchange = null; $('#chpw').classList.add('hidden'); $('#enter-exp')?.classList.add('hidden');
+    $('#view').innerHTML = '<div class="empty">Change your password to continue.</div>';
+    return changePassword();
+  }
+  $('#banner').innerHTML = '';
   await route();
   Tours.diary(me, token);                     // Help button; the welcome tour the first time this student opens the diary
 }
 function changePassword() {
+  const first = me.must_change;
   const o = document.createElement('div'); o.className = 'overlay';
-  o.innerHTML = `<div class="dialog"><div class="dialog-head"><h3>Change password</h3><button class="x">×</button></div><div class="dialog-body">
-    <div class="field"><label>Current password</label><input type="password" class="input" id="o"></div>
-    <div class="field"><label>New password (min 8 characters)</label><input type="password" class="input" id="n"></div></div>
-    <div class="dialog-foot"><button class="btn" id="c">Cancel</button><button class="btn primary" id="s">Change</button></div></div>`;
-  document.body.appendChild(o); $('.x', o).onclick = $('#c', o).onclick = () => o.remove();
-  $('#s', o).onclick = go(async () => { await api('/api/auth/change-password', { method: 'POST', body: { old_password: $('#o', o).value, new_password: $('#n', o).value } }); me.must_change = false; $('#banner').innerHTML = ''; o.remove(); toast('Password changed'); });
+  o.innerHTML = `<div class="dialog"><div class="dialog-head"><h3>Change password</h3>${first ? '' : '<button class="x">×</button>'}</div><div class="dialog-body">
+    ${first ? '<p class="hint">You signed in with a temporary password. Choose your own; you will then be signed out and sign in with it.</p>' : ''}
+    <div class="field"><label>${first ? 'Temporary password' : 'Current password'}</label><input type="password" class="input" id="o"></div>
+    <div class="field"><label>New password (min 8 characters)</label><input type="password" class="input" id="n"></div>
+    <div class="field"><label>New password again</label><input type="password" class="input" id="n2"></div></div>
+    <div class="dialog-foot"><button class="btn" id="c">${first ? 'Sign out' : 'Cancel'}</button><button class="btn primary" id="s">Change</button></div></div>`;
+  document.body.appendChild(o);
+  if (first) $('#c', o).onclick = logout; else $('.x', o).onclick = $('#c', o).onclick = () => o.remove();
+  $('#s', o).onclick = go(async () => {
+    if ($('#n', o).value !== $('#n2', o).value) return toast('The two new passwords are not the same', true);
+    await api('/api/auth/change-password', { method: 'POST', body: { old_password: $('#o', o).value, new_password: $('#n', o).value } });
+    if (first) { sessionStorage.removeItem('dtok'); return location.replace('/?changed=1'); }
+    o.remove(); toast('Password changed');
+  });
 }
 
 async function route() {
